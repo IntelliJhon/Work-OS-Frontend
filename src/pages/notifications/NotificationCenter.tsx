@@ -223,7 +223,6 @@ export const NotificationCenter: React.FC = () => {
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const highCount = notifications.filter(n => getPriority(n.title, n.priority, n.entityType) === 'high' && !n.isRead).length;
-  const mediumCount = notifications.filter(n => getPriority(n.title, n.priority, n.entityType) === 'medium' && !n.isRead).length;
   const lowCount = notifications.filter(n => getPriority(n.title, n.priority, n.entityType) === 'low' && !n.isRead).length;
 
   const activeSprintsCount = projects.reduce((count, proj) => {

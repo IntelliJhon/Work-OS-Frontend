@@ -11,8 +11,6 @@ import { PERMISSIONS } from '../../features/auth/permission.constants';
 import {
   Activity,
   Plus,
-  Play,
-  CheckCircle,
   Calendar,
   PlusCircle,
   Sparkles,
@@ -44,7 +42,7 @@ const createSprintSchema = z.object({
   phaseId: z.string().min(1, 'Target Phase is required'),
   startDate: z.string().min(1, 'Start Date is required'),
   endDate: z.string().min(1, 'End Date is required'),
-  cadence: z.enum(['Weekly', 'Bi-Weekly', 'Monthly', 'Custom']).default('Weekly'),
+  cadence: z.enum(['Weekly', 'Bi-Weekly', 'Monthly', 'Custom']),
 }).refine((data) => {
   if (data.startDate && data.endDate) {
     const start = new Date(data.startDate);
@@ -287,7 +285,7 @@ export const ProjectSprints: React.FC = () => {
     setValue('endDate', `${yyyy}-${mm}-${dd}`);
   }, [watchedStartDate, watchedCadence, setValue]);
 
-  const onSubmit = (values: CreateSprintValues) => {
+  const onSubmit = (values: any) => {
     let cadenceType: 'WEEK' | 'MONTH' | 'CUSTOM' = 'WEEK';
     let cadenceInterval = 1;
 
@@ -861,6 +859,36 @@ export const ProjectSprints: React.FC = () => {
                         <span>Dates: {selectedSprint.startDate ? new Date(selectedSprint.startDate).toLocaleDateString() : 'N/A'} - {selectedSprint.endDate ? new Date(selectedSprint.endDate).toLocaleDateString() : 'N/A'}</span>
                       </span>
                     </div>
+                  </div>
+
+                  {/* Sprint Lifecycle Action Controls */}
+                  <div className="flex items-center space-x-2 shrink-0">
+                    {selectedSprint.status === 'planning' && (
+                      <PermissionGate
+                        permission={PERMISSIONS.PROJECT_MANAGE}
+                        behavior="hide"
+                      >
+                        <button
+                          onClick={() => startSprintMutation.mutate(selectedSprint.id)}
+                          className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow border border-blue-500/20 active:scale-95 duration-150"
+                        >
+                          <span>Start Sprint Cycle</span>
+                        </button>
+                      </PermissionGate>
+                    )}
+                    {selectedSprint.status === 'active' && (
+                      <PermissionGate
+                        permission={PERMISSIONS.PROJECT_MANAGE}
+                        behavior="hide"
+                      >
+                        <button
+                          onClick={() => handleCloseSprintAttempt(selectedSprint)}
+                          className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow border border-emerald-500/20 active:scale-95 duration-150"
+                        >
+                          <span>Complete & Close Sprint</span>
+                        </button>
+                      </PermissionGate>
+                    )}
                   </div>
                 </div>
 
