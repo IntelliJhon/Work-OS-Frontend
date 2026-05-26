@@ -41,6 +41,9 @@ const createActivitySchema = z.object({
   title: z.string().min(3, 'Activity title must be at least 3 characters'),
   phaseId: z.string().min(1, 'Target Phase is required'),
   isSprintRelevant: z.boolean(),
+  frequency: z.enum(['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY']).optional().nullable(),
+  startDate: z.string().optional().nullable(),
+  endDate: z.string().optional().nullable(),
 });
 
 const createSprintSchema = z.object({
@@ -293,7 +296,10 @@ export const ProjectSprints: React.FC = () => {
     defaultValues: {
       title: '',
       phaseId: '',
-      isSprintRelevant: false
+      isSprintRelevant: false,
+      frequency: null,
+      startDate: null,
+      endDate: null,
     }
   });
 
@@ -311,6 +317,11 @@ export const ProjectSprints: React.FC = () => {
   const watchedStartDate = sprintForm.watch('startDate');
   const watchedCadence = sprintForm.watch('cadence');
 
+  // Watch activity form fields for auto end-date calculation
+  const watchedActivityFrequency = activityForm.watch('frequency');
+  const watchedActivityStartDate = activityForm.watch('startDate');
+
+  // Auto-calculate endDate for sprint form
   useEffect(() => {
     if (!watchedStartDate || !watchedCadence || watchedCadence === 'Custom') return;
     
@@ -332,12 +343,42 @@ export const ProjectSprints: React.FC = () => {
     sprintForm.setValue('endDate', `${yyyy}-${mm}-${dd}`);
   }, [watchedStartDate, watchedCadence, sprintForm]);
 
+  // Auto-calculate endDate for activity form based on frequency + startDate
+  useEffect(() => {
+    if (!watchedActivityStartDate || !watchedActivityFrequency) return;
+
+    const start = new Date(watchedActivityStartDate);
+    if (isNaN(start.getTime())) return;
+
+    const end = new Date(start);
+    if (watchedActivityFrequency === 'DAILY') {
+      end.setDate(start.getDate() + 1);
+    } else if (watchedActivityFrequency === 'WEEKLY') {
+      end.setDate(start.getDate() + 7);
+    } else if (watchedActivityFrequency === 'BIWEEKLY') {
+      end.setDate(start.getDate() + 14);
+    } else if (watchedActivityFrequency === 'MONTHLY') {
+      end.setMonth(start.getMonth() + 1);
+    }
+
+    const yyyy = end.getFullYear();
+    const mm = String(end.getMonth() + 1).padStart(2, '0');
+    const dd = String(end.getDate()).padStart(2, '0');
+    activityForm.setValue('endDate', `${yyyy}-${mm}-${dd}`);
+  }, [watchedActivityStartDate, watchedActivityFrequency, activityForm]);
+
   const onActivitySubmit = (values: CreateActivityValues) => {
+    const startISO = values.startDate ? new Date(values.startDate).toISOString() : null;
+    const endISO = values.endDate ? new Date(values.endDate).toISOString() : null;
+
     createActivityMutation.mutate({
       projectId: project.id,
       phaseId: values.phaseId,
       title: values.title,
       isSprintRelevant: values.isSprintRelevant,
+      frequency: values.frequency || null,
+      startDate: startISO,
+      endDate: endISO,
     });
   };
 
@@ -884,6 +925,42 @@ export const ProjectSprints: React.FC = () => {
                     ? 'Sprint cycles are supported inside this activity container. Set up sprints below to run your agile operational delivery.'
                     : 'Standard operational checklist. Add deliverables and collaborate with team comments.'}
                 </p>
+
+                {/* Schedule badge — shown when frequency + dates are set on this activity */}
+                {!selectedActivity.isSprintRelevant && selectedActivity.frequency && (
+                  <div className="flex flex-wrap items-center gap-3 pt-1">
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg border bg-blue-500/10 border-blue-500/20 text-blue-500">
+                      <Clock className="w-3 h-3" />
+                      {selectedActivity.frequency === 'DAILY' && 'Daily'}
+                      {selectedActivity.frequency === 'WEEKLY' && 'Weekly'}
+                      {selectedActivity.frequency === 'BIWEEKLY' && 'Bi-Weekly'}
+                      {selectedActivity.frequency === 'MONTHLY' && 'Monthly'}
+                      &nbsp;Frequency
+                    </span>
+
+                    {selectedActivity.startDate && (
+                      <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-zinc-500">
+                        <span className="text-slate-400 dark:text-zinc-600">Start:</span>
+                        <span className="text-slate-700 dark:text-zinc-300">
+                          {new Date(selectedActivity.startDate).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' })}
+                        </span>
+                      </span>
+                    )}
+
+                    {selectedActivity.startDate && selectedActivity.endDate && (
+                      <span className="text-slate-300 dark:text-zinc-700 text-xs">→</span>
+                    )}
+
+                    {selectedActivity.endDate && (
+                      <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-zinc-500">
+                        <span className="text-slate-400 dark:text-zinc-600">End:</span>
+                        <span className="text-slate-700 dark:text-zinc-300">
+                          {new Date(selectedActivity.endDate).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' })}
+                        </span>
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Ternary Branches */}
@@ -1540,6 +1617,51 @@ export const ProjectSprints: React.FC = () => {
                     <p className="text-[10px] text-red-400 font-bold">{activityForm.formState.errors.phaseId.message}</p>
                   )}
                 </div>
+
+                {/* Frequency + Start Date row */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Frequency</label>
+                    <select
+                      {...activityForm.register('frequency')}
+                      className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer font-semibold"
+                    >
+                      <option value="">None</option>
+                      <option value="DAILY">Daily</option>
+                      <option value="WEEKLY">Weekly</option>
+                      <option value="BIWEEKLY">Bi-Weekly</option>
+                      <option value="MONTHLY">Monthly</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Start Date</label>
+                    <input
+                      type="date"
+                      {...activityForm.register('startDate')}
+                      className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                {/* Calculated End Date — auto-filled, read-only display */}
+                {watchedActivityStartDate && watchedActivityFrequency && (
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Calculated End Date</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="date"
+                        {...activityForm.register('endDate')}
+                        readOnly
+                        className="w-full bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20 rounded-xl px-3 py-2 text-xs text-blue-700 dark:text-blue-300 focus:outline-none cursor-not-allowed font-mono"
+                      />
+                      <span className="text-[9px] uppercase font-black text-blue-400 whitespace-nowrap tracking-wider">Auto-calc</span>
+                    </div>
+                    <p className="text-[9px] text-slate-400 dark:text-zinc-600 font-medium">
+                      End date is calculated automatically from the start date and frequency.
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex items-center space-x-2 bg-slate-100/30 dark:bg-white/5 border border-slate-100 dark:border-white/5 p-3.5 rounded-xl">
                   <input

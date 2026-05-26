@@ -48,6 +48,9 @@ export interface Activity {
   phaseId: string;
   title: string;
   isSprintRelevant: boolean;
+  frequency: 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | null;
+  startDate: string | null;
+  endDate: string | null;
   createdAt: string;
   updatedAt: string;
 }

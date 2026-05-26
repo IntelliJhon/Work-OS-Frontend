@@ -6,6 +6,9 @@ export interface CreateActivityPayload {
   phaseId: string;
   title: string;
   isSprintRelevant: boolean;
+  frequency?: 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | null;
+  startDate?: string | null;
+  endDate?: string | null;
 }
 
 export interface CreateSprintPayload {
