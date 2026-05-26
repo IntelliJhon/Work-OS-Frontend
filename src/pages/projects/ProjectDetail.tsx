@@ -52,7 +52,7 @@ export const ProjectDetail: React.FC = () => {
       <div className="glass-panel rounded-2xl p-8 text-center border border-border space-y-4 max-w-md mx-auto mt-12">
         <FolderKanban className="w-12 h-12 text-red-400 mx-auto" />
         <div>
-          <h3 className="text-lg font-bold text-white">Deliverable Load Error</h3>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white">Deliverable Load Error</h3>
           <p className="text-xs text-muted-foreground mt-1 font-light">
             We were unable to locate the requested deliverable context or verify active RLS permissions.
           </p>
@@ -88,15 +88,15 @@ export const ProjectDetail: React.FC = () => {
       {/* Workspace Breadcrumbs & Active Indicator */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 pb-4 border-b border-border">
         <div className="space-y-1.5">
-          <div className="flex items-center space-x-1 text-xs text-zinc-500 font-medium">
+          <div className="flex items-center space-x-1 text-xs text-slate-500 dark:text-zinc-500 font-medium">
             <Link to="/dashboard" className="hover:text-zinc-900 dark:hover:text-white transition-all">Overview</Link>
             <ChevronRight className="w-3.5 h-3.5" />
             <Link to="/projects" className="hover:text-zinc-900 dark:hover:text-white transition-all">Workspace Deliverables</Link>
             <ChevronRight className="w-3.5 h-3.5" />
-            <span className="text-zinc-400 select-none truncate max-w-[120px]">{project.name}</span>
+            <span className="text-slate-600 dark:text-zinc-400 select-none truncate max-w-[120px]">{project.name}</span>
           </div>
           <div className="flex items-center space-x-2.5">
-            <h1 className="text-2xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
+            <h1 className="text-2xl font-extrabold text-zinc-900 dark:text-slate-900 dark:text-white tracking-tight">
               {project.name}
             </h1>
             <span
@@ -143,7 +143,7 @@ export const ProjectDetail: React.FC = () => {
 
           <Link
             to="/projects"
-            className="flex items-center space-x-1 px-3.5 py-2 rounded-xl bg-white/5 border border-border text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all text-xs font-semibold"
+            className="flex items-center space-x-1 px-3.5 py-2 rounded-xl bg-slate-100/60 dark:bg-white/5 border border-border text-slate-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all text-xs font-semibold"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Workspace</span>
@@ -158,12 +158,12 @@ export const ProjectDetail: React.FC = () => {
             Timeline Progress
           </div>
           <div className="flex items-end justify-between mt-2">
-            <span className="text-2xl font-extrabold text-zinc-900 dark:text-white">{progressPercent}%</span>
-            <span className="text-xs font-semibold text-zinc-500">
+            <span className="text-2xl font-extrabold text-zinc-900 dark:text-slate-900 dark:text-white">{progressPercent}%</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-zinc-500">
               {completedPhases} of {phases.length} Phases Completed
             </span>
           </div>
-          <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden border border-white/5 mt-3">
+          <div className="w-full bg-slate-100/60 dark:bg-white/5 rounded-full h-1.5 overflow-hidden border border-slate-100 dark:border-white/5 mt-3">
             <div
               className="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
@@ -186,12 +186,12 @@ export const ProjectDetail: React.FC = () => {
                 </span>
               </div>
             ) : (
-              <div className="text-zinc-500 text-xs italic font-light">
+              <div className="text-slate-500 dark:text-zinc-500 text-xs italic font-light">
                 No active phase. Initialize timeline nodes below.
               </div>
             )}
           </div>
-          <div className="text-[10px] text-muted-foreground font-light mt-2 border-t border-white/5 pt-2 flex justify-between">
+          <div className="text-[10px] text-muted-foreground font-light mt-2 border-t border-slate-100 dark:border-white/5 pt-2 flex justify-between">
             <span>Sprints in Phase: {project.sprints?.filter((s) => s.phaseId === activePhase?.id).length || 0}</span>
             <span>Quality Gates: {project.gates?.filter((g) => g.phaseId === activePhase?.id).length || 0}</span>
           </div>
@@ -201,17 +201,17 @@ export const ProjectDetail: React.FC = () => {
           <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
             RLS Audit Context
           </div>
-          <div className="text-xs font-light text-zinc-400 mt-2 space-y-1">
+          <div className="text-xs font-light text-slate-600 dark:text-zinc-400 mt-2 space-y-1">
             <div className="flex justify-between">
               <span>Workspace ID:</span>
-              <span className="font-mono text-[10px] text-zinc-900 dark:text-white truncate max-w-[120px]">{project.id}</span>
+              <span className="font-mono text-[10px] text-zinc-900 dark:text-slate-900 dark:text-white truncate max-w-[120px]">{project.id}</span>
             </div>
             <div className="flex justify-between">
               <span>Acme Domain:</span>
               <span className="text-emerald-400 font-semibold select-none">rls-secured-tx</span>
             </div>
           </div>
-          <div className="text-[9px] text-zinc-500 font-semibold uppercase tracking-wider mt-2 flex items-center space-x-1 justify-end">
+          <div className="text-[9px] text-slate-500 dark:text-zinc-500 font-semibold uppercase tracking-wider mt-2 flex items-center space-x-1 justify-end">
             <span>Standard Security Verified</span>
           </div>
         </div>
@@ -231,7 +231,7 @@ export const ProjectDetail: React.FC = () => {
               className={`flex items-center space-x-2 px-5 py-3 text-xs font-bold border-b-2 transition-all capitalize whitespace-nowrap ${
                 isActive
                   ? 'border-blue-500 text-blue-400 bg-blue-500/5'
-                  : 'border-transparent text-muted-foreground hover:text-zinc-900 dark:hover:text-white hover:bg-white/5'
+                  : 'border-transparent text-muted-foreground hover:text-zinc-900 dark:hover:text-white hover:bg-slate-100/60 dark:bg-white/5'
               }`}
             >
               <TabIcon className="w-4 h-4" />

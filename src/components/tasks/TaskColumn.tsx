@@ -62,7 +62,7 @@ export const TaskColumn: React.FC<TaskColumnProps> = ({
   };
 
   const countBadgeStyles = {
-    to_do: 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border border-zinc-500/25',
+    to_do: 'bg-zinc-500/10 text-zinc-600 dark:text-slate-600 dark:text-zinc-400 border border-zinc-500/25',
     in_progress: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25',
     in_review: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/25',
     done: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25',
@@ -90,7 +90,7 @@ export const TaskColumn: React.FC<TaskColumnProps> = ({
           <span className="text-xs font-bold text-foreground tracking-wide">{title}</span>
           <span
             className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded ${
-              countBadgeStyles[id as keyof typeof countBadgeStyles] || 'bg-zinc-500/10 text-zinc-400'
+              countBadgeStyles[id as keyof typeof countBadgeStyles] || 'bg-zinc-500/10 text-slate-600 dark:text-zinc-400'
             }`}
           >
             {tasks.length}

@@ -320,22 +320,22 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
     rendered = rendered.replace(/\*(.*?)\*/g, '<em>$1</em>');
 
     // 4. Code Blocks
-    rendered = rendered.replace(/```([\s\S]*?)```/g, '<pre class="bg-black/30 border border-border px-3 py-2 rounded-xl text-[11px] font-mono text-zinc-300 my-2 overflow-x-auto">$1</pre>');
+    rendered = rendered.replace(/```([\s\S]*?)```/g, '<pre class="bg-black/30 border border-border px-3 py-2 rounded-xl text-[11px] font-mono text-slate-700 dark:text-zinc-300 my-2 overflow-x-auto">$1</pre>');
 
     // 5. Inline Code
     rendered = rendered.replace(/`(.*?)`/g, '<code class="bg-black/40 px-1.5 py-0.5 rounded text-[10px] font-mono text-pink-400">$1</code>');
 
     // 6. Checklists
-    rendered = rendered.replace(/- \[[ ]\] (.*?)/g, '<div class="flex items-center space-x-2 my-1 text-zinc-400"><span class="w-3.5 h-3.5 border border-zinc-600 rounded flex items-center justify-center bg-black/20"></span><span>$1</span></div>');
+    rendered = rendered.replace(/- \[[ ]\] (.*?)/g, '<div class="flex items-center space-x-2 my-1 text-slate-600 dark:text-zinc-400"><span class="w-3.5 h-3.5 border border-zinc-600 rounded flex items-center justify-center bg-black/20"></span><span>$1</span></div>');
     rendered = rendered.replace(/- \[[xX]\] (.*?)/g, '<div class="flex items-center space-x-2 my-1 text-blue-400 line-through"><span class="w-3.5 h-3.5 border border-blue-500/40 rounded flex items-center justify-center bg-blue-500/10"><span class="w-1.5 h-1.5 rounded-sm bg-blue-400"></span></span><span>$1</span></div>');
 
     // 7. Bullet Lists
-    rendered = rendered.replace(/^- (.*?)/gm, '<li class="ml-4 list-disc text-zinc-300">$1</li>');
+    rendered = rendered.replace(/^- (.*?)/gm, '<li class="ml-4 list-disc text-slate-700 dark:text-zinc-300">$1</li>');
 
     // Line breaks to <br />
     rendered = rendered.replace(/\n/g, '<br />');
 
-    return <div dangerouslySetInnerHTML={{ __html: rendered }} className="text-xs text-zinc-300 space-y-1 mt-1 leading-relaxed" />;
+    return <div dangerouslySetInnerHTML={{ __html: rendered }} className="text-xs text-slate-700 dark:text-zinc-300 space-y-1 mt-1 leading-relaxed" />;
   };
 
   const getInitials = (name: string) => {
@@ -351,8 +351,8 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
         {parentComments.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-center space-y-2 border border-dashed border-zinc-800 rounded-2xl bg-white/1">
             <MessageSquare className="w-8 h-8 text-zinc-600 animate-pulse" />
-            <p className="text-xs font-bold text-zinc-400">No discussions yet</p>
-            <p className="text-[10px] text-zinc-500">Ask a question or tag team members to start working.</p>
+            <p className="text-xs font-bold text-slate-600 dark:text-zinc-400">No discussions yet</p>
+            <p className="text-[10px] text-slate-500 dark:text-zinc-500">Ask a question or tag team members to start working.</p>
           </div>
         ) : (
           parentComments.map((c) => {
@@ -360,10 +360,10 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
             return (
               <div key={c.id} className="space-y-3">
                 {/* Parent Comment */}
-                <div className="group/item relative flex space-x-3 p-3 bg-zinc-900/40 hover:bg-zinc-900/70 border border-white/5 rounded-2xl transition duration-200">
+                <div className="group/item relative flex space-x-3 p-3 bg-zinc-900/40 hover:bg-zinc-900/70 border border-slate-100 dark:border-white/5 rounded-2xl transition duration-200">
                   {/* Initials Avatar */}
                   <div 
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-extrabold text-white"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-extrabold text-slate-900 dark:text-white"
                     style={{ backgroundColor: getAvatarBg(c.userName) }}
                   >
                     {getInitials(c.userName)}
@@ -372,8 +372,8 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="text-xs font-extrabold text-white hover:underline cursor-pointer">{c.userName}</span>
-                        <span className="text-[9px] text-zinc-500 ml-2 font-medium">
+                        <span className="text-xs font-extrabold text-slate-900 dark:text-white hover:underline cursor-pointer">{c.userName}</span>
+                        <span className="text-[9px] text-slate-500 dark:text-zinc-500 ml-2 font-medium">
                           {new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
@@ -382,7 +382,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                       <div className="opacity-0 group-hover/item:opacity-100 flex items-center space-x-2 transition">
                         <button 
                           onClick={() => setActiveReplyId(activeReplyId === c.id ? null : c.id)}
-                          className="p-1 rounded hover:bg-white/5 text-zinc-400 hover:text-white transition"
+                          className="p-1 rounded hover:bg-slate-100/60 dark:bg-white/5 text-slate-600 dark:text-zinc-400 hover:text-white transition"
                           title="Reply to thread"
                         >
                           <Reply className="w-3.5 h-3.5" />
@@ -390,7 +390,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                         {user && user.id === c.userId && (
                           <button 
                             onClick={() => user?.tenantId && deleteComment(user.tenantId, projectId, entityId, c.id)}
-                            className="p-1 rounded hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition"
+                            className="p-1 rounded hover:bg-red-500/10 text-slate-500 dark:text-zinc-500 hover:text-red-400 transition"
                             title="Delete note"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -411,7 +411,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                             href={url} 
                             target="_blank" 
                             rel="noopener noreferrer" 
-                            className="flex items-center space-x-1.5 px-2 py-1 rounded-lg bg-black/40 border border-white/5 text-[10px] text-blue-400 hover:bg-black/60 transition"
+                            className="flex items-center space-x-1.5 px-2 py-1 rounded-lg bg-black/40 border border-slate-100 dark:border-white/5 text-[10px] text-blue-400 hover:bg-black/60 transition"
                           >
                             {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
                               <ImageIcon className="w-3.5 h-3.5" />
@@ -430,7 +430,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                       <div className="relative">
                         <button 
                           onClick={() => setShowEmojiPickerId(showEmojiPickerId === c.id ? null : c.id)}
-                          className="flex items-center justify-center p-1 rounded-lg hover:bg-white/5 border border-zinc-800 text-zinc-500 hover:text-zinc-300 transition"
+                          className="flex items-center justify-center p-1 rounded-lg hover:bg-slate-100/60 dark:bg-white/5 border border-zinc-800 text-slate-500 dark:text-zinc-500 hover:text-slate-700 dark:text-zinc-300 transition"
                         >
                           <Smile className="w-3 h-3" />
                         </button>
@@ -447,7 +447,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                                     setShowEmojiPickerId(null);
                                   }
                                 }}
-                                className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-xs transition"
+                                className="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-200/60 dark:bg-white/10 text-xs transition"
                               >
                                 {emoji}
                               </button>
@@ -465,7 +465,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                             className={`flex items-center space-x-1 px-1.5 py-0.5 rounded-lg text-[10px] font-bold border transition ${
                               hasReacted 
                                 ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' 
-                                : 'bg-black/20 border-zinc-800 text-zinc-500 hover:text-zinc-300'
+                                : 'bg-black/20 border-zinc-800 text-slate-500 dark:text-zinc-500 hover:text-slate-700 dark:text-zinc-300'
                             }`}
                           >
                             <span>{reaction}</span>
@@ -480,11 +480,11 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                 {/* Sub-Replies Threads */}
                 {replies.map((reply) => (
                   <div key={reply.id} className="flex pl-8 space-x-2.5 group/item relative">
-                    <CornerDownRight className="w-4 h-4 text-zinc-700 mt-2 shrink-0" />
+                    <CornerDownRight className="w-4 h-4 text-slate-800 dark:text-zinc-300 mt-2 shrink-0" />
                     
-                    <div className="flex-1 flex space-x-3 p-2.5 bg-zinc-950/20 hover:bg-zinc-950/40 border border-white/5 rounded-2xl transition duration-200">
+                    <div className="flex-1 flex space-x-3 p-2.5 bg-zinc-950/20 hover:bg-zinc-950/40 border border-slate-100 dark:border-white/5 rounded-2xl transition duration-200">
                       <div 
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-extrabold text-white"
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-extrabold text-slate-900 dark:text-white"
                         style={{ backgroundColor: getAvatarBg(reply.userName) }}
                       >
                         {getInitials(reply.userName)}
@@ -493,8 +493,8 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                       <div className="flex-1 space-y-0.5">
                         <div className="flex items-center justify-between">
                           <div>
-                            <span className="text-[11px] font-extrabold text-white">{reply.userName}</span>
-                            <span className="text-[8px] text-zinc-500 ml-2 font-medium">
+                            <span className="text-[11px] font-extrabold text-slate-900 dark:text-white">{reply.userName}</span>
+                            <span className="text-[8px] text-slate-500 dark:text-zinc-500 ml-2 font-medium">
                               {new Date(reply.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
@@ -502,7 +502,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                           {user && user.id === reply.userId && (
                             <button 
                               onClick={() => user?.tenantId && deleteComment(user.tenantId, projectId, entityId, reply.id)}
-                              className="opacity-0 group-hover/item:opacity-100 p-1 rounded hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition"
+                              className="opacity-0 group-hover/item:opacity-100 p-1 rounded hover:bg-red-500/10 text-slate-500 dark:text-zinc-500 hover:text-red-400 transition"
                               title="Delete reply"
                             >
                               <Trash2 className="w-3 h-3" />
@@ -517,7 +517,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                           <div className="relative">
                             <button 
                               onClick={() => setShowEmojiPickerId(showEmojiPickerId === reply.id ? null : reply.id)}
-                              className="flex items-center justify-center p-0.5 rounded hover:bg-white/5 border border-zinc-800 text-zinc-500 hover:text-zinc-300"
+                              className="flex items-center justify-center p-0.5 rounded hover:bg-slate-100/60 dark:bg-white/5 border border-zinc-800 text-slate-500 dark:text-zinc-500 hover:text-slate-700 dark:text-zinc-300"
                             >
                               <Smile className="w-2.5 h-2.5" />
                             </button>
@@ -532,7 +532,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                                         setShowEmojiPickerId(null);
                                       }
                                     }}
-                                    className="w-5.5 h-5.5 flex items-center justify-center rounded hover:bg-white/10 text-[10px] transition"
+                                    className="w-5.5 h-5.5 flex items-center justify-center rounded hover:bg-slate-200/60 dark:bg-white/10 text-[10px] transition"
                                   >
                                     {emoji}
                                   </button>
@@ -549,7 +549,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                                 className={`flex items-center space-x-1 px-1 py-0.5 rounded text-[8px] font-bold border transition ${
                                   hasReacted 
                                     ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' 
-                                    : 'bg-black/20 border-zinc-800 text-zinc-500 hover:text-zinc-300'
+                                    : 'bg-black/20 border-zinc-800 text-slate-500 dark:text-zinc-500 hover:text-slate-700 dark:text-zinc-300'
                                 }`}
                               >
                                 <span>{reaction}</span>
@@ -566,7 +566,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                 {/* Reply Input Box inline */}
                 {activeReplyId === c.id && (
                   <div className="pl-8 flex space-x-2.5 items-end">
-                    <CornerDownRight className="w-4 h-4 text-zinc-700 mb-2 shrink-0" />
+                    <CornerDownRight className="w-4 h-4 text-slate-800 dark:text-zinc-300 mb-2 shrink-0" />
                     <div className="flex-1 relative flex items-center bg-zinc-950 border border-zinc-800 rounded-2xl px-3 py-1.5 focus-within:border-blue-500/40">
                       <textarea
                         ref={replyTextareaRef}
@@ -585,18 +585,18 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                           className="absolute bottom-full left-0 mb-2 z-50 w-52 max-h-40 overflow-y-auto bg-card border border-border rounded-xl shadow-2xl p-1"
                         >
                           {filteredMembers.length === 0 ? (
-                            <p className="text-[10px] text-zinc-500 p-2 italic">No members matched</p>
+                            <p className="text-[10px] text-slate-500 dark:text-zinc-500 p-2 italic">No members matched</p>
                           ) : (
                             filteredMembers.map((m, idx) => (
                               <button
                                 key={m.id}
                                 onClick={() => selectMention(m, true)}
                                 className={`w-full text-left px-2 py-1.5 text-[11px] rounded-lg font-medium flex items-center justify-between ${
-                                  idx === mentionIndex ? 'bg-blue-500/10 text-blue-400' : 'text-zinc-300 hover:bg-white/5'
+                                  idx === mentionIndex ? 'bg-blue-500/10 text-blue-400' : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-100/60 dark:bg-white/5'
                                 }`}
                               >
                                 <span>{m.firstName} {m.lastName}</span>
-                                <span className="text-[8px] text-zinc-500">{m.email}</span>
+                                <span className="text-[8px] text-slate-500 dark:text-zinc-500">{m.email}</span>
                               </button>
                             ))
                           )}
@@ -619,23 +619,23 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
       </div>
 
       {/* Main Comment Composer */}
-      <div className="relative pt-4 border-t border-white/5 space-y-2 shrink-0">
+      <div className="relative pt-4 border-t border-slate-100 dark:border-white/5 space-y-2 shrink-0">
         {/* Markdown Hint Toolbar */}
-        <div className="flex items-center space-x-2.5 text-[10px] text-zinc-500 px-1">
+        <div className="flex items-center space-x-2.5 text-[10px] text-slate-500 dark:text-zinc-500 px-1">
           <span className="font-extrabold uppercase tracking-wide text-zinc-600 mr-2">Editor:</span>
-          <button className="flex items-center space-x-0.5 hover:text-zinc-300 cursor-help" title="Use **text** for bold text">
+          <button className="flex items-center space-x-0.5 hover:text-slate-700 dark:text-zinc-300 cursor-help" title="Use **text** for bold text">
             <Bold className="w-3 h-3 text-zinc-600" />
             <span>Bold</span>
           </button>
-          <button className="flex items-center space-x-0.5 hover:text-zinc-300 cursor-help" title="Use *text* for italic text">
+          <button className="flex items-center space-x-0.5 hover:text-slate-700 dark:text-zinc-300 cursor-help" title="Use *text* for italic text">
             <Italic className="w-3 h-3 text-zinc-600" />
             <span>Italic</span>
           </button>
-          <button className="flex items-center space-x-0.5 hover:text-zinc-300 cursor-help" title="Use `code` for code snippets">
+          <button className="flex items-center space-x-0.5 hover:text-slate-700 dark:text-zinc-300 cursor-help" title="Use `code` for code snippets">
             <Code className="w-3 h-3 text-zinc-600" />
             <span>Code</span>
           </button>
-          <button className="flex items-center space-x-0.5 hover:text-zinc-300 cursor-help" title="Use - [ ] for checklists">
+          <button className="flex items-center space-x-0.5 hover:text-slate-700 dark:text-zinc-300 cursor-help" title="Use - [ ] for checklists">
             <CheckSquare className="w-3 h-3 text-zinc-600" />
             <span>Checklist</span>
           </button>
@@ -659,22 +659,22 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
               ref={dropdownRef}
               className="absolute bottom-full left-2 mb-2 z-50 w-60 max-h-48 overflow-y-auto bg-card border border-border rounded-xl shadow-2xl p-1 animate-scale-in"
             >
-              <div className="px-2 py-1 text-[9px] uppercase tracking-wider text-zinc-500 font-extrabold border-b border-white/5 mb-1">
+              <div className="px-2 py-1 text-[9px] uppercase tracking-wider text-slate-500 dark:text-zinc-500 font-extrabold border-b border-slate-100 dark:border-white/5 mb-1">
                 Mention Team Member
               </div>
               {filteredMembers.length === 0 ? (
-                <p className="text-[10px] text-zinc-500 p-2 italic">No members matched</p>
+                <p className="text-[10px] text-slate-500 dark:text-zinc-500 p-2 italic">No members matched</p>
               ) : (
                 filteredMembers.map((m, idx) => (
                   <button
                     key={m.id}
                     onClick={() => selectMention(m, false)}
                     className={`w-full text-left px-2 py-1.5 text-xs rounded-lg font-medium flex items-center justify-between transition ${
-                      idx === mentionIndex ? 'bg-blue-500/10 text-blue-400' : 'text-zinc-300 hover:bg-white/5'
+                      idx === mentionIndex ? 'bg-blue-500/10 text-blue-400' : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-100/60 dark:bg-white/5'
                     }`}
                   >
                     <span>{m.firstName} {m.lastName}</span>
-                    <span className="text-[9px] text-zinc-500">{m.email}</span>
+                    <span className="text-[9px] text-slate-500 dark:text-zinc-500">{m.email}</span>
                   </button>
                 ))
               )}
@@ -685,9 +685,9 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
           {attachments.length > 0 && (
             <div className="absolute bottom-full left-0 right-0 mb-2 p-2 bg-black/80 border border-zinc-800 rounded-xl flex items-center gap-2 flex-wrap">
               {attachments.map((file, i) => (
-                <div key={i} className="flex items-center space-x-1.5 px-2 py-0.5 rounded-lg bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-300">
+                <div key={i} className="flex items-center space-x-1.5 px-2 py-0.5 rounded-lg bg-zinc-900 border border-zinc-800 text-[10px] text-slate-700 dark:text-zinc-300">
                   <span className="max-w-[100px] truncate">{file.name}</span>
-                  <span className="text-[8px] text-zinc-500">({(file.size / 1024).toFixed(0)} KB)</span>
+                  <span className="text-[8px] text-slate-500 dark:text-zinc-500">({(file.size / 1024).toFixed(0)} KB)</span>
                 </div>
               ))}
               {uploading && <span className="text-[9px] text-blue-400 animate-pulse">Uploading file...</span>}
@@ -705,7 +705,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
             />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="p-2 rounded-xl hover:bg-white/5 text-zinc-400 hover:text-zinc-200 transition"
+              className="p-2 rounded-xl hover:bg-slate-100/60 dark:bg-white/5 text-slate-600 dark:text-zinc-400 hover:text-zinc-200 transition"
               title="Attach document"
             >
               <Paperclip className="w-4 h-4" />

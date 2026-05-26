@@ -221,7 +221,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               disabled={!canEditFull}
               onChange={(e) => setName(e.target.value)}
               onBlur={() => handleSaveField('name', name)}
-              className="w-full bg-transparent border-0 border-b border-transparent hover:border-border/50 focus:border-blue-500/50 text-xl font-bold text-foreground focus:outline-none py-1 transition-all"
+              className="w-full bg-transparent border-0 border-b border-transparent hover:border-slate-200/50 dark:border-border/50 focus:border-blue-500/50 text-xl font-bold text-foreground focus:outline-none py-1 transition-all"
             />
           </div>
 

@@ -164,7 +164,7 @@ export const DragDropUpload: React.FC<DragDropUploadProps> = ({
           className={`relative border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center transition-all ${
             dragActive 
               ? 'border-blue-500 bg-blue-500/5 glow-primary' 
-              : 'border-border bg-white/5 hover:bg-white/10 hover:border-zinc-500'
+              : 'border-border bg-slate-100/60 dark:bg-white/5 hover:bg-slate-200/60 dark:bg-white/10 hover:border-zinc-500'
           }`}
         >
           <input
@@ -180,11 +180,11 @@ export const DragDropUpload: React.FC<DragDropUploadProps> = ({
             <div className="flex flex-col items-center space-y-3 w-full py-4">
               <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
               <div className="w-full max-w-xs space-y-1.5">
-                <div className="flex justify-between text-xs font-bold text-zinc-400">
+                <div className="flex justify-between text-xs font-bold text-slate-600 dark:text-zinc-400">
                   <span>Uploading files...</span>
                   <span>{progress}%</span>
                 </div>
-                <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden border border-white/5">
+                <div className="w-full bg-slate-100/60 dark:bg-white/5 rounded-full h-2 overflow-hidden border border-slate-100 dark:border-white/5">
                   <div 
                     className="bg-blue-500 h-full rounded-full transition-all duration-100" 
                     style={{ width: `${progress}%` }}
@@ -194,11 +194,11 @@ export const DragDropUpload: React.FC<DragDropUploadProps> = ({
             </div>
           ) : (
             <div className="text-center space-y-2 flex flex-col items-center cursor-pointer" onClick={onButtonClick}>
-              <div className="p-3 rounded-full bg-white/5 border border-white/10 text-muted-foreground group-hover:text-white transition-all">
+              <div className="p-3 rounded-full bg-slate-100/60 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 text-muted-foreground group-hover:text-slate-900 dark:text-white transition-all">
                 <UploadCloud className="w-8 h-8 text-blue-400" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-white">
+                <p className="text-xs font-semibold text-slate-900 dark:text-white">
                   Drag and drop your evidence here, or <span className="text-blue-400 underline">browse</span>
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-1">
@@ -227,22 +227,22 @@ export const DragDropUpload: React.FC<DragDropUploadProps> = ({
         {isLoading ? (
           <div className="space-y-1.5">
             {[1, 2].map((i) => (
-              <div key={i} className="h-10 rounded-lg bg-white/5 animate-pulse" />
+              <div key={i} className="h-10 rounded-lg bg-slate-100/60 dark:bg-white/5 animate-pulse" />
             ))}
           </div>
         ) : uploads.length === 0 ? (
-          <p className="text-xs text-zinc-500 font-light italic">No evidence uploaded yet.</p>
+          <p className="text-xs text-slate-500 dark:text-zinc-500 font-light italic">No evidence uploaded yet.</p>
         ) : (
           <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
             {uploads.map((file) => (
               <div 
                 key={file.id} 
-                className="flex items-center justify-between p-2.5 rounded-lg bg-white/5 border border-white/5 text-xs hover:bg-white/10 transition-all"
+                className="flex items-center justify-between p-2.5 rounded-lg bg-slate-100/60 dark:bg-white/5 border border-slate-100 dark:border-white/5 text-xs hover:bg-slate-200/60 dark:bg-white/10 transition-all"
               >
                 <div className="flex items-center space-x-2.5 min-w-0">
                   <FileText className="w-4 h-4 text-indigo-400 flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-white font-semibold truncate max-w-[200px]" title={file.originalName}>
+                    <p className="text-slate-900 dark:text-white font-semibold truncate max-w-[200px]" title={file.originalName}>
                       {file.originalName}
                     </p>
                     <p className="text-[10px] text-muted-foreground font-light">
@@ -256,7 +256,7 @@ export const DragDropUpload: React.FC<DragDropUploadProps> = ({
                     href={file.publicUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="p-1.5 rounded hover:bg-white/5 text-zinc-400 hover:text-white transition-all"
+                    className="p-1.5 rounded hover:bg-slate-100/60 dark:bg-white/5 text-slate-600 dark:text-zinc-400 hover:text-white transition-all"
                     title="Download Evidence File"
                   >
                     <Download className="w-3.5 h-3.5" />

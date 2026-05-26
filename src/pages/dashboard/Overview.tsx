@@ -194,9 +194,9 @@ export const Overview: React.FC = () => {
 
   const stats = [
     { name: 'Active Projects', value: `${activeProjectsCount} Active`, icon: FolderKanban, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
-    { name: 'Blocked Timelines', value: `${blockedProjects} Blocked`, icon: AlertTriangle, color: blockedProjects > 0 ? 'text-red-400' : 'text-zinc-500', bg: blockedProjects > 0 ? 'bg-red-500/10 border-red-500/20' : 'bg-zinc-500/5 border-zinc-500/10' },
+    { name: 'Blocked Timelines', value: `${blockedProjects} Blocked`, icon: AlertTriangle, color: blockedProjects > 0 ? 'text-red-400' : 'text-slate-500 dark:text-zinc-500', bg: blockedProjects > 0 ? 'bg-red-500/10 border-red-500/20' : 'bg-zinc-500/5 border-zinc-500/10' },
     { name: 'Workspace Health', value: `${healthScore}% - ${healthText}`, icon: HeartPulse, color: healthColor, bg: 'bg-emerald-500/10 border-emerald-500/20' },
-    { name: 'Unread Alerts', value: `${unreadCount} Alerts`, icon: Bell, color: unreadCount > 0 ? 'text-amber-400' : 'text-zinc-500', bg: unreadCount > 0 ? 'bg-amber-500/10 border-amber-500/20 animate-pulse' : 'bg-zinc-500/5 border-zinc-500/10' },
+    { name: 'Unread Alerts', value: `${unreadCount} Alerts`, icon: Bell, color: unreadCount > 0 ? 'text-amber-400' : 'text-slate-500 dark:text-zinc-500', bg: unreadCount > 0 ? 'bg-amber-500/10 border-amber-500/20 animate-pulse' : 'bg-zinc-500/5 border-zinc-500/10' },
   ];
 
   return (
@@ -309,7 +309,7 @@ export const Overview: React.FC = () => {
                           : project.effectiveStatus === 'active'
                           ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                           : project.effectiveStatus === 'archived'
-                          ? 'bg-zinc-500/10 border-zinc-500/20 text-zinc-400'
+                          ? 'bg-zinc-500/10 border-zinc-500/20 text-slate-600 dark:text-zinc-400'
                           : 'bg-red-500/10 border-red-500/20 text-red-400'
                       }`}
                     >
@@ -460,7 +460,7 @@ export const Overview: React.FC = () => {
                   type="text"
                   placeholder="e.g. Apollo Go-Live Suite"
                   {...register('name')}
-                  className="w-full px-4 py-3 rounded-xl bg-card border border-border text-foreground text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-light"
+                  className="w-full px-4 py-3 rounded-xl bg-white dark:bg-card border border-slate-200 dark:border-border text-slate-900 dark:text-foreground text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-light"
                 />
                 {errors.name && (
                   <p className="text-[10px] font-bold text-red-400 tracking-wider">
@@ -477,7 +477,7 @@ export const Overview: React.FC = () => {
                   rows={3}
                   placeholder="Deliverable details, milestones, sprint intervals..."
                   {...register('description')}
-                  className="w-full px-4 py-3 rounded-xl bg-card border border-border text-foreground text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-light"
+                  className="w-full px-4 py-3 rounded-xl bg-white dark:bg-card border border-slate-200 dark:border-border text-slate-900 dark:text-foreground text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-light"
                 />
               </div>
 

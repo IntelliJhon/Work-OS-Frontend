@@ -123,7 +123,7 @@ export const AcceptInvite: React.FC = () => {
           <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
             <ShieldAlert className="w-6 h-6 text-red-400" />
           </div>
-          <h2 className="text-xl font-bold text-white tracking-wide">Invalid Invitation</h2>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide">Invalid Invitation</h2>
           <p className="text-xs text-muted-foreground font-light max-w-sm mx-auto">
             {verifyError || 'This invitation details could not be retrieved.'}
           </p>
@@ -132,7 +132,7 @@ export const AcceptInvite: React.FC = () => {
         <div className="pt-4 flex flex-col space-y-3">
           <Link
             to="/login"
-            className="w-full py-3 px-4 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 text-white text-center transition"
+            className="w-full py-3 px-4 rounded-xl text-xs font-semibold bg-slate-100/60 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 hover:bg-slate-200/60 dark:bg-white/10 text-white text-center transition"
           >
             Back to Sign In
           </Link>
@@ -144,7 +144,7 @@ export const AcceptInvite: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h2 className="text-xl font-bold text-white tracking-wide">Join Workspace</h2>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide">Join Workspace</h2>
         <p className="text-xs text-muted-foreground font-light">
           Set up your workspace profile for <span className="text-blue-400 font-semibold">{inviteDetails.tenantName}</span>
         </p>
@@ -158,13 +158,13 @@ export const AcceptInvite: React.FC = () => {
       )}
 
       {/* Invite Context Box */}
-      <div className="p-3.5 rounded-xl bg-white/2 border border-white/5 space-y-1 text-xs">
+      <div className="p-3.5 rounded-xl bg-white/2 border border-slate-100 dark:border-white/5 space-y-1 text-xs">
         <div className="flex justify-between">
-          <span className="text-zinc-500">Your Email:</span>
-          <span className="font-mono text-zinc-300 font-medium">{inviteDetails.email}</span>
+          <span className="text-slate-500 dark:text-zinc-500">Your Email:</span>
+          <span className="font-mono text-slate-700 dark:text-zinc-300 font-medium">{inviteDetails.email}</span>
         </div>
         <div className="flex justify-between mt-1">
-          <span className="text-zinc-500">Role Assigned:</span>
+          <span className="text-slate-500 dark:text-zinc-500">Role Assigned:</span>
           <span className="text-blue-400 font-semibold flex items-center space-x-1">
             <span>{inviteDetails.roleName}</span>
           </span>

@@ -209,7 +209,7 @@ export const ActivityFeed: React.FC = () => {
         
         {/* Left: Search input */}
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-zinc-500" />
+          <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-zinc-500" />
           <input
             type="text"
             value={searchTerm}
@@ -221,7 +221,7 @@ export const ActivityFeed: React.FC = () => {
 
         {/* Right: Select Filters list */}
         <div className="flex flex-wrap items-center gap-2.5">
-          <div className="flex items-center space-x-1.5 text-zinc-400 pr-1.5 border-r border-white/5">
+          <div className="flex items-center space-x-1.5 text-slate-600 dark:text-zinc-400 pr-1.5 border-r border-slate-100 dark:border-white/5">
             <Filter className="w-3.5 h-3.5" />
             <span className="text-[10px] uppercase font-bold tracking-wider">Filters</span>
           </div>
@@ -230,7 +230,7 @@ export const ActivityFeed: React.FC = () => {
           <select
             value={selectedSeverity}
             onChange={(e) => setSelectedSeverity(e.target.value)}
-            className="bg-black/30 border border-border rounded-xl px-2.5 py-1.5 text-[10px] font-bold text-zinc-300 focus:outline-none hover:bg-black/50 transition"
+            className="bg-black/30 border border-border rounded-xl px-2.5 py-1.5 text-[10px] font-bold text-slate-700 dark:text-zinc-300 focus:outline-none hover:bg-black/50 transition"
           >
             <option value="all">All Severities</option>
             <option value="high">High Severity</option>
@@ -242,7 +242,7 @@ export const ActivityFeed: React.FC = () => {
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="bg-black/30 border border-border rounded-xl px-2.5 py-1.5 text-[10px] font-bold text-zinc-300 focus:outline-none hover:bg-black/50 transition max-w-[130px]"
+            className="bg-black/30 border border-border rounded-xl px-2.5 py-1.5 text-[10px] font-bold text-slate-700 dark:text-zinc-300 focus:outline-none hover:bg-black/50 transition max-w-[130px]"
           >
             <option value="all">All Events</option>
             {uniqueTypes.map(t => (
@@ -254,7 +254,7 @@ export const ActivityFeed: React.FC = () => {
           <select
             value={selectedActor}
             onChange={(e) => setSelectedActor(e.target.value)}
-            className="bg-black/30 border border-border rounded-xl px-2.5 py-1.5 text-[10px] font-bold text-zinc-300 focus:outline-none hover:bg-black/50 transition max-w-[130px]"
+            className="bg-black/30 border border-border rounded-xl px-2.5 py-1.5 text-[10px] font-bold text-slate-700 dark:text-zinc-300 focus:outline-none hover:bg-black/50 transition max-w-[130px]"
           >
             <option value="all">All Actors</option>
             {uniqueActors.map(a => (
@@ -265,7 +265,7 @@ export const ActivityFeed: React.FC = () => {
           {/* Reload button */}
           <button
             onClick={handleRefresh}
-            className={`p-2 rounded-xl border border-zinc-800 hover:bg-white/5 text-zinc-400 hover:text-white transition flex items-center justify-center cursor-pointer`}
+            className={`p-2 rounded-xl border border-zinc-800 hover:bg-slate-100/60 dark:bg-white/5 text-slate-600 dark:text-zinc-400 hover:text-white transition flex items-center justify-center cursor-pointer`}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-blue-400' : ''}`} />
           </button>
@@ -282,7 +282,7 @@ export const ActivityFeed: React.FC = () => {
           <div className="flex flex-col items-center justify-center py-20 text-center space-y-3 glass-panel border border-dashed border-border rounded-3xl bg-white/1">
             <Clock className="w-10 h-10 text-zinc-655 animate-pulse" />
             <h3 className="text-sm font-extrabold text-zinc-450">No operational entries recorded</h3>
-            <p className="text-xs text-zinc-500 max-w-xs leading-relaxed">
+            <p className="text-xs text-slate-500 dark:text-zinc-500 max-w-xs leading-relaxed">
               No audit logs match your selected filter criteria. Clear filters or add comments to append entries.
             </p>
           </div>
@@ -292,7 +292,7 @@ export const ActivityFeed: React.FC = () => {
               
               {/* Date Header Badge */}
               <div className="flex items-center space-x-3.5">
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 px-3.5 py-1 rounded-full border border-white/5 bg-zinc-950/40">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-zinc-500 px-3.5 py-1 rounded-full border border-slate-100 dark:border-white/5 bg-zinc-950/40">
                   {dateGroup}
                 </span>
                 <div className="flex-1 h-px bg-gradient-to-r from-zinc-800 to-transparent" />
@@ -303,7 +303,7 @@ export const ActivityFeed: React.FC = () => {
                 {items.map((act) => (
                   <div 
                     key={act.id} 
-                    className="relative group p-4 rounded-2xl bg-zinc-900/30 hover:bg-zinc-900/60 border border-white/5 transition duration-150 animate-scale-in"
+                    className="relative group p-4 rounded-2xl bg-zinc-900/30 hover:bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-white/5 transition duration-150 animate-scale-in"
                   >
                     
                     {/* Floating chronological node dot */}
@@ -320,15 +320,15 @@ export const ActivityFeed: React.FC = () => {
 
                         {/* Text description */}
                         <div>
-                          <p className="text-xs font-bold text-white leading-normal">{act.title}</p>
-                          <p className="text-[11px] text-zinc-400 leading-relaxed mt-0.5">{act.message}</p>
+                          <p className="text-xs font-bold text-slate-900 dark:text-white leading-normal">{act.title}</p>
+                          <p className="text-[11px] text-slate-600 dark:text-zinc-400 leading-relaxed mt-0.5">{act.message}</p>
                           
                           {/* Actor Badge */}
                           <div className="flex items-center space-x-1.5 mt-2">
-                            <span className="w-4 h-4 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-[7px] text-zinc-400 font-extrabold">
+                            <span className="w-4 h-4 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-[7px] text-slate-600 dark:text-zinc-400 font-extrabold">
                               {act.actor.substring(0, 2).toUpperCase()}
                             </span>
-                            <span className="text-[9px] text-zinc-500 font-bold">{act.actor}</span>
+                            <span className="text-[9px] text-slate-500 dark:text-zinc-500 font-bold">{act.actor}</span>
                           </div>
                         </div>
                       </div>
@@ -340,7 +340,7 @@ export const ActivityFeed: React.FC = () => {
                           <span>{act.severity}</span>
                         </span>
                         
-                        <span className="text-[9px] text-zinc-500 font-medium">
+                        <span className="text-[9px] text-slate-500 dark:text-zinc-500 font-medium">
                           {new Date(act.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>

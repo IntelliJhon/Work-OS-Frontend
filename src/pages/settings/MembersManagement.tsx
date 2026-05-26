@@ -295,7 +295,7 @@ export const MembersManagement: React.FC = () => {
               <Users className="w-5 h-5 text-blue-400" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">Workspace Members</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Workspace Members</h3>
               <p className="text-xs text-muted-foreground font-light mt-0.5">
                 Users with access to this tenant workspace environment.
               </p>
@@ -305,13 +305,13 @@ export const MembersManagement: React.FC = () => {
           <div className="flex flex-wrap items-center gap-3">
             {/* Search Input */}
             <div className="relative min-w-50 max-w-xs w-full">
-              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-zinc-500" />
+              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-slate-500 dark:text-zinc-500" />
               <input
                 type="text"
                 placeholder="Search name or email..."
                 value={searchQuery}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-                className="w-full bg-zinc-900/60 border border-border/80 rounded-xl pl-9 pr-4 py-2 text-xs font-light text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition-all"
+                className="w-full bg-white dark:bg-zinc-900/60 border border-border/80 rounded-xl pl-9 pr-4 py-2 text-xs font-light text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition-all"
               />
             </div>
 
@@ -319,7 +319,7 @@ export const MembersManagement: React.FC = () => {
             <select
               value={roleFilter}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setRoleFilter(e.target.value); setPage(1); }}
-              className="bg-zinc-900/60 border border-border/80 rounded-xl px-4 py-2 text-xs font-light text-white focus:outline-none focus:border-blue-500/50 transition-all"
+              className="bg-white dark:bg-zinc-900/60 border border-border/80 rounded-xl px-4 py-2 text-xs font-light text-white focus:outline-none focus:border-blue-500/50 transition-all"
             >
               <option value="">All Roles</option>
               {roles.map((r: Role) => (
@@ -341,10 +341,10 @@ export const MembersManagement: React.FC = () => {
         </div>
 
         {/* Members Table */}
-        <div className="overflow-x-auto border border-border/40 rounded-xl bg-zinc-900/20">
+        <div className="overflow-x-auto border border-border/40 rounded-xl bg-slate-50/50 dark:bg-zinc-900/20">
           <table className="w-full border-collapse text-left text-xs">
             <thead>
-              <tr className="border-b border-border/60 bg-white/2 text-zinc-400 font-bold uppercase tracking-wider text-[10px]">
+              <tr className="border-b border-border/60 bg-white/2 text-slate-600 dark:text-zinc-400 font-bold uppercase tracking-wider text-[10px]">
                 <th className="px-6 py-4">User Details</th>
                 <th className="px-6 py-4">Role Assigned</th>
                 <th className="px-6 py-4">Status / Presence</th>
@@ -379,10 +379,10 @@ export const MembersManagement: React.FC = () => {
                             <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-background shadow-md ${isOnline ? 'bg-emerald-500' : 'bg-zinc-600'}`} />
                           </div>
                           <div>
-                            <p className="font-semibold text-white flex items-center space-x-1.5">
+                            <p className="font-semibold text-slate-900 dark:text-white flex items-center space-x-1.5">
                               <span>{member.firstName} {member.lastName}</span>
                               {isSelf && (
-                                <span className="text-[9px] bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-zinc-400 font-bold tracking-wider uppercase">
+                                <span className="text-[9px] bg-slate-100/60 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 px-1.5 py-0.5 rounded text-slate-600 dark:text-zinc-400 font-bold tracking-wider uppercase">
                                   You
                                 </span>
                               )}
@@ -398,21 +398,21 @@ export const MembersManagement: React.FC = () => {
                             <select
                               value={member.roleId}
                                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleRoleChange(member.id, e.target.value, member.email)}
-                                className="bg-transparent border-0 hover:bg-white/5 p-1 rounded font-medium text-white focus:outline-none focus:ring-1 focus:ring-blue-500/30 text-xs cursor-pointer"
+                                className="bg-transparent border-0 hover:bg-slate-100/60 dark:bg-white/5 p-1 rounded font-medium text-white focus:outline-none focus:ring-1 focus:ring-blue-500/30 text-xs cursor-pointer"
                               >
                                 {roles.map((r: Role) => (
                                 <option key={r.id} value={r.id} className="bg-zinc-900">{r.name}</option>
                               ))}
                             </select>
                           ) : (
-                            <span className="font-medium text-white">{member.roleName || 'Member'}</span>
+                            <span className="font-medium text-slate-900 dark:text-white">{member.roleName || 'Member'}</span>
                           )}
                         </div>
                       </td>
                       <td className="px-6 py-4.5">
                         <div className="flex items-center space-x-2">
                           <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-500'}`} />
-                          <span className={`font-mono text-[10px] uppercase tracking-wider ${isOnline ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                          <span className={`font-mono text-[10px] uppercase tracking-wider ${isOnline ? 'text-emerald-400' : 'text-slate-500 dark:text-zinc-500'}`}>
                             {isOnline ? 'online' : 'offline'}
                           </span>
                         </div>
@@ -421,7 +421,7 @@ export const MembersManagement: React.FC = () => {
                         {can(PERMISSIONS.WORKSPACE_MEMBERS) && !isSelf && (
                           <button
                             onClick={() => handleRemoveMember(member.id, member.email)}
-                            className="p-2 text-zinc-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all active:scale-90"
+                            className="p-2 text-slate-500 dark:text-zinc-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all active:scale-90"
                             title="Remove Member"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -446,14 +446,14 @@ export const MembersManagement: React.FC = () => {
               <button
                 disabled={page === 1}
                 onClick={() => setPage(prev => Math.max(1, prev - 1))}
-                className="p-1.5 rounded-lg border border-border bg-white/2 hover:bg-white/5 disabled:opacity-30 disabled:pointer-events-none text-white transition-all"
+                className="p-1.5 rounded-lg border border-border bg-white/2 hover:bg-slate-100/60 dark:bg-white/5 disabled:opacity-30 disabled:pointer-events-none text-white transition-all"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 disabled={page === pagination.totalPages}
                 onClick={() => setPage(prev => Math.min(pagination.totalPages, prev + 1))}
-                className="p-1.5 rounded-lg border border-border bg-white/2 hover:bg-white/5 disabled:opacity-30 disabled:pointer-events-none text-white transition-all"
+                className="p-1.5 rounded-lg border border-border bg-white/2 hover:bg-slate-100/60 dark:bg-white/5 disabled:opacity-30 disabled:pointer-events-none text-white transition-all"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -470,17 +470,17 @@ export const MembersManagement: React.FC = () => {
               <Mail className="w-5 h-5 text-indigo-400" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">Pending Team Invitations</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Pending Team Invitations</h3>
               <p className="text-xs text-muted-foreground font-light mt-0.5">
                 Outstanding invitations issued for external collaborators.
               </p>
             </div>
           </div>
 
-          <div className="overflow-x-auto border border-border/40 rounded-xl bg-zinc-900/20">
+          <div className="overflow-x-auto border border-border/40 rounded-xl bg-slate-50/50 dark:bg-zinc-900/20">
             <table className="w-full border-collapse text-left text-xs">
               <thead>
-                <tr className="border-b border-border/60 bg-white/2 text-zinc-400 font-bold uppercase tracking-wider text-[10px]">
+                <tr className="border-b border-border/60 bg-white/2 text-slate-600 dark:text-zinc-400 font-bold uppercase tracking-wider text-[10px]">
                   <th className="px-6 py-4">Invited Email</th>
                   <th className="px-6 py-4">Assigned Role</th>
                   <th className="px-6 py-4">Expiration / Status</th>
@@ -496,7 +496,7 @@ export const MembersManagement: React.FC = () => {
                   </tr>
                 ) : invitations.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-zinc-500 font-light italic">
+                    <td colSpan={4} className="px-6 py-8 text-center text-slate-500 dark:text-zinc-500 font-light italic">
                       No pending invitations currently active.
                     </td>
                   </tr>
@@ -516,7 +516,7 @@ export const MembersManagement: React.FC = () => {
                       statusColor = 'bg-red-500/10 text-red-400 border-red-500/20';
                     } else if (isExpired) {
                       statusLabel = 'expired';
-                      statusColor = 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20';
+                      statusColor = 'bg-zinc-500/10 text-slate-500 dark:text-zinc-500 border-zinc-500/20';
                     }
 
                     return (
@@ -529,7 +529,7 @@ export const MembersManagement: React.FC = () => {
                               {statusLabel}
                             </span>
                             {!isAccepted && !isRevoked && (
-                              <span className="text-[10px] text-zinc-500 flex items-center space-x-1">
+                              <span className="text-[10px] text-slate-500 dark:text-zinc-500 flex items-center space-x-1">
                                 <Clock className="w-3 h-3" />
                                 <span>Expires {new Date(invite.expiresAt).toLocaleDateString()}</span>
                               </span>
@@ -542,7 +542,7 @@ export const MembersManagement: React.FC = () => {
                               {can(PERMISSIONS.WORKSPACE_MEMBERS_INVITE) && (
                                 <button
                                   onClick={() => handleResendInvite(invite.id, invite.email)}
-                                  className="p-2 text-zinc-500 hover:text-blue-400 rounded-lg hover:bg-blue-500/10 border border-transparent hover:border-blue-500/20 transition-all"
+                                  className="p-2 text-slate-500 dark:text-zinc-500 hover:text-blue-400 rounded-lg hover:bg-blue-500/10 border border-transparent hover:border-blue-500/20 transition-all"
                                   title="Resend Invite Token"
                                 >
                                   <RefreshCw className="w-3.5 h-3.5" />
@@ -551,7 +551,7 @@ export const MembersManagement: React.FC = () => {
                               {can(PERMISSIONS.WORKSPACE_MEMBERS) && (
                                 <button
                                   onClick={() => handleRevokeInvite(invite.id, invite.email)}
-                                  className="p-2 text-zinc-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all"
+                                  className="p-2 text-slate-500 dark:text-zinc-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all"
                                   title="Revoke Invite Token"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -576,7 +576,7 @@ export const MembersManagement: React.FC = () => {
           <div className="w-full max-w-md glass-panel-heavy rounded-2xl p-6 shadow-2xl border border-border/80 bg-zinc-950 glow-primary relative animate-scale-in">
             <button
               onClick={() => setShowInviteModal(false)}
-              className="absolute top-4 right-4 p-1 rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition"
+              className="absolute top-4 right-4 p-1 rounded-lg text-slate-500 dark:text-zinc-500 hover:text-white hover:bg-slate-100/60 dark:bg-white/5 transition"
             >
               <X className="w-4 h-4" />
             </button>
@@ -586,7 +586,7 @@ export const MembersManagement: React.FC = () => {
                 <UserPlus className="w-5 h-5 text-blue-400" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">Invite New Member</h3>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Invite New Member</h3>
                 <p className="text-xs text-muted-foreground font-light mt-0.5">
                   Send a secure tenant-scoped invitation token.
                 </p>
@@ -601,7 +601,7 @@ export const MembersManagement: React.FC = () => {
                 </div>
                 
                 <div className="space-y-1.5">
-                  <label className="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
                     Invitation Registration URL
                   </label>
                   <div className="flex gap-2">
@@ -609,7 +609,7 @@ export const MembersManagement: React.FC = () => {
                       type="text"
                       readOnly
                       value={generatedInviteUrl}
-                      className="w-full bg-zinc-900 border border-border/80 rounded-xl px-3 py-2.5 text-xs text-zinc-300 font-mono focus:outline-none"
+                      className="w-full bg-zinc-900 border border-border/80 rounded-xl px-3 py-2.5 text-xs text-slate-700 dark:text-zinc-300 font-mono focus:outline-none"
                     />
                     <button
                       type="button"
@@ -628,7 +628,7 @@ export const MembersManagement: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => { setShowInviteModal(false); setGeneratedInviteUrl(''); }}
-                    className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white text-xs font-semibold transition"
+                    className="px-4 py-2.5 rounded-xl bg-slate-100/60 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 hover:bg-slate-200/60 dark:bg-white/10 text-white text-xs font-semibold transition"
                   >
                     Close
                   </button>
@@ -637,33 +637,33 @@ export const MembersManagement: React.FC = () => {
             ) : (
               <form onSubmit={handleInviteSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-2">
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-2">
                     Recipient Email
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-3 w-4 h-4 text-zinc-500" />
+                    <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-500 dark:text-zinc-500" />
                     <input
                       type="email"
                       required
                       placeholder="name@company.com"
                       value={inviteEmail}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInviteEmail(e.target.value)}
-                      className="w-full bg-zinc-900/60 border border-border/80 rounded-xl pl-10 pr-4 py-2.5 text-xs font-light text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition"
+                      className="w-full bg-white dark:bg-zinc-900/60 border border-border/80 rounded-xl pl-10 pr-4 py-2.5 text-xs font-light text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-2">
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-2">
                     Workspace Role Profile
                   </label>
                   <div className="relative">
-                    <Shield className="absolute left-3.5 top-3 w-4 h-4 text-zinc-500" />
+                    <Shield className="absolute left-3.5 top-3 w-4 h-4 text-slate-500 dark:text-zinc-500" />
                     <select
                       required
                       value={inviteRoleId}
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setInviteRoleId(e.target.value)}
-                        className="w-full bg-zinc-900/60 border border-border/80 rounded-xl pl-10 pr-4 py-2.5 text-xs font-light text-white focus:outline-none focus:border-blue-500/50 transition appearance-none cursor-pointer"
+                        className="w-full bg-white dark:bg-zinc-900/60 border border-border/80 rounded-xl pl-10 pr-4 py-2.5 text-xs font-light text-white focus:outline-none focus:border-blue-500/50 transition appearance-none cursor-pointer"
                       >
                         <option value="" className="bg-zinc-950">Select workspace permission group</option>
                         {roles.map((r: Role) => (
@@ -686,7 +686,7 @@ export const MembersManagement: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowInviteModal(false)}
-                    className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white text-xs font-semibold transition"
+                    className="px-4 py-2.5 rounded-xl bg-slate-100/60 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 hover:bg-slate-200/60 dark:bg-white/10 text-white text-xs font-semibold transition"
                   >
                     Cancel
                   </button>

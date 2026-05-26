@@ -733,8 +733,8 @@ export const ProjectSprints: React.FC = () => {
 
         {/* Left column: Sprints list sidebar */}
         <div className="lg:col-span-1 space-y-4">
-          <div className="flex items-center justify-between border-b border-white/5 pb-2">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-1.5">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-2">
+            <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-1.5">
               <ClipboardList className="w-4 h-4 text-blue-400" />
               <span>Sprints Backlog</span>
             </h4>
@@ -744,7 +744,7 @@ export const ProjectSprints: React.FC = () => {
             >
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="p-1 rounded-lg hover:bg-white/5 text-blue-400 hover:text-white transition-all"
+                className="p-1 rounded-lg hover:bg-slate-100/60 dark:bg-white/5 text-blue-400 hover:text-white transition-all"
                 title="Create New Sprint Deliverable"
               >
                 <Plus className="w-4.5 h-4.5" />
@@ -755,12 +755,12 @@ export const ProjectSprints: React.FC = () => {
           {isLoading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-16 rounded-xl bg-white/5 animate-pulse" />
+                <div key={i} className="h-16 rounded-xl bg-slate-100/60 dark:bg-white/5 animate-pulse" />
               ))}
             </div>
           ) : sprints.length === 0 ? (
-            <div className="p-6 text-center border border-dashed border-border rounded-2xl bg-white/5">
-              <Activity className="w-8 h-8 text-zinc-500 mx-auto mb-2" />
+            <div className="p-6 text-center border border-dashed border-border rounded-2xl bg-slate-100/60 dark:bg-white/5">
+              <Activity className="w-8 h-8 text-slate-500 dark:text-zinc-500 mx-auto mb-2" />
               <p className="text-xs text-muted-foreground font-light">No sprints provisioned.</p>
               <PermissionGate
                 permission={PERMISSIONS.PROJECT_MANAGE}
@@ -790,7 +790,7 @@ export const ProjectSprints: React.FC = () => {
                     className={`p-3.5 rounded-xl border cursor-pointer transition-all duration-300 ${
                       isSelected
                         ? 'border-blue-500 bg-blue-500/10 shadow-lg text-blue-400 glow-primary'
-                        : 'border-border bg-white/5 text-zinc-400 hover:bg-white/10 hover:border-zinc-700'
+                        : 'border-border bg-slate-100/60 dark:bg-white/5 text-slate-600 dark:text-zinc-400 hover:bg-slate-200/60 dark:bg-white/10 hover:border-zinc-700'
                     }`}
                   >
                     <div className="flex justify-between items-start">
@@ -802,7 +802,7 @@ export const ProjectSprints: React.FC = () => {
                           ? 'bg-blue-500/10 border-blue-500/20 text-blue-400 animate-pulse'
                           : sprint.status === 'closed'
                           ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                          : 'bg-zinc-500/10 border-zinc-500/20 text-zinc-500'
+                          : 'bg-zinc-500/10 border-zinc-500/20 text-slate-500 dark:text-zinc-500'
                       }`}>
                         {sprint.status}
                       </span>
@@ -816,7 +816,7 @@ export const ProjectSprints: React.FC = () => {
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between text-[9px] text-zinc-500 font-bold uppercase tracking-wider mt-2.5">
+                    <div className="flex items-center justify-between text-[9px] text-slate-500 dark:text-zinc-500 font-bold uppercase tracking-wider mt-2.5">
                       <span className="truncate max-w-[80px] text-blue-400">
                         🔑 {parentPhase?.name || 'N/A'}
                       </span>
@@ -837,10 +837,10 @@ export const ProjectSprints: React.FC = () => {
             <>
               {/* Sprint info panel & governance tools */}
               <div className="glass-panel-heavy rounded-2xl p-6 border border-border space-y-4">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 border-b border-white/5 pb-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 border-b border-slate-100 dark:border-white/5 pb-4">
                   <div className="space-y-1.5">
                     <div className="flex items-center space-x-2">
-                      <h4 className="text-xl font-bold text-white">
+                      <h4 className="text-xl font-bold text-slate-900 dark:text-white">
                         {selectedSprint.name}
                       </h4>
                       <span className="flex items-center space-x-1 text-[9px] uppercase font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded">
@@ -853,7 +853,7 @@ export const ProjectSprints: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="flex items-center space-x-3 text-xs text-zinc-500 font-light">
+                    <div className="flex items-center space-x-3 text-xs text-slate-500 dark:text-zinc-500 font-light">
                       <span className="flex items-center space-x-1">
                         <Calendar className="w-3.5 h-3.5" />
                         <span>Dates: {selectedSprint.startDate ? new Date(selectedSprint.startDate).toLocaleDateString() : 'N/A'} - {selectedSprint.endDate ? new Date(selectedSprint.endDate).toLocaleDateString() : 'N/A'}</span>
@@ -894,12 +894,12 @@ export const ProjectSprints: React.FC = () => {
 
                 {/* Sprints checklist summary */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-white/5 border border-white/5 p-4 rounded-xl space-y-2">
-                    <div className="flex justify-between text-xs font-bold text-zinc-400">
+                  <div className="bg-slate-100/60 dark:bg-white/5 border border-slate-100 dark:border-white/5 p-4 rounded-xl space-y-2">
+                    <div className="flex justify-between text-xs font-bold text-slate-600 dark:text-zinc-400">
                       <span>Tasks Closed Checklist</span>
-                      <span className="text-white">{progressPercent}% ({completedCount}/{totalCount})</span>
+                      <span className="text-slate-900 dark:text-white">{progressPercent}% ({completedCount}/{totalCount})</span>
                     </div>
-                    <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden border border-white/5">
+                    <div className="w-full bg-slate-100/60 dark:bg-white/5 rounded-full h-1.5 overflow-hidden border border-slate-100 dark:border-white/5">
                       <div
                         className="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-500"
                         style={{ width: `${progressPercent}%` }}
@@ -907,11 +907,11 @@ export const ProjectSprints: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="bg-white/5 border border-white/5 p-4 rounded-xl flex items-center justify-between">
+                  <div className="bg-slate-100/60 dark:bg-white/5 border border-slate-100 dark:border-white/5 p-4 rounded-xl flex items-center justify-between">
                     <div>
-                      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Story Weight Tallies</p>
-                      <p className="text-lg font-bold text-white mt-1">
-                        {completedPoints} <span className="text-zinc-500 font-light text-xs">/ {totalPoints} Points Closed</span>
+                      <p className="text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest">Story Weight Tallies</p>
+                      <p className="text-lg font-bold text-slate-900 dark:text-white mt-1">
+                        {completedPoints} <span className="text-slate-500 dark:text-zinc-500 font-light text-xs">/ {totalPoints} Points Closed</span>
                       </p>
                     </div>
                     <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400">
@@ -923,12 +923,12 @@ export const ProjectSprints: React.FC = () => {
 
               {/* Real-time Drag-and-Drop Kanban Workspace */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                  <h5 className="text-sm font-extrabold text-white uppercase tracking-wider">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-2">
+                  <h5 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
                     Kanban Operational Workspace
                   </h5>
                   {selectedSprint.status === 'closed' ? (
-                    <span className="text-[10px] text-zinc-500 flex items-center space-x-1">
+                    <span className="text-[10px] text-slate-500 dark:text-zinc-500 flex items-center space-x-1">
                       <Lock className="w-3.5 h-3.5" />
                       <span>Sprint Closed — Kanban Locked</span>
                     </span>
@@ -960,14 +960,14 @@ export const ProjectSprints: React.FC = () => {
                   <div
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, 'to_do')}
-                    className="glass-panel-heavy rounded-2xl p-4 border border-white/5 flex flex-col space-y-3 min-h-[500px] w-[280px] md:w-[320px] shrink-0 bg-zinc-900/20 hover:bg-zinc-900/30 transition-all duration-300"
+                    className="glass-panel-heavy rounded-2xl p-4 border border-slate-100 dark:border-white/5 flex flex-col space-y-3 min-h-[500px] w-[280px] md:w-[320px] shrink-0 bg-slate-50/50 dark:bg-zinc-900/20 hover:bg-zinc-900/30 transition-all duration-300"
                   >
-                    <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                    <div className="flex justify-between items-center border-b border-slate-100 dark:border-white/5 pb-2">
                       <div className="flex items-center space-x-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
-                        <h6 className="text-xs font-extrabold text-white uppercase tracking-wider">To Do</h6>
+                        <h6 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">To Do</h6>
                       </div>
-                      <span className="text-[10px] font-bold bg-white/5 px-2 py-0.5 rounded-md text-zinc-400 border border-white/5">
+                      <span className="text-[10px] font-bold bg-slate-100/60 dark:bg-white/5 px-2 py-0.5 rounded-md text-slate-600 dark:text-zinc-400 border border-slate-100 dark:border-white/5">
                         {todoTasks.length}
                       </span>
                     </div>
@@ -975,7 +975,7 @@ export const ProjectSprints: React.FC = () => {
                     <div className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[600px] scrollbar-thin">
                       {todoTasks.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-center p-6 text-zinc-600 border border-dashed border-zinc-800 rounded-xl py-12">
-                          <Activity className="w-6 h-6 mb-1 text-zinc-700" />
+                          <Activity className="w-6 h-6 mb-1 text-slate-800 dark:text-zinc-300" />
                           <p className="text-[10px] italic">No tasks planned.</p>
                         </div>
                       ) : (
@@ -985,22 +985,22 @@ export const ProjectSprints: React.FC = () => {
                             draggable={getCanDragTask(task)}
                             onDragStart={(e) => handleDragStart(e, task.id, 'to_do')}
                             onClick={() => setActiveTaskId(task.id)}
-                            className={`p-3.5 rounded-xl border border-white/5 bg-zinc-900/60 transition-all duration-200 cursor-pointer shadow-md group relative ${
+                            className={`p-3.5 rounded-xl border border-slate-100 dark:border-white/5 bg-white dark:bg-zinc-900/60 transition-all duration-200 cursor-pointer shadow-md group relative ${
                               selectedSprint.status === 'closed' ? 'opacity-85' : 'active:scale-95'
                             } ${
                               getCanDragTask(task)
                                 ? 'cursor-grab active:cursor-grabbing hover:bg-zinc-900/90 hover:border-blue-500/40'
-                                : 'cursor-default opacity-85 hover:bg-zinc-900/60 hover:border-white/5'
+                                : 'cursor-default opacity-85 hover:bg-white dark:bg-zinc-900/60 hover:border-slate-100 dark:border-white/5'
                             }`}
                           >
                             <div className="flex justify-between items-start space-x-2">
-                              <span className="text-xs font-bold text-white leading-snug group-hover:text-blue-400 transition">
+                              <span className="text-xs font-bold text-slate-900 dark:text-white leading-snug group-hover:text-blue-400 transition">
                                 {task.name}
                               </span>
                             </div>
 
                             {task.description && (
-                              <p className="text-[10px] text-zinc-500 line-clamp-2 mt-1.5 font-light leading-relaxed">
+                              <p className="text-[10px] text-slate-500 dark:text-zinc-500 line-clamp-2 mt-1.5 font-light leading-relaxed">
                                 {task.description}
                               </p>
                             )}
@@ -1012,27 +1012,27 @@ export const ProjectSprints: React.FC = () => {
                               const pct = Math.round((doneCount / totalSub) * 100);
                               return (
                                 <div className="mt-3 space-y-1">
-                                  <div className="flex justify-between text-[9px] font-bold text-zinc-500">
+                                  <div className="flex justify-between text-[9px] font-bold text-slate-500 dark:text-zinc-500">
                                     <span className="flex items-center space-x-0.5">
                                       <CheckSquare className="w-2.5 h-2.5 text-blue-500" />
                                       <span>Subtasks</span>
                                     </span>
                                     <span>{doneCount}/{totalSub}</span>
                                   </div>
-                                  <div className="w-full bg-white/5 rounded-full h-1 overflow-hidden">
+                                  <div className="w-full bg-slate-100/60 dark:bg-white/5 rounded-full h-1 overflow-hidden">
                                     <div className="bg-blue-500 h-full rounded-full transition-all" style={{ width: `${pct}%` }} />
                                   </div>
                                 </div>
                               );
                             })()}
 
-                            <div className="flex items-center justify-between pt-3 mt-3 border-t border-white/5 text-[9px] text-zinc-500 font-bold uppercase tracking-wider">
+                            <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 dark:border-white/5 text-[9px] text-slate-500 dark:text-zinc-500 font-bold uppercase tracking-wider">
                               <div className="flex items-center space-x-2">
                                 <span className="bg-blue-500/10 border border-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-mono text-[8px]">
                                   {task.weight} SP
                                 </span>
                                 {task.dueDate && (
-                                  <span className="flex items-center space-x-0.5 text-zinc-500">
+                                  <span className="flex items-center space-x-0.5 text-slate-500 dark:text-zinc-500">
                                     <Clock className="w-2.5 h-2.5 text-zinc-600" />
                                     <span>{new Date(task.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
                                   </span>
@@ -1041,7 +1041,7 @@ export const ProjectSprints: React.FC = () => {
 
                               {/* Assignee Avatar */}
                               <div
-                                className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black text-white shrink-0 shadow-inner"
+                                className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black text-slate-900 dark:text-white shrink-0 shadow-inner"
                                 style={{ backgroundColor: getAvatarBg(task.assignee) }}
                                 title={`Assignee: ${task.assignee}`}
                               >
@@ -1058,14 +1058,14 @@ export const ProjectSprints: React.FC = () => {
                   <div
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, 'in_progress')}
-                    className="glass-panel-heavy rounded-2xl p-4 border border-white/5 flex flex-col space-y-3 min-h-[500px] w-[280px] md:w-[320px] shrink-0 bg-zinc-900/20 hover:bg-zinc-900/30 transition-all duration-300"
+                    className="glass-panel-heavy rounded-2xl p-4 border border-slate-100 dark:border-white/5 flex flex-col space-y-3 min-h-[500px] w-[280px] md:w-[320px] shrink-0 bg-slate-50/50 dark:bg-zinc-900/20 hover:bg-zinc-900/30 transition-all duration-300"
                   >
-                    <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                    <div className="flex justify-between items-center border-b border-slate-100 dark:border-white/5 pb-2">
                       <div className="flex items-center space-x-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
-                        <h6 className="text-xs font-extrabold text-white uppercase tracking-wider">In Progress</h6>
+                        <h6 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">In Progress</h6>
                       </div>
-                      <span className="text-[10px] font-bold bg-white/5 px-2 py-0.5 rounded-md text-zinc-400 border border-white/5">
+                      <span className="text-[10px] font-bold bg-slate-100/60 dark:bg-white/5 px-2 py-0.5 rounded-md text-slate-600 dark:text-zinc-400 border border-slate-100 dark:border-white/5">
                         {inProgressTasks.length}
                       </span>
                     </div>
@@ -1073,7 +1073,7 @@ export const ProjectSprints: React.FC = () => {
                     <div className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[600px] scrollbar-thin">
                       {inProgressTasks.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-center p-6 text-zinc-600 border border-dashed border-zinc-800 rounded-xl py-12">
-                          <Activity className="w-6 h-6 mb-1 text-zinc-700" />
+                          <Activity className="w-6 h-6 mb-1 text-slate-800 dark:text-zinc-300" />
                           <p className="text-[10px] italic">No active works.</p>
                         </div>
                       ) : (
@@ -1083,22 +1083,22 @@ export const ProjectSprints: React.FC = () => {
                             draggable={getCanDragTask(task)}
                             onDragStart={(e) => handleDragStart(e, task.id, 'in_progress')}
                             onClick={() => setActiveTaskId(task.id)}
-                            className={`p-3.5 rounded-xl border border-white/5 bg-zinc-900/60 transition-all duration-200 cursor-pointer shadow-md group relative ${
+                            className={`p-3.5 rounded-xl border border-slate-100 dark:border-white/5 bg-white dark:bg-zinc-900/60 transition-all duration-200 cursor-pointer shadow-md group relative ${
                               selectedSprint.status === 'closed' ? 'opacity-85' : 'active:scale-95'
                             } ${
                               getCanDragTask(task)
                                 ? 'cursor-grab active:cursor-grabbing hover:bg-zinc-900/90 hover:border-amber-500/40'
-                                : 'cursor-default opacity-85 hover:bg-zinc-900/60 hover:border-white/5'
+                                : 'cursor-default opacity-85 hover:bg-white dark:bg-zinc-900/60 hover:border-slate-100 dark:border-white/5'
                             }`}
                           >
                             <div className="flex justify-between items-start space-x-2">
-                              <span className="text-xs font-bold text-white leading-snug group-hover:text-amber-400 transition">
+                              <span className="text-xs font-bold text-slate-900 dark:text-white leading-snug group-hover:text-amber-400 transition">
                                 {task.name}
                               </span>
                             </div>
 
                             {task.description && (
-                              <p className="text-[10px] text-zinc-500 line-clamp-2 mt-1.5 font-light leading-relaxed">
+                              <p className="text-[10px] text-slate-500 dark:text-zinc-500 line-clamp-2 mt-1.5 font-light leading-relaxed">
                                 {task.description}
                               </p>
                             )}
@@ -1110,27 +1110,27 @@ export const ProjectSprints: React.FC = () => {
                               const pct = Math.round((doneCount / totalSub) * 100);
                               return (
                                 <div className="mt-3 space-y-1">
-                                  <div className="flex justify-between text-[9px] font-bold text-zinc-500">
+                                  <div className="flex justify-between text-[9px] font-bold text-slate-500 dark:text-zinc-500">
                                     <span className="flex items-center space-x-0.5">
                                       <CheckSquare className="w-2.5 h-2.5 text-amber-500" />
                                       <span>Subtasks</span>
                                     </span>
                                     <span>{doneCount}/{totalSub}</span>
                                   </div>
-                                  <div className="w-full bg-white/5 rounded-full h-1 overflow-hidden">
+                                  <div className="w-full bg-slate-100/60 dark:bg-white/5 rounded-full h-1 overflow-hidden">
                                     <div className="bg-amber-500 h-full rounded-full transition-all" style={{ width: `${pct}%` }} />
                                   </div>
                                 </div>
                               );
                             })()}
 
-                            <div className="flex items-center justify-between pt-3 mt-3 border-t border-white/5 text-[9px] text-zinc-500 font-bold uppercase tracking-wider">
+                            <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 dark:border-white/5 text-[9px] text-slate-500 dark:text-zinc-500 font-bold uppercase tracking-wider">
                               <div className="flex items-center space-x-2">
                                 <span className="bg-amber-500/10 border border-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded font-mono text-[8px]">
                                   {task.weight} SP
                                 </span>
                                 {task.dueDate && (
-                                  <span className="flex items-center space-x-0.5 text-zinc-500">
+                                  <span className="flex items-center space-x-0.5 text-slate-500 dark:text-zinc-500">
                                     <Clock className="w-2.5 h-2.5 text-zinc-600" />
                                     <span>{new Date(task.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
                                   </span>
@@ -1139,7 +1139,7 @@ export const ProjectSprints: React.FC = () => {
 
                               {/* Assignee Avatar */}
                               <div
-                                className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black text-white shrink-0 shadow-inner"
+                                className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black text-slate-900 dark:text-white shrink-0 shadow-inner"
                                 style={{ backgroundColor: getAvatarBg(task.assignee) }}
                                 title={`Assignee: ${task.assignee}`}
                               >
@@ -1156,14 +1156,14 @@ export const ProjectSprints: React.FC = () => {
                   <div
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, 'in_review')}
-                    className="glass-panel-heavy rounded-2xl p-4 border border-white/5 flex flex-col space-y-3 min-h-[500px] w-[280px] md:w-[320px] shrink-0 bg-zinc-900/20 hover:bg-zinc-900/30 transition-all duration-300"
+                    className="glass-panel-heavy rounded-2xl p-4 border border-slate-100 dark:border-white/5 flex flex-col space-y-3 min-h-[500px] w-[280px] md:w-[320px] shrink-0 bg-slate-50/50 dark:bg-zinc-900/20 hover:bg-zinc-900/30 transition-all duration-300"
                   >
-                    <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                    <div className="flex justify-between items-center border-b border-slate-100 dark:border-white/5 pb-2">
                       <div className="flex items-center space-x-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
-                        <h6 className="text-xs font-extrabold text-white uppercase tracking-wider">In Review</h6>
+                        <h6 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">In Review</h6>
                       </div>
-                      <span className="text-[10px] font-bold bg-white/5 px-2 py-0.5 rounded-md text-zinc-400 border border-white/5">
+                      <span className="text-[10px] font-bold bg-slate-100/60 dark:bg-white/5 px-2 py-0.5 rounded-md text-slate-600 dark:text-zinc-400 border border-slate-100 dark:border-white/5">
                         {reviewTasks.length}
                       </span>
                     </div>
@@ -1171,7 +1171,7 @@ export const ProjectSprints: React.FC = () => {
                     <div className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[600px] scrollbar-thin">
                       {reviewTasks.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-center p-6 text-zinc-600 border border-dashed border-zinc-800 rounded-xl py-12">
-                          <Activity className="w-6 h-6 mb-1 text-zinc-700" />
+                          <Activity className="w-6 h-6 mb-1 text-slate-800 dark:text-zinc-300" />
                           <p className="text-[10px] italic">No reviews pending.</p>
                         </div>
                       ) : (
@@ -1181,22 +1181,22 @@ export const ProjectSprints: React.FC = () => {
                             draggable={getCanDragTask(task)}
                             onDragStart={(e) => handleDragStart(e, task.id, 'in_review')}
                             onClick={() => setActiveTaskId(task.id)}
-                            className={`p-3.5 rounded-xl border border-white/5 bg-zinc-900/60 transition-all duration-200 cursor-pointer shadow-md group relative ${
+                            className={`p-3.5 rounded-xl border border-slate-100 dark:border-white/5 bg-white dark:bg-zinc-900/60 transition-all duration-200 cursor-pointer shadow-md group relative ${
                               selectedSprint.status === 'closed' ? 'opacity-85' : 'active:scale-95'
                             } ${
                               getCanDragTask(task)
                                 ? 'cursor-grab active:cursor-grabbing hover:bg-zinc-900/90 hover:border-purple-500/40'
-                                : 'cursor-default opacity-85 hover:bg-zinc-900/60 hover:border-white/5'
+                                : 'cursor-default opacity-85 hover:bg-white dark:bg-zinc-900/60 hover:border-slate-100 dark:border-white/5'
                             }`}
                           >
                             <div className="flex justify-between items-start space-x-2">
-                              <span className="text-xs font-bold text-white leading-snug group-hover:text-purple-400 transition">
+                              <span className="text-xs font-bold text-slate-900 dark:text-white leading-snug group-hover:text-purple-400 transition">
                                 {task.name}
                               </span>
                             </div>
 
                             {task.description && (
-                              <p className="text-[10px] text-zinc-500 line-clamp-2 mt-1.5 font-light leading-relaxed">
+                              <p className="text-[10px] text-slate-500 dark:text-zinc-500 line-clamp-2 mt-1.5 font-light leading-relaxed">
                                 {task.description}
                               </p>
                             )}
@@ -1208,27 +1208,27 @@ export const ProjectSprints: React.FC = () => {
                               const pct = Math.round((doneCount / totalSub) * 100);
                               return (
                                 <div className="mt-3 space-y-1">
-                                  <div className="flex justify-between text-[9px] font-bold text-zinc-500">
+                                  <div className="flex justify-between text-[9px] font-bold text-slate-500 dark:text-zinc-500">
                                     <span className="flex items-center space-x-0.5">
                                       <CheckSquare className="w-2.5 h-2.5 text-purple-500" />
                                       <span>Subtasks</span>
                                     </span>
                                     <span>{doneCount}/{totalSub}</span>
                                   </div>
-                                  <div className="w-full bg-white/5 rounded-full h-1 overflow-hidden">
+                                  <div className="w-full bg-slate-100/60 dark:bg-white/5 rounded-full h-1 overflow-hidden">
                                     <div className="bg-purple-500 h-full rounded-full transition-all" style={{ width: `${pct}%` }} />
                                   </div>
                                 </div>
                               );
                             })()}
 
-                            <div className="flex items-center justify-between pt-3 mt-3 border-t border-white/5 text-[9px] text-zinc-500 font-bold uppercase tracking-wider">
+                            <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 dark:border-white/5 text-[9px] text-slate-500 dark:text-zinc-500 font-bold uppercase tracking-wider">
                               <div className="flex items-center space-x-2">
                                 <span className="bg-purple-500/10 border border-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded font-mono text-[8px]">
                                   {task.weight} SP
                                 </span>
                                 {task.dueDate && (
-                                  <span className="flex items-center space-x-0.5 text-zinc-500">
+                                  <span className="flex items-center space-x-0.5 text-slate-500 dark:text-zinc-500">
                                     <Clock className="w-2.5 h-2.5 text-zinc-600" />
                                     <span>{new Date(task.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
                                   </span>
@@ -1237,7 +1237,7 @@ export const ProjectSprints: React.FC = () => {
 
                               {/* Assignee Avatar */}
                               <div
-                                className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black text-white shrink-0 shadow-inner"
+                                className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black text-slate-900 dark:text-white shrink-0 shadow-inner"
                                 style={{ backgroundColor: getAvatarBg(task.assignee) }}
                                 title={`Assignee: ${task.assignee}`}
                               >
@@ -1254,14 +1254,14 @@ export const ProjectSprints: React.FC = () => {
                   <div
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, 'done')}
-                    className="glass-panel-heavy rounded-2xl p-4 border border-white/5 flex flex-col space-y-3 min-h-[500px] w-[280px] md:w-[320px] shrink-0 bg-zinc-900/20 hover:bg-zinc-900/30 transition-all duration-300"
+                    className="glass-panel-heavy rounded-2xl p-4 border border-slate-100 dark:border-white/5 flex flex-col space-y-3 min-h-[500px] w-[280px] md:w-[320px] shrink-0 bg-slate-50/50 dark:bg-zinc-900/20 hover:bg-zinc-900/30 transition-all duration-300"
                   >
-                    <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                    <div className="flex justify-between items-center border-b border-slate-100 dark:border-white/5 pb-2">
                       <div className="flex items-center space-x-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                        <h6 className="text-xs font-extrabold text-white uppercase tracking-wider">Done</h6>
+                        <h6 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Done</h6>
                       </div>
-                      <span className="text-[10px] font-bold bg-white/5 px-2 py-0.5 rounded-md text-zinc-400 border border-white/5">
+                      <span className="text-[10px] font-bold bg-slate-100/60 dark:bg-white/5 px-2 py-0.5 rounded-md text-slate-600 dark:text-zinc-400 border border-slate-100 dark:border-white/5">
                         {doneTasks.length}
                       </span>
                     </div>
@@ -1269,7 +1269,7 @@ export const ProjectSprints: React.FC = () => {
                     <div className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[600px] scrollbar-thin">
                       {doneTasks.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-center p-6 text-zinc-600 border border-dashed border-zinc-800 rounded-xl py-12">
-                          <Activity className="w-6 h-6 mb-1 text-zinc-700" />
+                          <Activity className="w-6 h-6 mb-1 text-slate-800 dark:text-zinc-300" />
                           <p className="text-[10px] italic">No completed deliverables.</p>
                         </div>
                       ) : (
@@ -1279,22 +1279,22 @@ export const ProjectSprints: React.FC = () => {
                             draggable={getCanDragTask(task)}
                             onDragStart={(e) => handleDragStart(e, task.id, 'done')}
                             onClick={() => setActiveTaskId(task.id)}
-                            className={`p-3.5 rounded-xl border border-white/5 bg-zinc-900/60 transition-all duration-200 cursor-pointer shadow-md group relative ${
+                            className={`p-3.5 rounded-xl border border-slate-100 dark:border-white/5 bg-white dark:bg-zinc-900/60 transition-all duration-200 cursor-pointer shadow-md group relative ${
                               selectedSprint.status === 'closed' ? 'opacity-85' : 'active:scale-95'
                             } ${
                               getCanDragTask(task)
                                 ? 'cursor-grab active:cursor-grabbing hover:bg-zinc-900/90 hover:border-emerald-500/40'
-                                : 'cursor-default opacity-85 hover:bg-zinc-900/60 hover:border-white/5'
+                                : 'cursor-default opacity-85 hover:bg-white dark:bg-zinc-900/60 hover:border-slate-100 dark:border-white/5'
                             }`}
                           >
                             <div className="flex justify-between items-start space-x-2">
-                              <span className="text-xs font-bold text-zinc-400 line-through leading-snug group-hover:text-emerald-400 transition">
+                              <span className="text-xs font-bold text-slate-600 dark:text-zinc-400 line-through leading-snug group-hover:text-emerald-400 transition">
                                 {task.name}
                               </span>
                             </div>
 
                             {task.description && (
-                              <p className="text-[10px] text-zinc-500 line-clamp-2 mt-1.5 font-light leading-relaxed">
+                              <p className="text-[10px] text-slate-500 dark:text-zinc-500 line-clamp-2 mt-1.5 font-light leading-relaxed">
                                 {task.description}
                               </p>
                             )}
@@ -1306,27 +1306,27 @@ export const ProjectSprints: React.FC = () => {
                               const pct = Math.round((doneCount / totalSub) * 100);
                               return (
                                 <div className="mt-3 space-y-1">
-                                  <div className="flex justify-between text-[9px] font-bold text-zinc-500">
+                                  <div className="flex justify-between text-[9px] font-bold text-slate-500 dark:text-zinc-500">
                                     <span className="flex items-center space-x-0.5">
                                       <CheckSquare className="w-2.5 h-2.5 text-emerald-500" />
                                       <span>Subtasks</span>
                                     </span>
                                     <span>{doneCount}/{totalSub}</span>
                                   </div>
-                                  <div className="w-full bg-white/5 rounded-full h-1 overflow-hidden">
+                                  <div className="w-full bg-slate-100/60 dark:bg-white/5 rounded-full h-1 overflow-hidden">
                                     <div className="bg-emerald-500 h-full rounded-full transition-all" style={{ width: `${pct}%` }} />
                                   </div>
                                 </div>
                               );
                             })()}
 
-                            <div className="flex items-center justify-between pt-3 mt-3 border-t border-white/5 text-[9px] text-zinc-500 font-bold uppercase tracking-wider">
+                            <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 dark:border-white/5 text-[9px] text-slate-500 dark:text-zinc-500 font-bold uppercase tracking-wider">
                               <div className="flex items-center space-x-2">
                                 <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-mono text-[8px]">
                                   {task.weight} SP
                                 </span>
                                 {task.dueDate && (
-                                  <span className="flex items-center space-x-0.5 text-zinc-500">
+                                  <span className="flex items-center space-x-0.5 text-slate-500 dark:text-zinc-500">
                                     <Clock className="w-2.5 h-2.5 text-zinc-600" />
                                     <span>{new Date(task.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
                                   </span>
@@ -1335,7 +1335,7 @@ export const ProjectSprints: React.FC = () => {
 
                               {/* Assignee Avatar */}
                               <div
-                                className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black text-white shrink-0 shadow-inner"
+                                className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black text-slate-900 dark:text-white shrink-0 shadow-inner"
                                 style={{ backgroundColor: getAvatarBg(task.assignee) }}
                                 title={`Assignee: ${task.assignee}`}
                               >
@@ -1352,14 +1352,14 @@ export const ProjectSprints: React.FC = () => {
                   <div
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, 'blocked')}
-                    className="glass-panel-heavy rounded-2xl p-4 border border-white/5 flex flex-col space-y-3 min-h-[500px] w-[280px] md:w-[320px] shrink-0 bg-zinc-900/20 hover:bg-zinc-900/30 transition-all duration-300"
+                    className="glass-panel-heavy rounded-2xl p-4 border border-slate-100 dark:border-white/5 flex flex-col space-y-3 min-h-[500px] w-[280px] md:w-[320px] shrink-0 bg-slate-50/50 dark:bg-zinc-900/20 hover:bg-zinc-900/30 transition-all duration-300"
                   >
-                    <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                    <div className="flex justify-between items-center border-b border-slate-100 dark:border-white/5 pb-2">
                       <div className="flex items-center space-x-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]" />
-                        <h6 className="text-xs font-extrabold text-white uppercase tracking-wider">Blocked</h6>
+                        <h6 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Blocked</h6>
                       </div>
-                      <span className="text-[10px] font-bold bg-white/5 px-2 py-0.5 rounded-md text-zinc-400 border border-white/5">
+                      <span className="text-[10px] font-bold bg-slate-100/60 dark:bg-white/5 px-2 py-0.5 rounded-md text-slate-600 dark:text-zinc-400 border border-slate-100 dark:border-white/5">
                         {blockedTasks.length}
                       </span>
                     </div>
@@ -1367,7 +1367,7 @@ export const ProjectSprints: React.FC = () => {
                     <div className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[600px] scrollbar-thin">
                       {blockedTasks.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-center p-6 text-zinc-600 border border-dashed border-zinc-800 rounded-xl py-12">
-                          <Activity className="w-6 h-6 mb-1 text-zinc-700" />
+                          <Activity className="w-6 h-6 mb-1 text-slate-800 dark:text-zinc-300" />
                           <p className="text-[10px] italic">No active blockers.</p>
                         </div>
                       ) : (
@@ -1377,22 +1377,22 @@ export const ProjectSprints: React.FC = () => {
                             draggable={getCanDragTask(task)}
                             onDragStart={(e) => handleDragStart(e, task.id, 'blocked')}
                             onClick={() => setActiveTaskId(task.id)}
-                            className={`p-3.5 rounded-xl border border-white/5 bg-zinc-900/60 transition-all duration-200 cursor-pointer shadow-md group relative ${
+                            className={`p-3.5 rounded-xl border border-slate-100 dark:border-white/5 bg-white dark:bg-zinc-900/60 transition-all duration-200 cursor-pointer shadow-md group relative ${
                               selectedSprint.status === 'closed' ? 'opacity-85' : 'active:scale-95'
                             } ${
                               getCanDragTask(task)
                                 ? 'cursor-grab active:cursor-grabbing hover:bg-zinc-900/90 hover:border-rose-500/40'
-                                : 'cursor-default opacity-85 hover:bg-zinc-900/60 hover:border-white/5'
+                                : 'cursor-default opacity-85 hover:bg-white dark:bg-zinc-900/60 hover:border-slate-100 dark:border-white/5'
                             }`}
                           >
                             <div className="flex justify-between items-start space-x-2">
-                              <span className="text-xs font-bold text-white leading-snug group-hover:text-rose-400 transition">
+                              <span className="text-xs font-bold text-slate-900 dark:text-white leading-snug group-hover:text-rose-400 transition">
                                 {task.name}
                               </span>
                             </div>
 
                             {task.description && (
-                              <p className="text-[10px] text-zinc-500 line-clamp-2 mt-1.5 font-light leading-relaxed">
+                              <p className="text-[10px] text-slate-500 dark:text-zinc-500 line-clamp-2 mt-1.5 font-light leading-relaxed">
                                 {task.description}
                               </p>
                             )}
@@ -1404,27 +1404,27 @@ export const ProjectSprints: React.FC = () => {
                               const pct = Math.round((doneCount / totalSub) * 100);
                               return (
                                 <div className="mt-3 space-y-1">
-                                  <div className="flex justify-between text-[9px] font-bold text-zinc-500">
+                                  <div className="flex justify-between text-[9px] font-bold text-slate-500 dark:text-zinc-500">
                                     <span className="flex items-center space-x-0.5">
                                       <CheckSquare className="w-2.5 h-2.5 text-rose-500" />
                                       <span>Subtasks</span>
                                     </span>
                                     <span>{doneCount}/{totalSub}</span>
                                   </div>
-                                  <div className="w-full bg-white/5 rounded-full h-1 overflow-hidden">
+                                  <div className="w-full bg-slate-100/60 dark:bg-white/5 rounded-full h-1 overflow-hidden">
                                     <div className="bg-rose-500 h-full rounded-full transition-all" style={{ width: `${pct}%` }} />
                                   </div>
                                 </div>
                               );
                             })()}
 
-                            <div className="flex items-center justify-between pt-3 mt-3 border-t border-white/5 text-[9px] text-zinc-500 font-bold uppercase tracking-wider">
+                            <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 dark:border-white/5 text-[9px] text-slate-500 dark:text-zinc-500 font-bold uppercase tracking-wider">
                               <div className="flex items-center space-x-2">
                                 <span className="bg-rose-500/10 border border-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded font-mono text-[8px]">
                                   {task.weight} SP
                                 </span>
                                 {task.dueDate && (
-                                  <span className="flex items-center space-x-0.5 text-zinc-500">
+                                  <span className="flex items-center space-x-0.5 text-slate-500 dark:text-zinc-500">
                                     <Clock className="w-2.5 h-2.5 text-zinc-600" />
                                     <span>{new Date(task.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
                                   </span>
@@ -1433,7 +1433,7 @@ export const ProjectSprints: React.FC = () => {
 
                               {/* Assignee Avatar */}
                               <div
-                                className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black text-white shrink-0 shadow-inner"
+                                className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black text-slate-900 dark:text-white shrink-0 shadow-inner"
                                 style={{ backgroundColor: getAvatarBg(task.assignee) }}
                                 title={`Assignee: ${task.assignee}`}
                               >
@@ -1450,9 +1450,9 @@ export const ProjectSprints: React.FC = () => {
             </>
           ) : (
             <div className="glass-panel rounded-2xl p-16 text-center border border-border flex flex-col items-center justify-center space-y-4">
-              <Activity className="w-16 h-16 text-zinc-500" />
+              <Activity className="w-16 h-16 text-slate-500 dark:text-zinc-500" />
               <div>
-                <h3 className="text-base font-bold text-white">No sprint selected</h3>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">No sprint selected</h3>
                 <p className="text-xs text-muted-foreground max-w-sm mt-1 mx-auto font-light">
                   Select a sprint deliverable in the sidebar backlog or plan a new sprint increment.
                 </p>
@@ -1467,13 +1467,13 @@ export const ProjectSprints: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
           <div className="w-full max-w-md glass-panel-heavy rounded-2xl p-6 border border-border shadow-2xl animate-scale-in">
             <div className="flex items-center justify-between border-b border-border pb-3 mb-5">
-              <div className="flex items-center space-x-2 text-white">
+              <div className="flex items-center space-x-2 text-slate-900 dark:text-white">
                 <Sparkles className="w-5 h-5 text-blue-500" />
                 <h4 className="font-bold text-base">Plan New Sprint</h4>
               </div>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="p-1 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-white transition-all"
+                className="p-1 rounded-lg hover:bg-slate-100/60 dark:bg-white/5 text-muted-foreground hover:text-white transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1488,7 +1488,7 @@ export const ProjectSprints: React.FC = () => {
                   type="text"
                   placeholder="e.g. Q2 Sprint 1 Core RLS Setup"
                   {...register('name')}
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-border text-white text-sm focus:outline-none focus:border-blue-500 transition-all font-light"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-100/60 dark:bg-white/5 border border-border text-white text-sm focus:outline-none focus:border-blue-500 transition-all font-light"
                 />
                 {errors.name && (
                   <p className="text-[10px] font-bold text-red-400 tracking-wider">
@@ -1543,11 +1543,11 @@ export const ProjectSprints: React.FC = () => {
               {watchedCadence === 'Custom' ? (
                 <div className="grid grid-cols-2 gap-4 animate-fade-in transition-all duration-300">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">Start Date</label>
+                    <label className="text-xs font-semibold text-slate-500 dark:text-zinc-500 uppercase tracking-widest">Start Date</label>
                     <input
                       type="date"
                       {...register('startDate')}
-                      className="w-full px-4 py-2 bg-white/5 border border-border text-white text-xs rounded-xl focus:outline-none focus:border-blue-500"
+                      className="w-full px-4 py-2 bg-slate-100/60 dark:bg-white/5 border border-border text-white text-xs rounded-xl focus:outline-none focus:border-blue-500"
                     />
                     {errors.startDate && (
                       <p className="text-[10px] font-bold text-red-400 tracking-wider">
@@ -1556,11 +1556,11 @@ export const ProjectSprints: React.FC = () => {
                     )}
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">End Date</label>
+                    <label className="text-xs font-semibold text-slate-500 dark:text-zinc-500 uppercase tracking-widest">End Date</label>
                     <input
                       type="date"
                       {...register('endDate')}
-                      className="w-full px-4 py-2 bg-white/5 border border-border text-white text-xs rounded-xl focus:outline-none focus:border-blue-500"
+                      className="w-full px-4 py-2 bg-slate-100/60 dark:bg-white/5 border border-border text-white text-xs rounded-xl focus:outline-none focus:border-blue-500"
                     />
                     {errors.endDate && (
                       <p className="text-[10px] font-bold text-red-400 tracking-wider">
@@ -1572,11 +1572,11 @@ export const ProjectSprints: React.FC = () => {
               ) : (
                 <div className="space-y-4 animate-fade-in transition-all duration-300">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">Start Date</label>
+                    <label className="text-xs font-semibold text-slate-500 dark:text-zinc-500 uppercase tracking-widest">Start Date</label>
                     <input
                       type="date"
                       {...register('startDate')}
-                      className="w-full px-4 py-2 bg-white/5 border border-border text-white text-xs rounded-xl focus:outline-none focus:border-blue-500"
+                      className="w-full px-4 py-2 bg-slate-100/60 dark:bg-white/5 border border-border text-white text-xs rounded-xl focus:outline-none focus:border-blue-500"
                     />
                     {errors.startDate && (
                       <p className="text-[10px] font-bold text-red-400 tracking-wider">
@@ -1587,15 +1587,15 @@ export const ProjectSprints: React.FC = () => {
                   
                   {/* Readonly Date Preview Card */}
                   {watchedStartDate && watchedEndDate && (
-                    <div className="glass-panel p-4 rounded-xl border border-blue-500/20 bg-blue-500/5 text-xs text-zinc-300 flex items-center space-x-3.5 shadow-inner">
+                    <div className="glass-panel p-4 rounded-xl border border-blue-500/20 bg-blue-500/5 text-xs text-slate-700 dark:text-zinc-300 flex items-center space-x-3.5 shadow-inner">
                       <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 select-none animate-pulse">
                         🔄
                       </div>
                       <div className="flex-1 min-w-0 space-y-1">
-                        <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+                        <p className="text-[10px] font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
                           Auto-Calculated Sprint Duration
                         </p>
-                        <p className="text-xs text-white font-medium">
+                        <p className="text-xs text-slate-900 dark:text-white font-medium">
                           {formatPreviewDate(watchedStartDate)} <span className="text-indigo-400 mx-1">→</span> {formatPreviewDate(watchedEndDate)}
                         </p>
                       </div>
@@ -1608,7 +1608,7 @@ export const ProjectSprints: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2.5 rounded-xl hover:bg-white/5 font-semibold text-muted-foreground hover:text-white border border-transparent"
+                  className="px-4 py-2.5 rounded-xl hover:bg-slate-100/60 dark:bg-white/5 font-semibold text-muted-foreground hover:text-white border border-transparent"
                 >
                   Cancel
                 </button>
@@ -1641,14 +1641,14 @@ export const ProjectSprints: React.FC = () => {
             </div>
 
             <div>
-              <h4 className="text-lg font-extrabold text-white">Governance Blocker: Incomplete Deliverables</h4>
+              <h4 className="text-lg font-extrabold text-slate-900 dark:text-white">Governance Blocker: Incomplete Deliverables</h4>
               <p className="text-xs text-muted-foreground max-w-md mx-auto mt-1.5 font-light">
                 Agile restrictions deny closing sprint "{selectedSprint.name}". In accordance with safety checklists, all active tasks must be closed prior to sprint closure.
               </p>
             </div>
 
             {/* Checklist of incomplete tasks */}
-            <div className="bg-white/5 border border-white/5 rounded-xl p-4 text-left max-h-48 overflow-y-auto space-y-2">
+            <div className="bg-slate-100/60 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-xl p-4 text-left max-h-48 overflow-y-auto space-y-2">
               <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Active Blockers Checklist:</p>
               {activeSprintTasks
                 .filter((t) => t.status !== 'done')
@@ -1665,7 +1665,7 @@ export const ProjectSprints: React.FC = () => {
             <div className="pt-2 flex justify-center text-xs">
               <button
                 onClick={() => setShowBlockerModal(false)}
-                className="px-6 py-2.5 rounded-xl bg-white/5 border border-border text-zinc-300 hover:text-white hover:bg-white/10 transition-all font-semibold"
+                className="px-6 py-2.5 rounded-xl bg-slate-100/60 dark:bg-white/5 border border-border text-slate-700 dark:text-zinc-300 hover:text-white hover:bg-slate-200/60 dark:bg-white/10 transition-all font-semibold"
               >
                 Acknowledge & Resolve Checklist
               </button>
@@ -1679,13 +1679,13 @@ export const ProjectSprints: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
           <div className="w-full max-w-md glass-panel-heavy rounded-2xl p-6 border border-border shadow-2xl animate-scale-in">
             <div className="flex items-center justify-between border-b border-border pb-3 mb-5">
-              <div className="flex items-center space-x-2 text-white">
+              <div className="flex items-center space-x-2 text-slate-900 dark:text-white">
                 <PlusCircle className="w-5 h-5 text-blue-500" />
                 <h4 className="font-bold text-base">Add Task Deliverable</h4>
               </div>
               <button
                 onClick={() => setShowAddTaskModal(false)}
-                className="p-1 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-white transition-all"
+                className="p-1 rounded-lg hover:bg-slate-100/60 dark:bg-white/5 text-muted-foreground hover:text-white transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1701,7 +1701,7 @@ export const ProjectSprints: React.FC = () => {
                   placeholder="e.g. Provision multi-tenant schema audits"
                   value={addTaskName}
                   onChange={(e) => setAddTaskName(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-border text-white text-sm focus:outline-none focus:border-blue-500 transition-all font-light"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-100/60 dark:bg-white/5 border border-border text-white text-sm focus:outline-none focus:border-blue-500 transition-all font-light"
                 />
               </div>
 
@@ -1714,13 +1714,13 @@ export const ProjectSprints: React.FC = () => {
                   value={addTaskDesc}
                   onChange={(e) => setAddTaskDesc(e.target.value)}
                   rows={3}
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-border text-white text-sm focus:outline-none focus:border-blue-500 transition-all font-light resize-none"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-100/60 dark:bg-white/5 border border-border text-white text-sm focus:outline-none focus:border-blue-500 transition-all font-light resize-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">
+                  <label className="text-xs font-semibold text-slate-500 dark:text-zinc-500 uppercase tracking-widest">
                     Story Weight
                   </label>
                   <select
@@ -1737,20 +1737,20 @@ export const ProjectSprints: React.FC = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">
+                  <label className="text-xs font-semibold text-slate-500 dark:text-zinc-500 uppercase tracking-widest">
                     Due Date
                   </label>
                   <input
                     type="date"
                     value={addTaskDueDate}
                     onChange={(e) => setAddTaskDueDate(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-white/5 border border-border text-white text-xs rounded-xl focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-2.5 bg-slate-100/60 dark:bg-white/5 border border-border text-white text-xs rounded-xl focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">
+                <label className="text-xs font-semibold text-slate-500 dark:text-zinc-500 uppercase tracking-widest">
                   Assignee
                 </label>
                 <select
@@ -1780,7 +1780,7 @@ export const ProjectSprints: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowAddTaskModal(false)}
-                  className="px-4 py-2.5 rounded-xl hover:bg-white/5 font-semibold text-muted-foreground hover:text-white border border-transparent"
+                  className="px-4 py-2.5 rounded-xl hover:bg-slate-100/60 dark:bg-white/5 font-semibold text-muted-foreground hover:text-white border border-transparent"
                 >
                   Cancel
                 </button>
@@ -1810,7 +1810,7 @@ export const ProjectSprints: React.FC = () => {
           <div className="fixed top-0 right-0 h-full w-[540px] bg-zinc-950/98 border-l border-zinc-800/80 shadow-[0_0_50px_rgba(0,0,0,0.8)] backdrop-blur-lg z-50 p-6 overflow-y-auto transform transition-transform duration-300 ease-out flex flex-col justify-between animate-slide-in">
             <div className="space-y-6 flex-1 overflow-y-auto pr-1 pb-6">
               {/* Header */}
-              <div className="flex justify-between items-start border-b border-white/5 pb-4">
+              <div className="flex justify-between items-start border-b border-slate-100 dark:border-white/5 pb-4">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
                     <span className={`text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded border ${
@@ -1822,15 +1822,15 @@ export const ProjectSprints: React.FC = () => {
                         ? 'bg-purple-500/10 border-purple-500/20 text-purple-400'
                         : activeTask.status === 'blocked'
                         ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-                        : 'bg-zinc-500/10 border-zinc-500/20 text-zinc-500'
+                        : 'bg-zinc-500/10 border-zinc-500/20 text-slate-500 dark:text-zinc-500'
                     }`}>
                       {activeTask.status.replace(/_/g, ' ')}
                     </span>
-                    <span className="text-[10px] text-zinc-500 font-mono">
+                    <span className="text-[10px] text-slate-500 dark:text-zinc-500 font-mono">
                       ID: {activeTask.id}
                     </span>
                   </div>
-                  <h3 className="text-lg font-bold text-white tracking-tight">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
                     {activeTask.name}
                   </h3>
                 </div>
@@ -1843,7 +1843,7 @@ export const ProjectSprints: React.FC = () => {
                           handleDeleteTask(selectedSprint.id, activeTask.id);
                         }
                       }}
-                      className="p-1.5 rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition"
+                      className="p-1.5 rounded-lg hover:bg-red-500/10 text-slate-500 dark:text-zinc-500 hover:text-red-400 transition"
                       title="Delete deliverable"
                     >
                       <Trash className="w-4.5 h-4.5" />
@@ -1851,7 +1851,7 @@ export const ProjectSprints: React.FC = () => {
                   )}
                   <button
                     onClick={() => setActiveTaskId(null)}
-                    className="p-1.5 rounded-lg hover:bg-white/5 text-zinc-400 hover:text-white transition"
+                    className="p-1.5 rounded-lg hover:bg-slate-100/60 dark:bg-white/5 text-slate-600 dark:text-zinc-400 hover:text-white transition"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -1859,9 +1859,9 @@ export const ProjectSprints: React.FC = () => {
               </div>
 
               {/* Task Fields Configuration Panel */}
-              <div className="bg-white/3 border border-white/5 rounded-2xl p-4 grid grid-cols-2 gap-4 text-xs">
+              <div className="bg-white/3 border border-slate-100 dark:border-white/5 rounded-2xl p-4 grid grid-cols-2 gap-4 text-xs">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Assignee</label>
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest">Assignee</label>
                   <select
                     disabled={!canEditFull || selectedSprint.status === 'closed'}
                     value={activeTask.assignee}
@@ -1887,7 +1887,7 @@ export const ProjectSprints: React.FC = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Story Weight</label>
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest">Story Weight</label>
                   <select
                     disabled={!canEditFull || selectedSprint.status === 'closed'}
                     value={activeTask.weight}
@@ -1903,7 +1903,7 @@ export const ProjectSprints: React.FC = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Due Date</label>
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest">Due Date</label>
                   <input
                     type="date"
                     disabled={!canEditFull || selectedSprint.status === 'closed'}
@@ -1914,7 +1914,7 @@ export const ProjectSprints: React.FC = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Status</label>
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest">Status</label>
                   <select
                     disabled={!canUpdate || selectedSprint.status === 'closed'}
                     value={activeTask.status}
@@ -1945,7 +1945,7 @@ export const ProjectSprints: React.FC = () => {
 
               {/* Task Details description area */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Description</label>
+                <label className="text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest">Description</label>
                 <textarea
                   disabled={!canEditFull || selectedSprint.status === 'closed'}
                   value={activeTask.description || ''}
@@ -1959,8 +1959,8 @@ export const ProjectSprints: React.FC = () => {
               {/* Subtasks Checklist */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Subtasks Checklist</label>
-                  <span className="text-[10px] text-zinc-400 font-bold font-mono">
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest">Subtasks Checklist</label>
+                  <span className="text-[10px] text-slate-600 dark:text-zinc-400 font-bold font-mono">
                     {((activeTask.subtasks || []).filter(s => s.done).length)} / {((activeTask.subtasks || []).length)} Completed
                   </span>
                 </div>
@@ -1968,10 +1968,10 @@ export const ProjectSprints: React.FC = () => {
                 {/* Subtask list */}
                 <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                   {(activeTask.subtasks || []).length === 0 ? (
-                    <p className="text-xs text-zinc-500 italic py-2 font-light">No subtasks created yet. Add one below.</p>
+                    <p className="text-xs text-slate-500 dark:text-zinc-500 italic py-2 font-light">No subtasks created yet. Add one below.</p>
                   ) : (
                     (activeTask.subtasks || []).map((sub) => (
-                      <div key={sub.id} className="flex items-center justify-between p-2.5 bg-white/2 hover:bg-white/4 border border-white/5 rounded-xl transition duration-150">
+                      <div key={sub.id} className="flex items-center justify-between p-2.5 bg-white/2 hover:bg-white/4 border border-slate-100 dark:border-white/5 rounded-xl transition duration-150">
                         <button
                           disabled={!canUpdate || selectedSprint.status === 'closed'}
                           onClick={() => handleToggleSubtask(selectedSprint.id, activeTask.id, sub.id)}
@@ -1982,7 +1982,7 @@ export const ProjectSprints: React.FC = () => {
                           ) : (
                             <Square className="w-4 h-4 text-zinc-600 shrink-0" />
                           )}
-                          <span className={`transition ${sub.done ? 'line-through text-zinc-500 font-light' : 'font-semibold'}`}>
+                          <span className={`transition ${sub.done ? 'line-through text-slate-500 dark:text-zinc-500 font-light' : 'font-semibold'}`}>
                             {sub.title}
                           </span>
                         </button>
@@ -1990,7 +1990,7 @@ export const ProjectSprints: React.FC = () => {
                         {selectedSprint.status !== 'closed' && canUpdate && (
                           <button
                             onClick={() => handleDeleteSubtask(selectedSprint.id, activeTask.id, sub.id)}
-                            className="p-1 rounded text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition"
+                            className="p-1 rounded text-slate-500 dark:text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition"
                           >
                             <Trash className="w-3.5 h-3.5" />
                           </button>
@@ -2026,9 +2026,9 @@ export const ProjectSprints: React.FC = () => {
               </div>
 
               {/* Threaded Comments discussion section */}
-              <div className="border-t border-white/5 pt-5 space-y-4">
+              <div className="border-t border-slate-100 dark:border-white/5 pt-5 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h5 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center space-x-1.5">
+                  <h5 className="text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest flex items-center space-x-1.5">
                     <MessageSquare className="w-4 h-4 text-blue-400" />
                     <span>Task Discussion Thread</span>
                   </h5>

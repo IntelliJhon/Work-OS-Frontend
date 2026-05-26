@@ -143,7 +143,7 @@ export const TaskAnalytics: React.FC<TaskAnalyticsProps> = ({ tasks, assignees }
       { key: 'critical', label: 'Critical', count: counts.critical, color: 'bg-red-500/80 border-red-500 text-red-400', barColor: 'from-red-500 to-red-600' },
       { key: 'high', label: 'High', count: counts.high, color: 'bg-amber-500/80 border-amber-500 text-amber-400', barColor: 'from-amber-500 to-amber-600' },
       { key: 'medium', label: 'Medium', count: counts.medium, color: 'bg-blue-500/80 border-blue-500 text-blue-400', barColor: 'from-blue-500 to-blue-600' },
-      { key: 'low', label: 'Low', count: counts.low, color: 'bg-zinc-500/80 border-zinc-500 text-zinc-400', barColor: 'from-zinc-500 to-zinc-600' },
+      { key: 'low', label: 'Low', count: counts.low, color: 'bg-zinc-500/80 border-zinc-500 text-slate-600 dark:text-zinc-400', barColor: 'from-zinc-500 to-zinc-600' },
     ].map(p => ({
       ...p,
       percentage: total > 0 ? Math.round((p.count / total) * 100) : 0,

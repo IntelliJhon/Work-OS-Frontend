@@ -304,7 +304,7 @@ export const DashboardLayout: React.FC = () => {
         <div className="h-16 flex items-center justify-between px-6 border-b border-border">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg glow-primary">
-              <span className="font-bold text-white text-sm">W</span>
+              <span className="font-bold text-slate-900 dark:text-white text-sm">W</span>
             </div>
             <span className="text-lg font-bold tracking-tight text-foreground">
               Work<span className="text-blue-500">OS</span>
@@ -316,7 +316,7 @@ export const DashboardLayout: React.FC = () => {
         </div>
 
         {/* Profile Card Summary */}
-        <div className="px-4 py-4 border-b border-border/50">
+        <div className="px-4 py-4 border-b border-slate-200/50 dark:border-border/50">
           <div className="flex items-center space-x-3 p-2 rounded-xl bg-muted/50 border border-border">
             <div className="w-10 h-10 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
               <User className="w-5 h-5 text-indigo-400" />
@@ -355,7 +355,7 @@ export const DashboardLayout: React.FC = () => {
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-border/50 absolute bottom-0 w-full left-0 bg-background/80">
+        <div className="p-4 border-t border-slate-200/50 dark:border-border/50 absolute bottom-0 w-full left-0 bg-background/80">
           <button
             onClick={handleLogout}
             className="w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl border border-transparent hover:border-red-500/20 transition-all"
@@ -429,7 +429,7 @@ export const DashboardLayout: React.FC = () => {
               >
                 <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-blue-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
+                  <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-blue-500 rounded-full text-[10px] font-bold text-slate-900 dark:text-white flex items-center justify-center animate-pulse">
                     {unreadCount}
                   </span>
                 )}
@@ -468,7 +468,7 @@ export const DashboardLayout: React.FC = () => {
 
       {/* Sign Out Premium Fullscreen Overlay */}
       {isSigningOut && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#070b19] text-white transition-opacity duration-500">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#070b19] text-slate-900 dark:text-white transition-opacity duration-500">
           {/* Soft floating background glows */}
           <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-red-500/5 blur-[150px] animate-pulse duration-[10000ms]" />
           <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-orange-500/5 blur-[150px] animate-pulse duration-[8000ms]" />
@@ -476,12 +476,12 @@ export const DashboardLayout: React.FC = () => {
           <div className="relative z-10 flex flex-col items-center max-w-sm w-full px-6 text-center">
             {/* Brand Logo with pulse */}
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-red-500 to-orange-600 flex items-center justify-center shadow-2xl glow-primary animate-pulse mb-8">
-              <span className="font-bold text-white text-4xl tracking-wider select-none">W</span>
+              <span className="font-bold text-slate-900 dark:text-white text-4xl tracking-wider select-none">W</span>
             </div>
 
             {/* Loader text */}
             <div className="space-y-2 h-14">
-              <h3 className="text-xl font-bold tracking-tight text-white/90 drop-shadow-md">
+              <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white/90 drop-shadow-md">
                 {signOutStep}
               </h3>
               <p className="text-xs text-orange-400/80 font-mono tracking-wider">
@@ -490,7 +490,7 @@ export const DashboardLayout: React.FC = () => {
             </div>
 
             {/* Progress bar container */}
-            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5 shadow-inner mt-8">
+            <div className="w-full h-1.5 bg-slate-100/60 dark:bg-white/5 rounded-full overflow-hidden border border-slate-100 dark:border-white/5 shadow-inner mt-8">
               <div 
                 className="h-full bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 rounded-full transition-all duration-[75ms] ease-out shadow-[0_0_12px_rgba(239,68,68,0.8)]"
                 style={{ width: `${signOutProgress}%` }}

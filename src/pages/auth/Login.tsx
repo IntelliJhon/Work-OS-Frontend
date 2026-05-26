@@ -96,7 +96,7 @@ export const Login: React.FC = () => {
 
   if (isTransitioning) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#070b19] text-white">
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#070b19] text-slate-900 dark:text-white">
         {/* Soft floating background glows */}
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-blue-500/10 blur-[150px] animate-pulse duration-[10000ms]" />
         <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[150px] animate-pulse duration-[8000ms]" />
@@ -104,12 +104,12 @@ export const Login: React.FC = () => {
         <div className="relative z-10 flex flex-col items-center max-w-sm w-full px-6 text-center">
           {/* Brand Logo with pulse/bounce */}
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center shadow-2xl glow-primary animate-bounce mb-8">
-            <span className="font-bold text-white text-4xl tracking-wider select-none">W</span>
+            <span className="font-bold text-slate-900 dark:text-white text-4xl tracking-wider select-none">W</span>
           </div>
 
           {/* Loader text */}
           <div className="space-y-2 h-14">
-            <h3 className="text-xl font-bold tracking-tight text-white/90 drop-shadow-md transition-all duration-300">
+            <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white/90 drop-shadow-md transition-all duration-300">
               {transitionStep}
             </h3>
             <p className="text-xs text-blue-400/80 font-mono tracking-wider">
@@ -118,7 +118,7 @@ export const Login: React.FC = () => {
           </div>
 
           {/* Progress bar container */}
-          <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5 shadow-inner mt-8">
+          <div className="w-full h-1.5 bg-slate-100/60 dark:bg-white/5 rounded-full overflow-hidden border border-slate-100 dark:border-white/5 shadow-inner mt-8">
             <div 
               className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-[75ms] ease-out shadow-[0_0_12px_rgba(59,130,246,0.8)]"
               style={{ width: `${transitionProgress}%` }}
@@ -137,7 +137,7 @@ export const Login: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h2 className="text-xl font-bold text-white tracking-wide">Welcome Back</h2>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide">Welcome Back</h2>
         <p className="text-xs text-muted-foreground font-light">
           Enter your workspace details and email credentials
         </p>

@@ -93,7 +93,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   }
 
   const priorityColors = {
-    low: 'text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-500/10 border-zinc-200 dark:border-zinc-500/20',
+    low: 'text-zinc-600 dark:text-slate-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-500/10 border-zinc-200 dark:border-zinc-500/20',
     medium: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20',
     high: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20',
     critical: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border-red-100 dark:border-red-500/20 animate-pulse',

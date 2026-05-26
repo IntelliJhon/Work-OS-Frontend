@@ -14,9 +14,9 @@ export const AuthLayout: React.FC = () => {
           <div className="inline-flex items-center space-x-2 mb-2">
             {/* Premium Logo mark */}
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg glow-primary">
-              <span className="font-bold text-white text-lg tracking-wider">W</span>
+              <span className="font-bold text-slate-900 dark:text-white text-lg tracking-wider">W</span>
             </div>
-            <span className="text-2xl font-bold tracking-tight text-white">
+            <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               Work<span className="text-blue-500">OS</span>
             </span>
           </div>

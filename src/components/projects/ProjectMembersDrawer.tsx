@@ -150,15 +150,15 @@ export const ProjectMembersDrawer: React.FC<ProjectMembersDrawerProps> = ({
               <Users className="w-5 h-5 text-blue-400" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white">Project Members</h3>
-              <p className="text-[10px] text-white font-light leading-normal max-w-[220px] truncate">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Project Members</h3>
+              <p className="text-[10px] text-slate-900 dark:text-white font-light leading-normal max-w-[220px] truncate">
   {projectName}
 </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition"
+            className="p-1.5 rounded-lg text-slate-500 dark:text-zinc-500 hover:text-white hover:bg-slate-100/60 dark:bg-white/5 transition"
           >
             <X className="w-4 h-4" />
           </button>
@@ -186,14 +186,14 @@ export const ProjectMembersDrawer: React.FC<ProjectMembersDrawerProps> = ({
           {/* Add Member Form Panel */}
           {canManage && workspaceUsers.length > 0 ? (
             <div className="glass-panel p-4 border border-border/60 bg-white/2 rounded-xl space-y-4">
-              <h4 className="text-xs font-bold text-white flex items-center space-x-1.5">
+              <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
                 <UserPlus className="w-3.5 h-3.5 text-blue-400" />
                 <span>Assign New Project Member</span>
               </h4>
 
               <form onSubmit={handleAddMember} className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">
+                  <label className="text-[9px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-wider block">
                     Workspace User
                   </label>
                   <select
@@ -212,7 +212,7 @@ export const ProjectMembersDrawer: React.FC<ProjectMembersDrawerProps> = ({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">
+                  <label className="text-[9px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-wider block">
                     Project-Specific Role
                   </label>
                   <select
@@ -240,14 +240,14 @@ export const ProjectMembersDrawer: React.FC<ProjectMembersDrawerProps> = ({
               </form>
             </div>
           ) : canManage && workspaceUsers.length === 0 ? (
-            <p className="text-[10px] text-zinc-500 italic font-light bg-white/2 p-3 rounded-lg border border-white/5 text-center">
+            <p className="text-[10px] text-slate-500 dark:text-zinc-500 italic font-light bg-white/2 p-3 rounded-lg border border-slate-100 dark:border-white/5 text-center">
               All workspace members are already assigned to this project.
             </p>
           ) : null}
 
           {/* Members List Panel */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-white flex items-center space-x-1.5">
+            <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
               <Users className="w-3.5 h-3.5 text-blue-400" />
               <span>Assigned Members ({members.length})</span>
             </h4>
@@ -255,7 +255,7 @@ export const ProjectMembersDrawer: React.FC<ProjectMembersDrawerProps> = ({
             {loading ? (
               <p className="text-[11px] text-muted-foreground italic font-light">Loading project members...</p>
             ) : members.length === 0 ? (
-              <p className="text-[11px] text-zinc-500 italic font-light">No members assigned to this project yet.</p>
+              <p className="text-[11px] text-slate-500 dark:text-zinc-500 italic font-light">No members assigned to this project yet.</p>
             ) : (
               <div className="space-y-2">
                 {members.map((member) => {
@@ -271,7 +271,7 @@ export const ProjectMembersDrawer: React.FC<ProjectMembersDrawerProps> = ({
                           {initials}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-xs font-semibold text-white truncate">
+                          <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
                             {member.firstName} {member.lastName}
                           </p>
                           <p className="text-[10px] text-muted-foreground font-light truncate">
@@ -287,21 +287,21 @@ export const ProjectMembersDrawer: React.FC<ProjectMembersDrawerProps> = ({
                             <select
                               value={member.roleId}
                               onChange={(e) => handleRoleChange(member.userId, e.target.value)}
-                              className="bg-transparent border-0 hover:bg-white/5 p-1 rounded font-medium text-white focus:outline-none text-[10px] cursor-pointer"
+                              className="bg-transparent border-0 hover:bg-slate-100/60 dark:bg-white/5 p-1 rounded font-medium text-white focus:outline-none text-[10px] cursor-pointer"
                             >
                               {roles.map((r) => (
                                 <option key={r.id} value={r.id} className="bg-zinc-950">{r.name}</option>
                               ))}
                             </select>
                           ) : (
-                            <span className="text-[10px] font-medium text-zinc-300">{member.roleName}</span>
+                            <span className="text-[10px] font-medium text-slate-700 dark:text-zinc-300">{member.roleName}</span>
                           )}
                         </div>
 
                         {canManage && (
                           <button
                             onClick={() => handleRemoveMember(member.userId, member.email)}
-                            className="p-1.5 text-zinc-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition active:scale-90"
+                            className="p-1.5 text-slate-500 dark:text-zinc-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition active:scale-90"
                             title="Remove Member from Project"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -317,7 +317,7 @@ export const ProjectMembersDrawer: React.FC<ProjectMembersDrawerProps> = ({
         </div>
 
         {/* Drawer Footer info */}
-        <div className="p-4 border-t border-white/5 bg-zinc-950 text-center text-[9px] text-zinc-500 font-light flex items-center justify-center space-x-1 select-none">
+        <div className="p-4 border-t border-slate-100 dark:border-white/5 bg-zinc-950 text-center text-[9px] text-slate-500 dark:text-zinc-500 font-light flex items-center justify-center space-x-1 select-none">
           <HelpCircle className="w-3 h-3" />
           <span>Project memberships override general workspace roles within this stage.</span>
         </div>

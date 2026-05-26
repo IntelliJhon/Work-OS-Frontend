@@ -89,7 +89,7 @@ export const ProjectList: React.FC = () => {
     <div className="space-y-6 text-foreground animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 pb-4 border-b border-border">
         <div>
-          <h1 className="text-2xl font-extrabold text-zinc-900 dark:text-white flex items-center space-x-2">
+          <h1 className="text-2xl font-extrabold text-zinc-900 dark:text-slate-900 dark:text-white flex items-center space-x-2">
             <FolderKanban className="w-7 h-7 text-blue-500" />
             <span>Workspace Deliverables</span>
           </h1>
@@ -107,9 +107,9 @@ export const ProjectList: React.FC = () => {
       </div>
 
       {/* Filter and Search Panel */}
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white/5 border border-border p-4 rounded-xl">
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-slate-100/60 dark:bg-white/5 border border-border p-4 rounded-xl">
         <div className="relative w-full md:max-w-xs">
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
+          <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-500 dark:text-zinc-500" />
           <input
             type="text"
             placeholder="Search deliverables..."
@@ -142,14 +142,14 @@ export const ProjectList: React.FC = () => {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-44 rounded-2xl bg-white/5 animate-pulse border border-border/20" />
+            <div key={i} className="h-44 rounded-2xl bg-slate-100/60 dark:bg-white/5 animate-pulse border border-border/20" />
           ))}
         </div>
       ) : filteredProjects.length === 0 ? (
         <div className="glass-panel rounded-2xl p-16 text-center border border-border flex flex-col items-center justify-center space-y-4">
-          <FolderKanban className="w-16 h-16 text-zinc-500" />
+          <FolderKanban className="w-16 h-16 text-slate-500 dark:text-zinc-500" />
           <div>
-            <h3 className="text-base font-bold text-zinc-900 dark:text-white">No deliverables found</h3>
+            <h3 className="text-base font-bold text-zinc-900 dark:text-slate-900 dark:text-white">No deliverables found</h3>
             <p className="text-xs text-muted-foreground max-w-sm mt-1 mx-auto font-light">
               Clear your filters or provision a new project workspace to setup state timeline charts.
             </p>
@@ -166,19 +166,19 @@ export const ProjectList: React.FC = () => {
           {filteredProjects.map((project) => (
             <div
               key={project.id}
-              className="glass-panel-heavy rounded-2xl p-6 border border-border hover:border-white/10 transition-all duration-300 flex flex-col justify-between relative group"
+              className="glass-panel-heavy rounded-2xl p-6 border border-border hover:border-slate-200/60 dark:border-white/10 transition-all duration-300 flex flex-col justify-between relative group"
             >
               {/* Delete button */}
               <button
                 onClick={(e) => handleDelete(project.id, e)}
-                className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-red-500/10 text-slate-500 dark:text-zinc-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all duration-200"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
 
               <div className="space-y-3">
                 <div className="flex justify-between items-start pr-8">
-                  <h3 className="font-extrabold text-zinc-900 dark:text-white text-lg">
+                  <h3 className="font-extrabold text-zinc-900 dark:text-slate-900 dark:text-white text-lg">
                     {project.name}
                   </h3>
                   {/* Derive badge status: 100% phases = completed, regardless of DB field */}
@@ -196,7 +196,7 @@ export const ProjectList: React.FC = () => {
                             : displayStatus === 'active'
                             ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                             : displayStatus === 'archived'
-                            ? 'bg-zinc-500/10 border-zinc-500/20 text-zinc-400'
+                            ? 'bg-zinc-500/10 border-zinc-500/20 text-slate-600 dark:text-zinc-400'
                             : 'bg-red-500/10 border-red-500/20 text-red-400'
                         }`}
                       >
@@ -224,7 +224,7 @@ export const ProjectList: React.FC = () => {
                   const textColor = pct === 100 ? 'text-emerald-400' : 'text-blue-400';
                   return (
                     <div className="space-y-1">
-                      <div className="flex justify-between text-[10px] font-bold text-zinc-500">
+                      <div className="flex justify-between text-[10px] font-bold text-slate-500 dark:text-zinc-500">
                         <span>TIMELINE COMPLETION</span>
                         <span className={textColor}>{pct}%</span>
                       </div>
@@ -242,8 +242,8 @@ export const ProjectList: React.FC = () => {
                 })()}
               </div>
 
-              <div className="flex items-center justify-between border-t border-white/5 pt-4 mt-5 text-xs">
-                <span className="text-zinc-500 flex items-center space-x-1.5">
+              <div className="flex items-center justify-between border-t border-slate-100 dark:border-white/5 pt-4 mt-5 text-xs">
+                <span className="text-slate-500 dark:text-zinc-500 flex items-center space-x-1.5">
                   <Calendar className="w-3.5 h-3.5" />
                   <span>{new Date(project.createdAt).toLocaleDateString()}</span>
                 </span>
@@ -266,13 +266,13 @@ export const ProjectList: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
           <div className="w-full max-w-md glass-panel-heavy rounded-2xl p-6 border border-border shadow-2xl animate-scale-in">
             <div className="flex items-center justify-between border-b border-border pb-3 mb-5">
-              <div className="flex items-center space-x-2 text-zinc-900 dark:text-white">
+              <div className="flex items-center space-x-2 text-zinc-900 dark:text-slate-900 dark:text-white">
                 <Sparkles className="w-5 h-5 text-blue-500" />
                 <h4 className="font-bold text-base">Provision New Project</h4>
               </div>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 text-muted-foreground hover:text-zinc-900 dark:hover:text-white transition-all"
+                className="p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-slate-100/60 dark:bg-white/5 text-muted-foreground hover:text-zinc-900 dark:hover:text-white transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -312,7 +312,7 @@ export const ProjectList: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-white/5 font-semibold text-muted-foreground hover:text-zinc-900 dark:hover:text-white transition-all border border-transparent"
+                  className="px-4 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-slate-100/60 dark:bg-white/5 font-semibold text-muted-foreground hover:text-zinc-900 dark:hover:text-white transition-all border border-transparent"
                 >
                   Cancel
                 </button>

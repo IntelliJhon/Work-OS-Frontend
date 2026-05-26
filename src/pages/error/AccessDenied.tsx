@@ -15,7 +15,7 @@ export const AccessDenied: React.FC = () => {
         </div>
       </div>
 
-      <h1 className="text-4xl font-extrabold text-white tracking-tight mb-2">
+      <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-2">
         403 - Access Denied
       </h1>
       <h2 className="text-base font-medium text-red-400/90 mb-4 uppercase tracking-wider text-xs">
@@ -30,7 +30,7 @@ export const AccessDenied: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-xs sm:max-w-md">
         <button
           onClick={() => navigate(-1)}
-          className="w-full sm:w-auto px-6 py-3 rounded-xl border border-white/10 hover:border-white/20 text-white/90 hover:text-white font-medium text-xs tracking-wider uppercase transition-all flex items-center justify-center space-x-2"
+          className="w-full sm:w-auto px-6 py-3 rounded-xl border border-slate-200/60 dark:border-white/10 hover:border-white/20 text-white/90 hover:text-white font-medium text-xs tracking-wider uppercase transition-all flex items-center justify-center space-x-2"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Go Back</span>

@@ -63,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // While initializing, we show a premium sleek loading spinner
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#0F0F12] text-white flex flex-col items-center justify-center space-y-4">
+      <div className="min-h-screen bg-[#0F0F12] text-slate-900 dark:text-white flex flex-col items-center justify-center space-y-4">
         {/* Sleek premium spinner */}
         <div className="relative w-12 h-12">
           <div className="absolute inset-0 rounded-full border-t-2 border-r-2 border-blue-500/20 animate-spin"></div>

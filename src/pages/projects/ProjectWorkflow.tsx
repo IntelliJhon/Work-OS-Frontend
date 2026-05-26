@@ -89,9 +89,9 @@ export const ProjectWorkflow: React.FC = () => {
   if (phases.length === 0) {
     return (
       <div className="glass-panel rounded-2xl p-12 text-center border border-border space-y-4">
-        <GitBranch className="w-12 h-12 text-zinc-500 mx-auto" />
+        <GitBranch className="w-12 h-12 text-slate-500 dark:text-zinc-500 mx-auto" />
         <div>
-          <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Timeline Uninitialized</h4>
+          <h4 className="text-sm font-bold text-zinc-900 dark:text-slate-900 dark:text-white">Timeline Uninitialized</h4>
           <p className="text-xs text-muted-foreground font-light max-w-sm mt-1 mx-auto">
             This project does not have standard workflow governance nodes provisioned. 
             Please check database seed bounds or recreate the project.
@@ -128,8 +128,8 @@ export const ProjectWorkflow: React.FC = () => {
       case 'pending':
       default:
         return {
-          card: 'border-border bg-white/5 text-zinc-500 hover:border-zinc-700 hover:bg-white/10',
-          badge: 'bg-white/5 border-white/10 text-zinc-500',
+          card: 'border-border bg-slate-100/60 dark:bg-white/5 text-slate-500 dark:text-zinc-500 hover:border-zinc-700 hover:bg-slate-200/60 dark:bg-white/10',
+          badge: 'bg-slate-100/60 dark:bg-white/5 border-slate-200/60 dark:border-white/10 text-slate-500 dark:text-zinc-500',
           dot: 'bg-zinc-600'
         };
     }
@@ -145,7 +145,7 @@ export const ProjectWorkflow: React.FC = () => {
     <div className="space-y-6 text-foreground">
       {/* Timeline Progression Node visualization */}
       <div className="space-y-3">
-        <h3 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">
+        <h3 className="text-sm font-bold text-zinc-900 dark:text-slate-900 dark:text-white uppercase tracking-wider">
           Standardized Lifecycle Flow
         </h3>
         
@@ -163,7 +163,7 @@ export const ProjectWorkflow: React.FC = () => {
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-bold text-zinc-400">0{idx + 1}</span>
+                  <span className="text-[10px] font-bold text-slate-600 dark:text-zinc-400">0{idx + 1}</span>
                   <span className={`w-2 h-2 rounded-full ${styles.dot} ${phase.status === 'active' ? 'animate-pulse' : ''}`} />
                 </div>
 
@@ -176,7 +176,7 @@ export const ProjectWorkflow: React.FC = () => {
                       {phase.status}
                     </span>
                     {phase.isLocked && (
-                      <Lock className="w-2.5 h-2.5 text-zinc-500" />
+                      <Lock className="w-2.5 h-2.5 text-slate-500 dark:text-zinc-500" />
                     )}
                   </div>
                 </div>
@@ -200,14 +200,14 @@ export const ProjectWorkflow: React.FC = () => {
           {/* Main Info and Governance Actions */}
           <div className="lg:col-span-2 space-y-4">
             <div className="glass-panel-heavy rounded-2xl p-6 border border-border space-y-5">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 border-b border-white/5 pb-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 border-b border-slate-100 dark:border-white/5 pb-4">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
-                    <h4 className="text-xl font-bold text-zinc-900 dark:text-white">
+                    <h4 className="text-xl font-bold text-zinc-900 dark:text-slate-900 dark:text-white">
                       Stage Gate: {selectedPhase.name}
                     </h4>
                     {selectedPhase.isLocked ? (
-                      <span className="flex items-center space-x-1 text-[10px] font-semibold text-zinc-500 bg-white/5 border border-white/10 px-2 py-0.5 rounded">
+                      <span className="flex items-center space-x-1 text-[10px] font-semibold text-slate-500 dark:text-zinc-500 bg-slate-100/60 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 px-2 py-0.5 rounded">
                         <Lock className="w-3 h-3" />
                         <span>Locked</span>
                       </span>
@@ -231,8 +231,8 @@ export const ProjectWorkflow: React.FC = () => {
               </div>
 
               {/* Actions panel according to user role permissions */}
-              <div className="space-y-3 bg-white/5 border border-white/5 p-5 rounded-xl">
-                <h5 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center space-x-1.5">
+              <div className="space-y-3 bg-slate-100/60 dark:bg-white/5 border border-slate-100 dark:border-white/5 p-5 rounded-xl">
+                <h5 className="text-[10px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-widest flex items-center space-x-1.5">
                   <Info className="w-3.5 h-3.5 text-blue-400" />
                   <span>Authorized Stage Actions (PM & Lead Scope)</span>
                 </h5>
@@ -278,7 +278,7 @@ export const ProjectWorkflow: React.FC = () => {
                             Go to the <span className="font-bold text-amber-300">Quality Gates</span> tab, review all criteria, and sign off the gate first.
                           </p>
                           <div className="flex items-center space-x-1.5 pt-1">
-                            <span className="text-[9px] font-extrabold uppercase tracking-wider text-zinc-400">Gate Status:</span>
+                            <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-zinc-400">Gate Status:</span>
                             <span className={`text-[9px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded border ${
                               gateStatus === 'rejected'
                                 ? 'bg-red-500/10 border-red-500/20 text-red-400'
@@ -402,8 +402,8 @@ export const ProjectWorkflow: React.FC = () => {
             
             {/* Quick Sprints view */}
             <div className="glass-panel rounded-xl p-5 border border-border flex flex-col h-[210px]">
-              <div className="flex items-center justify-between mb-3.5 border-b border-white/5 pb-2.5">
-                <h5 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider flex items-center space-x-1.5">
+              <div className="flex items-center justify-between mb-3.5 border-b border-slate-100 dark:border-white/5 pb-2.5">
+                <h5 className="text-xs font-bold text-zinc-900 dark:text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-1.5">
                   <Activity className="w-4 h-4 text-blue-400" />
                   <span>Sprints List ({selectedPhaseSprints.length})</span>
                 </h5>
@@ -411,17 +411,17 @@ export const ProjectWorkflow: React.FC = () => {
 
               <div className="flex-1 overflow-y-auto space-y-2 pr-1">
                 {selectedPhaseSprints.length === 0 ? (
-                  <p className="text-xs text-zinc-500 font-light italic py-4">No sprints created in this stage.</p>
+                  <p className="text-xs text-slate-500 dark:text-zinc-500 font-light italic py-4">No sprints created in this stage.</p>
                 ) : (
                   selectedPhaseSprints.map((sprint) => (
-                    <div key={sprint.id} className="flex justify-between items-center p-2 rounded bg-white/5 border border-white/5 text-xs">
-                      <span className="font-semibold text-zinc-900 dark:text-white truncate max-w-[150px]">{sprint.name}</span>
+                    <div key={sprint.id} className="flex justify-between items-center p-2 rounded bg-slate-100/60 dark:bg-white/5 border border-slate-100 dark:border-white/5 text-xs">
+                      <span className="font-semibold text-zinc-900 dark:text-slate-900 dark:text-white truncate max-w-[150px]">{sprint.name}</span>
                       <span className={`text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded border ${
                         sprint.status === 'active' 
                           ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' 
                           : sprint.status === 'closed'
                           ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                          : 'bg-zinc-500/10 border-zinc-500/20 text-zinc-500'
+                          : 'bg-zinc-500/10 border-zinc-500/20 text-slate-500 dark:text-zinc-500'
                       }`}>
                         {sprint.status}
                       </span>
@@ -433,8 +433,8 @@ export const ProjectWorkflow: React.FC = () => {
 
             {/* Quick Quality Gates View */}
             <div className="glass-panel rounded-xl p-5 border border-border flex flex-col h-[210px]">
-              <div className="flex items-center justify-between mb-3.5 border-b border-white/5 pb-2.5">
-                <h5 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider flex items-center space-x-1.5">
+              <div className="flex items-center justify-between mb-3.5 border-b border-slate-100 dark:border-white/5 pb-2.5">
+                <h5 className="text-xs font-bold text-zinc-900 dark:text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-1.5">
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
                   <span>Quality Gates ({selectedPhaseGates.length})</span>
                 </h5>
@@ -442,12 +442,12 @@ export const ProjectWorkflow: React.FC = () => {
 
               <div className="flex-1 overflow-y-auto space-y-2 pr-1">
                 {selectedPhaseGates.length === 0 ? (
-                  <p className="text-xs text-zinc-500 font-light italic py-4">No quality gates bound to this stage.</p>
+                  <p className="text-xs text-slate-500 dark:text-zinc-500 font-light italic py-4">No quality gates bound to this stage.</p>
                 ) : (
                   selectedPhaseGates.map((gate) => (
-                    <div key={gate.id} className="flex justify-between items-center p-2 rounded bg-white/5 border border-white/5 text-xs">
+                    <div key={gate.id} className="flex justify-between items-center p-2 rounded bg-slate-100/60 dark:bg-white/5 border border-slate-100 dark:border-white/5 text-xs">
                       <div className="min-w-0 pr-2">
-                        <p className="font-bold text-zinc-900 dark:text-white truncate">Criteria Rules</p>
+                        <p className="font-bold text-zinc-900 dark:text-slate-900 dark:text-white truncate">Criteria Rules</p>
                         <p className="text-[9px] text-muted-foreground truncate">
                           Keys: {Object.keys(gate.criteria).join(', ') || 'N/A'}
                         </p>

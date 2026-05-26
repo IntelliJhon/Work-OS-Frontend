@@ -112,11 +112,11 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({ isOpen, onClose, gat
               <FileCheck className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-extrabold text-white flex items-center space-x-1.5">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center space-x-1.5">
                 <span>Sign off Quality Gate</span>
                 <Sparkles className="w-3.5 h-3.5 text-yellow-400 animate-pulse" />
               </h2>
-              <p className="text-[10px] text-zinc-400">Review deliverables, evidence documents, and authorize phase transition.</p>
+              <p className="text-[10px] text-slate-600 dark:text-zinc-400">Review deliverables, evidence documents, and authorize phase transition.</p>
             </div>
           </div>
         </div>
@@ -126,7 +126,7 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({ isOpen, onClose, gat
           
           {/* Evidence Attachments */}
           <div className="space-y-2">
-            <h3 className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 flex items-center space-x-1">
+            <h3 className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-zinc-400 flex items-center space-x-1">
               <ScrollText className="w-3.5 h-3.5 text-blue-400" />
               <span>Evidence Documentation ({gateFiles.length})</span>
             </h3>
@@ -143,12 +143,12 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({ isOpen, onClose, gat
                   <button
                     key={file.id}
                     onClick={() => setSelectedPreviewFile(file)}
-                    className="flex items-center space-x-2.5 p-2 rounded-xl bg-zinc-900 border border-white/5 text-left hover:bg-zinc-800/80 transition"
+                    className="flex items-center space-x-2.5 p-2 rounded-xl bg-zinc-900 border border-slate-100 dark:border-white/5 text-left hover:bg-zinc-800/80 transition"
                   >
                     <FileText className="w-4 h-4 text-blue-400 shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-zinc-300 truncate">{file.originalName}</p>
-                      <p className="text-[9px] text-zinc-500 uppercase font-extrabold">{(file.size / 1024).toFixed(0)} KB</p>
+                      <p className="text-xs font-bold text-slate-700 dark:text-zinc-300 truncate">{file.originalName}</p>
+                      <p className="text-[9px] text-slate-500 dark:text-zinc-500 uppercase font-extrabold">{(file.size / 1024).toFixed(0)} KB</p>
                     </div>
                   </button>
                 ))}
@@ -158,11 +158,11 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({ isOpen, onClose, gat
 
           {/* Gate Criteria Checklist */}
           <div className="space-y-2.5">
-            <h3 className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 flex items-center space-x-1">
+            <h3 className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-zinc-400 flex items-center space-x-1">
               <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
               <span>Deliverable Requirements Checklist</span>
             </h3>
-            <p className="text-[10px] text-zinc-400 italic">Please manually inspect all deliverables and verify they satisfy standard compliance.</p>
+            <p className="text-[10px] text-slate-600 dark:text-zinc-400 italic">Please manually inspect all deliverables and verify they satisfy standard compliance.</p>
             
             <div className="space-y-1.5">
               {criteriaKeys.map(k => (
@@ -172,7 +172,7 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({ isOpen, onClose, gat
                   className={`w-full flex items-center space-x-3 p-3 rounded-2xl border transition text-left ${
                     checklist[k] 
                       ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-300' 
-                      : 'bg-zinc-900 border-border text-zinc-400 hover:bg-zinc-850'
+                      : 'bg-zinc-900 border-border text-slate-600 dark:text-zinc-400 hover:bg-zinc-850'
                   }`}
                 >
                   <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition ${
@@ -187,20 +187,20 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({ isOpen, onClose, gat
           </div>
 
           {/* Secure Audit Signature Panel */}
-          <div className="p-4 rounded-3xl bg-zinc-900/60 border border-white/5 space-y-3">
+          <div className="p-4 rounded-3xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-white/5 space-y-3">
             <div className="flex items-start space-x-2.5">
               <ShieldAlert className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
               <div>
                 <h4 className="text-xs font-extrabold text-zinc-200">Legal Authorization Signature</h4>
-                <p className="text-[10px] text-zinc-500 leading-relaxed">
+                <p className="text-[10px] text-slate-500 dark:text-zinc-500 leading-relaxed">
                   By signing, you confirm that all deliverables have been thoroughly inspected and satisfy Acme's security, quality, and operational standards.
                 </p>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-[9px] uppercase tracking-wider text-zinc-400 font-extrabold flex justify-between">
-                <span>Type full name to sign: <span className="text-zinc-300 italic">{user?.firstName} {user?.lastName}</span></span>
+              <label className="text-[9px] uppercase tracking-wider text-slate-600 dark:text-zinc-400 font-extrabold flex justify-between">
+                <span>Type full name to sign: <span className="text-slate-700 dark:text-zinc-300 italic">{user?.firstName} {user?.lastName}</span></span>
                 {isSignatureMatched && <span className="text-emerald-400 font-bold flex items-center space-x-0.5"><UserCheck className="w-3 h-3" /> <span>Authorized</span></span>}
               </label>
               <input
@@ -226,7 +226,7 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({ isOpen, onClose, gat
         <div className="px-6 py-4 bg-zinc-950 border-t border-border flex items-center justify-between shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-bold text-zinc-400 hover:text-zinc-200 transition"
+            className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-zinc-400 hover:text-zinc-200 transition"
           >
             Cancel
           </button>
@@ -329,8 +329,8 @@ export const RejectModal: React.FC<RejectModalProps> = ({ isOpen, onClose, gate,
               <XCircle className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-extrabold text-white">Reject Gate Sign-off</h2>
-              <p className="text-[10px] text-zinc-400 font-medium">Record blockers and request immediate remediation.</p>
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">Reject Gate Sign-off</h2>
+              <p className="text-[10px] text-slate-600 dark:text-zinc-400 font-medium">Record blockers and request immediate remediation.</p>
             </div>
           </div>
         </div>
@@ -338,7 +338,7 @@ export const RejectModal: React.FC<RejectModalProps> = ({ isOpen, onClose, gate,
         {/* Form Body */}
         <div className="p-6 space-y-4">
           <div className="space-y-2">
-            <label className="text-[9px] uppercase tracking-wider text-zinc-400 font-extrabold flex justify-between">
+            <label className="text-[9px] uppercase tracking-wider text-slate-600 dark:text-zinc-400 font-extrabold flex justify-between">
               <span>Detailed Rejection Rationale</span>
               <span className="text-red-400 font-extrabold">Required</span>
             </label>
@@ -363,7 +363,7 @@ export const RejectModal: React.FC<RejectModalProps> = ({ isOpen, onClose, gate,
         <div className="px-6 py-4 bg-zinc-950 border-t border-border flex items-center justify-between">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-bold text-zinc-400 hover:text-zinc-200 transition"
+            className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-zinc-400 hover:text-zinc-200 transition"
           >
             Cancel
           </button>
@@ -437,8 +437,8 @@ export const RemediationModal: React.FC<RemediationModalProps> = ({ isOpen, onCl
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-extrabold text-white">File Remediation Action</h2>
-              <p className="text-[10px] text-zinc-400 font-medium">Create outstanding tasks to bypass blockers.</p>
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">File Remediation Action</h2>
+              <p className="text-[10px] text-slate-600 dark:text-zinc-400 font-medium">Create outstanding tasks to bypass blockers.</p>
             </div>
           </div>
         </div>
@@ -446,7 +446,7 @@ export const RemediationModal: React.FC<RemediationModalProps> = ({ isOpen, onCl
         {/* Form Body */}
         <div className="p-6 space-y-4">
           <div className="space-y-2">
-            <label className="text-[9px] uppercase tracking-wider text-zinc-400 font-extrabold flex justify-between">
+            <label className="text-[9px] uppercase tracking-wider text-slate-600 dark:text-zinc-400 font-extrabold flex justify-between">
               <span>Remediation checklist instructions</span>
               <span className="text-orange-400 font-extrabold">Checklist Format</span>
             </label>
@@ -464,7 +464,7 @@ export const RemediationModal: React.FC<RemediationModalProps> = ({ isOpen, onCl
         <div className="px-6 py-4 bg-zinc-950 border-t border-border flex items-center justify-between">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-bold text-zinc-400 hover:text-zinc-200 transition"
+            className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-zinc-400 hover:text-zinc-200 transition"
           >
             Cancel
           </button>

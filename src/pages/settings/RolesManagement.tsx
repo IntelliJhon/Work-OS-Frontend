@@ -196,12 +196,12 @@ export const RolesManagement: React.FC = () => {
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center space-x-2">
               <Shield className="w-5 h-5 text-blue-400" />
-              <h3 className="text-sm font-bold text-white">Roles Profiles</h3>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Roles Profiles</h3>
             </div>
             {can('workspace.roles.update' as any) && (
               <button
                 onClick={() => { setErrorMsg(''); setSuccessMsg(''); setShowCreateModal(true); }}
-                className="p-2 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:text-blue-400 transition"
+                className="p-2 rounded-lg bg-slate-100/60 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 text-white hover:bg-slate-200/60 dark:bg-white/10 hover:text-blue-400 transition"
                 title="Create Custom Role"
               >
                 <Plus className="w-4 h-4" />
@@ -224,7 +224,7 @@ export const RolesManagement: React.FC = () => {
                     className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
                       isActive
                         ? 'bg-blue-600/10 border-blue-500/30 text-blue-400 glow-primary'
-                        : 'border-white/5 bg-zinc-900/20 hover:bg-zinc-900/40 text-zinc-400'
+                        : 'border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-zinc-900/20 hover:bg-zinc-900/40 text-slate-600 dark:text-zinc-400'
                     }`}
                   >
                     <div className="flex items-start justify-between">
@@ -235,12 +235,12 @@ export const RolesManagement: React.FC = () => {
                         </p>
                       </div>
                       
-                      <span className="text-[9px] bg-white/5 px-2 py-0.5 rounded text-zinc-400 border border-white/5 font-mono">
+                      <span className="text-[9px] bg-slate-100/60 dark:bg-white/5 px-2 py-0.5 rounded text-slate-600 dark:text-zinc-400 border border-slate-100 dark:border-white/5 font-mono">
                         {r.userCount || 0} Users
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-white/5">
+                    <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 dark:border-white/5">
                       <span className={`text-[8px] font-black uppercase tracking-widest font-mono ${isSystem ? 'text-indigo-400' : 'text-amber-400'}`}>
                         {isSystem ? 'system role' : 'custom role'}
                       </span>
@@ -248,7 +248,7 @@ export const RolesManagement: React.FC = () => {
                       {!isSystem && can('workspace.roles.update' as any) && (
                         <button
                           onClick={(e) => { e.stopPropagation(); handleDeleteRole(r.id, r.name); }}
-                          className="p-1 text-zinc-500 hover:text-red-400 rounded hover:bg-red-500/10 transition"
+                          className="p-1 text-slate-500 dark:text-zinc-500 hover:text-red-400 rounded hover:bg-red-500/10 transition"
                           title="Delete Role"
                         >
                           <Trash className="w-3.5 h-3.5" />
@@ -266,9 +266,9 @@ export const RolesManagement: React.FC = () => {
         <div className="xl:col-span-2 glass-panel rounded-2xl p-6 border border-border bg-card/40 glow-primary">
           {selectedRole ? (
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
                 <div>
-                  <h3 className="text-base font-bold text-white flex items-center space-x-2">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
                     <span>Permission Matrix: {selectedRole.name}</span>
                   </h3>
                   <p className="text-xs text-muted-foreground font-light mt-0.5">
@@ -288,8 +288,8 @@ export const RolesManagement: React.FC = () => {
               </div>
 
               {/* Role Info input */}
-              <div className="bg-zinc-900/40 p-4 rounded-xl border border-white/5 space-y-3">
-                <div className="flex items-center space-x-2 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+              <div className="bg-zinc-900/40 p-4 rounded-xl border border-slate-100 dark:border-white/5 space-y-3">
+                <div className="flex items-center space-x-2 text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
                   <Info className="w-4 h-4 text-blue-400" />
                   <span>Role Description</span>
                 </div>
@@ -304,10 +304,10 @@ export const RolesManagement: React.FC = () => {
               </div>
 
               {/* Matrix Table */}
-              <div className="border border-border/40 rounded-xl overflow-hidden bg-zinc-900/20">
+              <div className="border border-border/40 rounded-xl overflow-hidden bg-slate-50/50 dark:bg-zinc-900/20">
                 <table className="w-full border-collapse text-left text-xs">
                   <thead>
-                    <tr className="border-b border-border/60 bg-white/2 text-zinc-400 font-bold uppercase tracking-wider text-[10px]">
+                    <tr className="border-b border-border/60 bg-white/2 text-slate-600 dark:text-zinc-400 font-bold uppercase tracking-wider text-[10px]">
                       <th className="px-6 py-4 w-1/3">Permission Key</th>
                       <th className="px-6 py-4 w-12 text-center font-bold">Policy Status</th>
                       <th className="px-6 py-4">Action Rules Description</th>
@@ -321,8 +321,8 @@ export const RolesManagement: React.FC = () => {
                       return (
                         <tr key={perm.key} className="hover:bg-white/2 transition-colors">
                           <td className="px-6 py-4">
-                            <span className="font-semibold text-white">{perm.label}</span>
-                            <span className="block font-mono text-[9px] text-zinc-500 mt-0.5">{perm.key}</span>
+                            <span className="font-semibold text-slate-900 dark:text-white">{perm.label}</span>
+                            <span className="block font-mono text-[9px] text-slate-500 dark:text-zinc-500 mt-0.5">{perm.key}</span>
                           </td>
                           <td className="px-6 py-4 text-center">
                             <button
@@ -332,7 +332,7 @@ export const RolesManagement: React.FC = () => {
                               className={`w-9 h-6.5 rounded-lg border flex items-center justify-center transition-all ${
                                 hasAccess
                                   ? 'bg-emerald-500/10 border-emerald-500/35 text-emerald-400 glow-primary'
-                                  : 'bg-zinc-900/60 border-white/5 text-zinc-600'
+                                  : 'bg-white dark:bg-zinc-900/60 border-slate-100 dark:border-white/5 text-zinc-600'
                               } disabled:opacity-50 disabled:cursor-not-allowed`}
                             >
                               {hasAccess ? (
@@ -343,7 +343,7 @@ export const RolesManagement: React.FC = () => {
                             </button>
                           </td>
                           <td className="px-6 py-4">
-                            <p className="text-[11px] text-zinc-400 font-light leading-relaxed">{perm.desc}</p>
+                            <p className="text-[11px] text-slate-600 dark:text-zinc-400 font-light leading-relaxed">{perm.desc}</p>
                             {isSystemAdmin && (
                               <span className="inline-flex items-center space-x-1 text-[8px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold uppercase tracking-widest px-1.5 py-0.5 rounded mt-1.5">
                                 <ShieldAlert className="w-2.5 h-2.5 shrink-0" />
@@ -370,7 +370,7 @@ export const RolesManagement: React.FC = () => {
           <div className="w-full max-w-md glass-panel-heavy rounded-2xl p-6 shadow-2xl border border-border/80 bg-zinc-950 glow-primary relative animate-scale-in">
             <button
               onClick={() => setShowCreateModal(false)}
-              className="absolute top-4 right-4 p-1 rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition"
+              className="absolute top-4 right-4 p-1 rounded-lg text-slate-500 dark:text-zinc-500 hover:text-white hover:bg-slate-100/60 dark:bg-white/5 transition"
             >
               <X className="w-4 h-4" />
             </button>
@@ -380,7 +380,7 @@ export const RolesManagement: React.FC = () => {
                 <Plus className="w-5 h-5 text-blue-400" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">Create Custom Role</h3>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Create Custom Role</h3>
                 <p className="text-xs text-muted-foreground font-light mt-0.5">
                   Define a new workspace access profile tag.
                 </p>
@@ -389,7 +389,7 @@ export const RolesManagement: React.FC = () => {
 
             <form onSubmit={handleCreateRoleSubmit} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-2">
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-2">
                   Role Name
                 </label>
                 <input
@@ -398,12 +398,12 @@ export const RolesManagement: React.FC = () => {
                   placeholder="e.g. Lead Quality Assurance"
                   value={newRoleName}
                   onChange={(e) => setNewRoleName(e.target.value)}
-                  className="w-full bg-zinc-900/60 border border-border/80 rounded-xl px-4 py-2.5 text-xs font-light text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition"
+                  className="w-full bg-white dark:bg-zinc-900/60 border border-border/80 rounded-xl px-4 py-2.5 text-xs font-light text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-2">
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-2">
                   Description / Context
                 </label>
                 <textarea
@@ -411,7 +411,7 @@ export const RolesManagement: React.FC = () => {
                   value={newRoleDesc}
                   onChange={(e) => setNewRoleDesc(e.target.value)}
                   rows={3}
-                  className="w-full bg-zinc-900/60 border border-border/80 rounded-xl px-4 py-2.5 text-xs font-light text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition resize-none"
+                  className="w-full bg-white dark:bg-zinc-900/60 border border-border/80 rounded-xl px-4 py-2.5 text-xs font-light text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition resize-none"
                 />
               </div>
 
@@ -419,7 +419,7 @@ export const RolesManagement: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white text-xs font-semibold transition"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100/60 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 hover:bg-slate-200/60 dark:bg-white/10 text-white text-xs font-semibold transition"
                 >
                   Cancel
                 </button>

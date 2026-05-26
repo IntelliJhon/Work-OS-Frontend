@@ -119,8 +119,8 @@ export const ProjectGates: React.FC = () => {
 
   return (
     <div className="space-y-6 text-foreground animate-fade-in">
-      <div className="pb-3 border-b border-white/5">
-        <h3 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
+      <div className="pb-3 border-b border-slate-100 dark:border-white/5">
+        <h3 className="text-sm font-bold text-zinc-900 dark:text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
           <ShieldCheck className="w-5 h-5 text-emerald-400" />
           <span>Stage Quality Gates</span>
         </h3>
@@ -131,7 +131,7 @@ export const ProjectGates: React.FC = () => {
 
       {gates.length === 0 ? (
         <div className="glass-panel rounded-2xl p-12 text-center border border-border">
-          <ShieldCheck className="w-12 h-12 text-zinc-500 mx-auto mb-2" />
+          <ShieldCheck className="w-12 h-12 text-slate-500 dark:text-zinc-500 mx-auto mb-2" />
           <p className="text-xs text-muted-foreground font-light">No quality gates bound to project phases.</p>
         </div>
       ) : (
@@ -147,7 +147,7 @@ export const ProjectGates: React.FC = () => {
               <div
                 key={gate.id}
                 className={`glass-panel-heavy rounded-2xl border transition-all duration-300 ${
-                  isExpanded ? 'border-zinc-500 bg-white/5' : 'border-border bg-white/5 hover:border-zinc-700'
+                  isExpanded ? 'border-zinc-500 bg-slate-100/60 dark:bg-white/5' : 'border-border bg-slate-100/60 dark:bg-white/5 hover:border-zinc-700'
                 }`}
               >
                 {/* Gate Summary Header */}
@@ -160,10 +160,10 @@ export const ProjectGates: React.FC = () => {
                       <ShieldCheck className="w-5.5 h-5.5" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center space-x-2">
+                      <h4 className="text-sm font-bold text-zinc-900 dark:text-slate-900 dark:text-white flex items-center space-x-2">
                         <span>Stage Gate Check: {parentPhase?.name || 'Governance Gate'}</span>
                       </h4>
-                      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mt-1">
+                      <p className="text-[10px] text-slate-500 dark:text-zinc-500 font-bold uppercase tracking-wider mt-1">
                         Linked Stage: {parentPhase?.status || 'Pending'}
                       </p>
                     </div>
@@ -171,32 +171,32 @@ export const ProjectGates: React.FC = () => {
 
                   <div className="flex items-center space-x-4">
                     {getStatusBadge(gate.status)}
-                    {isExpanded ? <ChevronUp className="w-4 h-4 text-zinc-500" /> : <ChevronDown className="w-4 h-4 text-zinc-500" />}
+                    {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-500 dark:text-zinc-500" /> : <ChevronDown className="w-4 h-4 text-slate-500 dark:text-zinc-500" />}
                   </div>
                 </div>
 
                 {/* Gate Expandable Details */}
                 {isExpanded && (
-                  <div className="px-5 pb-5 pt-1 border-t border-white/5 grid grid-cols-1 lg:grid-cols-2 gap-6 animate-scale-in">
+                  <div className="px-5 pb-5 pt-1 border-t border-slate-100 dark:border-white/5 grid grid-cols-1 lg:grid-cols-2 gap-6 animate-scale-in">
                     {/* Left Column: Criteria Checklists & Decisions */}
                     <div className="space-y-5">
                       <div className="space-y-3.5">
-                        <h5 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center space-x-1.5">
+                        <h5 className="text-[10px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-widest flex items-center space-x-1.5">
                           <CheckCircle2 className="w-4 h-4 text-blue-400" />
                           <span>Required Quality Criteria Checklist</span>
                         </h5>
 
-                        <div className="space-y-2 bg-background/50 p-4 rounded-xl border border-white/5">
+                        <div className="space-y-2 bg-background/50 p-4 rounded-xl border border-slate-100 dark:border-white/5">
                           {criteriaList.length === 0 ? (
-                            <p className="text-xs text-zinc-500 font-light italic">No criteria specified for this gate.</p>
+                            <p className="text-xs text-slate-500 dark:text-zinc-500 font-light italic">No criteria specified for this gate.</p>
                           ) : (
                             criteriaList.map(([criterion, isSatisfied]) => (
                               <div key={criterion} className="flex items-center justify-between text-xs py-1">
-                                <span className="font-semibold text-zinc-300">{criterion.replace(/([A-Z])/g, ' $1')}</span>
+                                <span className="font-semibold text-slate-700 dark:text-zinc-300">{criterion.replace(/([A-Z])/g, ' $1')}</span>
                                 <span className={`text-[9px] uppercase font-extrabold tracking-widest px-2 py-0.5 rounded ${
                                   isSatisfied 
                                     ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                                    : 'bg-zinc-500/10 text-zinc-500 border border-white/5'
+                                    : 'bg-zinc-500/10 text-slate-500 dark:text-zinc-500 border border-slate-100 dark:border-white/5'
                                 }`}>
                                   {isSatisfied ? 'Satisfied' : 'Auditing'}
                                 </span>
@@ -207,21 +207,21 @@ export const ProjectGates: React.FC = () => {
                       </div>
 
                       {/* Decisions Board / Actions Panel */}
-                      <div className="bg-white/5 border border-white/5 p-4 rounded-xl space-y-3">
-                        <h5 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center space-x-1.5">
+                      <div className="bg-slate-100/60 dark:bg-white/5 border border-slate-100 dark:border-white/5 p-4 rounded-xl space-y-3">
+                        <h5 className="text-[10px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-widest flex items-center space-x-1.5">
                           <History className="w-4 h-4 text-amber-400" />
                           <span>Governance Decision Desk</span>
                         </h5>
 
                         {gate.approvedBy && (
-                          <div className="text-xs text-zinc-400 font-light space-y-1 pb-2 border-b border-white/5">
+                          <div className="text-xs text-slate-600 dark:text-zinc-400 font-light space-y-1 pb-2 border-b border-slate-100 dark:border-white/5">
                             <div className="flex justify-between">
                               <span>Approved By ID:</span>
-                              <span className="font-mono text-zinc-900 dark:text-white text-[10px] truncate max-w-[120px]">{gate.approvedBy}</span>
+                              <span className="font-mono text-zinc-900 dark:text-slate-900 dark:text-white text-[10px] truncate max-w-[120px]">{gate.approvedBy}</span>
                             </div>
                             <div className="flex justify-between">
                               <span>Approved Date:</span>
-                              <span className="text-zinc-900 dark:text-white">{gate.approvedAt ? new Date(gate.approvedAt).toLocaleString() : 'N/A'}</span>
+                              <span className="text-zinc-900 dark:text-slate-900 dark:text-white">{gate.approvedAt ? new Date(gate.approvedAt).toLocaleString() : 'N/A'}</span>
                             </div>
                           </div>
                         )}
@@ -295,8 +295,8 @@ export const ProjectGates: React.FC = () => {
                     </div>
 
                     {/* Right Column: Multi-tenant Evidence Upload Zone */}
-                    <div className="space-y-4 border-l border-white/5 lg:pl-6">
-                      <h5 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center space-x-1.5">
+                    <div className="space-y-4 border-l border-slate-100 dark:border-white/5 lg:pl-6">
+                      <h5 className="text-[10px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-widest flex items-center space-x-1.5">
                         <UploadCloud className="w-4 h-4 text-blue-400" />
                         <span>Compliance Evidence Vault</span>
                       </h5>
@@ -310,8 +310,8 @@ export const ProjectGates: React.FC = () => {
                     </div>
 
                     {/* Inline Comments Thread */}
-                    <div className="col-span-1 lg:col-span-2 border-t border-white/5 pt-6 mt-6">
-                      <h5 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center space-x-1.5 mb-4">
+                    <div className="col-span-1 lg:col-span-2 border-t border-slate-100 dark:border-white/5 pt-6 mt-6">
+                      <h5 className="text-[10px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-widest flex items-center space-x-1.5 mb-4">
                         <MessageSquare className="w-3.5 h-3.5 text-pink-400" />
                         <span>Remediation Debate & Evidence Sign-offs</span>
                       </h5>

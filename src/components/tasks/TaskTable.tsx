@@ -102,7 +102,7 @@ export const TaskTable: React.FC<TaskTableProps> = ({
   }, [tasks, sortField, sortOrder, projects, sprints]);
 
   const getSortIcon = (field: SortField) => {
-    if (sortField !== field) return <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 opacity-50" />;
+    if (sortField !== field) return <ArrowUpDown className="w-3.5 h-3.5 text-slate-500 dark:text-zinc-500 opacity-50" />;
     return sortOrder === 'asc' 
       ? <ArrowUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> 
       : <ArrowDown className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />;
@@ -128,14 +128,14 @@ export const TaskTable: React.FC<TaskTableProps> = ({
   };
 
   const priorityColors = {
-    low: 'text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-500/10 border-zinc-200 dark:border-zinc-500/20',
+    low: 'text-zinc-600 dark:text-slate-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-500/10 border-zinc-200 dark:border-zinc-500/20',
     medium: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20',
     high: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20',
     critical: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border-red-100 dark:border-red-500/20 animate-pulse',
   };
 
   const statusColors = {
-    to_do: 'text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-500/10 border-zinc-200 dark:border-zinc-500/20',
+    to_do: 'text-zinc-600 dark:text-slate-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-500/10 border-zinc-200 dark:border-zinc-500/20',
     in_progress: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20',
     in_review: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 border-purple-100 dark:border-purple-500/20',
     done: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20',

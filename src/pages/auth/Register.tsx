@@ -94,7 +94,7 @@ export const Register: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h2 className="text-xl font-bold text-white tracking-wide">Create Workspace</h2>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide">Create Workspace</h2>
         <p className="text-xs text-muted-foreground font-light">
           Onboard your tenant organization and administrator account
         </p>

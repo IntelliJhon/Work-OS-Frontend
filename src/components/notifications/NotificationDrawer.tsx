@@ -177,7 +177,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
             <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 relative">
               <Bell className="w-5 h-5 animate-pulse" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-red-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center border-2 border-card">
+                <span className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-red-500 rounded-full text-[9px] font-bold text-slate-900 dark:text-white flex items-center justify-center border-2 border-card">
                   {unreadCount}
                 </span>
               )}
@@ -210,7 +210,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
         </div>
 
         {/* Priority Filter Selection */}
-        <div className="px-5 py-3.5 border-b border-border/50 bg-muted/20 flex items-center justify-between">
+        <div className="px-5 py-3.5 border-b border-slate-200/50 dark:border-border/50 bg-muted/20 flex items-center justify-between">
           <span className="text-[10px] text-muted-foreground font-black uppercase tracking-wider flex items-center gap-1">
             <Filter className="w-3 h-3 text-muted-foreground/60" />
             <span>Priority Filter</span>
