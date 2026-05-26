@@ -243,6 +243,20 @@ export const ProjectSprints: React.FC = () => {
     }
   });
 
+  const deleteActivityMutation = useMutation({
+    mutationFn: activitiesApi.delete,
+    onSuccess: (_deleted, deletedId) => {
+      queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
+      refetchActivities();
+      // If the deleted activity was selected, clear selection
+      if (selectedActivityId === deletedId) {
+        setSelectedActivityId(null);
+        setSelectedSprintId(null);
+        setActiveTaskId(null);
+      }
+    }
+  });
+
   const createSprintMutation = useMutation({
     mutationFn: sprintsApi.create,
     onSuccess: (newSprint) => {
@@ -771,6 +785,7 @@ export const ProjectSprints: React.FC = () => {
               {activities.map((act) => {
                 const isSelected = selectedActivity?.id === act.id;
                 const parentPhase = getParentPhase(act);
+                const isDeleting = deleteActivityMutation.isPending && deleteActivityMutation.variables === act.id;
 
                 return (
                   <div
@@ -780,23 +795,50 @@ export const ProjectSprints: React.FC = () => {
                       setSelectedSprintId(null);
                       setActiveTaskId(null);
                     }}
-                    className={`p-3.5 rounded-xl border cursor-pointer transition-all duration-300 ${
+                    className={`group p-3.5 rounded-xl border cursor-pointer transition-all duration-300 relative ${
                       isSelected
                         ? 'border-blue-500 bg-blue-500/10 shadow-lg text-blue-400 glow-primary'
                         : 'border-border bg-slate-100/60 dark:bg-white/5 text-slate-600 dark:text-zinc-400 hover:bg-slate-200/60 dark:hover:bg-white/10 hover:border-zinc-700'
                     }`}
                   >
                     <div className="flex justify-between items-start">
-                      <p className={`text-xs font-extrabold truncate max-w-[130px] ${isSelected ? 'text-blue-600 dark:text-white' : 'text-slate-800 dark:text-zinc-300'}`}>
+                      <p className={`text-xs font-extrabold truncate max-w-[110px] ${isSelected ? 'text-blue-600 dark:text-white' : 'text-slate-800 dark:text-zinc-300'}`}>
                         {act.title}
                       </p>
-                      <span className={`text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded border ${
-                        act.isSprintRelevant
-                          ? 'bg-purple-500/10 border-purple-500/20 text-purple-400'
-                          : 'bg-zinc-500/10 border-zinc-500/20 text-slate-500 dark:text-zinc-500'
-                      }`}>
-                        {act.isSprintRelevant ? 'Sprint' : 'Standard'}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className={`text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded border ${
+                          act.isSprintRelevant
+                            ? 'bg-purple-500/10 border-purple-500/20 text-purple-400'
+                            : 'bg-zinc-500/10 border-zinc-500/20 text-slate-500 dark:text-zinc-500'
+                        }`}>
+                          {act.isSprintRelevant ? 'Sprint' : 'Standard'}
+                        </span>
+
+                        {/* Delete button — visible on hover */}
+                        <PermissionGate permission={PERMISSIONS.PROJECT_MANAGE} behavior="hide">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(`Delete activity "${act.title}"? This cannot be undone.`)) {
+                                deleteActivityMutation.mutate(act.id);
+                              }
+                            }}
+                            disabled={isDeleting}
+                            className={`opacity-0 group-hover:opacity-100 transition-all duration-200 p-1 rounded-lg ${
+                              isDeleting
+                                ? 'opacity-50 cursor-not-allowed'
+                                : 'hover:bg-red-500/15 hover:text-red-400 text-slate-400 dark:text-zinc-500'
+                            }`}
+                            title="Delete activity"
+                          >
+                            {isDeleting ? (
+                              <span className="block w-3.5 h-3.5 border-2 border-red-400/40 border-t-red-400 rounded-full animate-spin" />
+                            ) : (
+                              <Trash className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </PermissionGate>
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between text-[9px] text-slate-500 dark:text-zinc-500 font-bold uppercase tracking-wider mt-2.5">
