@@ -5,6 +5,7 @@ export interface Task {
   tenantId: string;
   projectId: string;
   storyId: string;
+  activityId?: string | null;
   sprintId: string | null;
   assigneeId: string | null;
   name: string;
@@ -25,6 +26,7 @@ export interface Task {
 export interface CreateTaskPayload {
   projectId: string;
   storyId: string;
+  activityId?: string | null;
   sprintId?: string | null;
   assigneeId?: string | null;
   name: string;

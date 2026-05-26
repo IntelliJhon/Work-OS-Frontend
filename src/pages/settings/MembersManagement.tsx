@@ -311,7 +311,7 @@ export const MembersManagement: React.FC = () => {
                 placeholder="Search name or email..."
                 value={searchQuery}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-                className="w-full bg-white dark:bg-zinc-900/60 border border-border/80 rounded-xl pl-9 pr-4 py-2 text-xs font-light text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition-all"
+                className="w-full bg-white dark:bg-zinc-900/60 border border-border/80 rounded-xl pl-9 pr-4 py-2 text-xs font-light text-slate-900 dark:text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition-all"
               />
             </div>
 
@@ -319,11 +319,11 @@ export const MembersManagement: React.FC = () => {
             <select
               value={roleFilter}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setRoleFilter(e.target.value); setPage(1); }}
-              className="bg-white dark:bg-zinc-900/60 border border-border/80 rounded-xl px-4 py-2 text-xs font-light text-white focus:outline-none focus:border-blue-500/50 transition-all"
+              className="bg-white dark:bg-zinc-900/60 border border-border/80 rounded-xl px-4 py-2 text-xs font-light text-slate-900 dark:text-white focus:outline-none focus:border-blue-500/50 transition-all cursor-pointer"
             >
-              <option value="">All Roles</option>
+              <option value="" className="bg-white dark:bg-zinc-950 text-slate-900 dark:text-white">All Roles</option>
               {roles.map((r: Role) => (
-                <option key={r.id} value={r.id}>{r.name}</option>
+                <option key={r.id} value={r.id} className="bg-white dark:bg-zinc-950 text-slate-900 dark:text-white">{r.name}</option>
               ))}
             </select>
 
@@ -398,10 +398,10 @@ export const MembersManagement: React.FC = () => {
                             <select
                               value={member.roleId}
                                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleRoleChange(member.id, e.target.value, member.email)}
-                                className="bg-transparent border-0 hover:bg-slate-100/60 dark:bg-white/5 p-1 rounded font-medium text-white focus:outline-none focus:ring-1 focus:ring-blue-500/30 text-xs cursor-pointer"
+                                className="bg-transparent border-0 hover:bg-slate-100/60 dark:bg-white/5 p-1 rounded font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500/30 text-xs cursor-pointer"
                               >
                                 {roles.map((r: Role) => (
-                                <option key={r.id} value={r.id} className="bg-zinc-900">{r.name}</option>
+                                <option key={r.id} value={r.id} className="bg-white dark:bg-zinc-950 text-slate-900 dark:text-white">{r.name}</option>
                               ))}
                             </select>
                           ) : (
@@ -446,14 +446,14 @@ export const MembersManagement: React.FC = () => {
               <button
                 disabled={page === 1}
                 onClick={() => setPage(prev => Math.max(1, prev - 1))}
-                className="p-1.5 rounded-lg border border-border bg-white/2 hover:bg-slate-100/60 dark:bg-white/5 disabled:opacity-30 disabled:pointer-events-none text-white transition-all"
+                className="p-1.5 rounded-lg border border-slate-200 dark:border-border bg-slate-100/30 dark:bg-white/2 hover:bg-slate-100/60 dark:hover:bg-white/5 disabled:opacity-30 disabled:pointer-events-none text-slate-700 dark:text-white transition-all"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 disabled={page === pagination.totalPages}
                 onClick={() => setPage(prev => Math.min(pagination.totalPages, prev + 1))}
-                className="p-1.5 rounded-lg border border-border bg-white/2 hover:bg-slate-100/60 dark:bg-white/5 disabled:opacity-30 disabled:pointer-events-none text-white transition-all"
+                className="p-1.5 rounded-lg border border-slate-200 dark:border-border bg-slate-100/30 dark:bg-white/2 hover:bg-slate-100/60 dark:hover:bg-white/5 disabled:opacity-30 disabled:pointer-events-none text-slate-700 dark:text-white transition-all"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -521,8 +521,8 @@ export const MembersManagement: React.FC = () => {
 
                     return (
                       <tr key={invite.id} className="hover:bg-white/2 transition-colors">
-                        <td className="px-6 py-4.5 font-medium text-white">{invite.email}</td>
-                        <td className="px-6 py-4.5 font-medium text-white">{invite.roleName || 'Member'}</td>
+                        <td className="px-6 py-4.5 font-medium text-slate-900 dark:text-white">{invite.email}</td>
+                        <td className="px-6 py-4.5 font-medium text-slate-900 dark:text-white">{invite.roleName || 'Member'}</td>
                         <td className="px-6 py-4.5">
                           <div className="flex items-center space-x-3.5">
                             <span className={`px-2 py-0.5 rounded text-[9px] font-bold border capitalize ${statusColor}`}>
@@ -573,10 +573,10 @@ export const MembersManagement: React.FC = () => {
       {/* Invite Modal Popover */}
       {showInviteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-md glass-panel-heavy rounded-2xl p-6 shadow-2xl border border-border/80 bg-zinc-950 glow-primary relative animate-scale-in">
+          <div className="w-full max-w-md glass-panel-heavy rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-border/80 bg-white dark:bg-zinc-950 glow-primary relative animate-scale-in">
             <button
               onClick={() => setShowInviteModal(false)}
-              className="absolute top-4 right-4 p-1 rounded-lg text-slate-500 dark:text-zinc-500 hover:text-white hover:bg-slate-100/60 dark:bg-white/5 transition"
+              className="absolute top-4 right-4 p-1 rounded-lg text-slate-500 dark:text-zinc-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:bg-white/5 transition"
             >
               <X className="w-4 h-4" />
             </button>
@@ -609,7 +609,7 @@ export const MembersManagement: React.FC = () => {
                       type="text"
                       readOnly
                       value={generatedInviteUrl}
-                      className="w-full bg-zinc-900 border border-border/80 rounded-xl px-3 py-2.5 text-xs text-slate-700 dark:text-zinc-300 font-mono focus:outline-none"
+                      className="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-border/80 rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-zinc-300 font-mono focus:outline-none"
                     />
                     <button
                       type="button"
@@ -628,7 +628,7 @@ export const MembersManagement: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => { setShowInviteModal(false); setGeneratedInviteUrl(''); }}
-                    className="px-4 py-2.5 rounded-xl bg-slate-100/60 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 hover:bg-slate-200/60 dark:bg-white/10 text-white text-xs font-semibold transition"
+                    className="px-4 py-2.5 rounded-xl bg-slate-100/60 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 hover:bg-slate-200/60 dark:hover:bg-white/10 text-slate-750 dark:text-white text-xs font-semibold transition"
                   >
                     Close
                   </button>
@@ -648,7 +648,7 @@ export const MembersManagement: React.FC = () => {
                       placeholder="name@company.com"
                       value={inviteEmail}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInviteEmail(e.target.value)}
-                      className="w-full bg-white dark:bg-zinc-900/60 border border-border/80 rounded-xl pl-10 pr-4 py-2.5 text-xs font-light text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition"
+                      className="w-full bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-border/80 rounded-xl pl-10 pr-4 py-2.5 text-xs font-light text-slate-900 dark:text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition"
                     />
                   </div>
                 </div>
@@ -663,11 +663,11 @@ export const MembersManagement: React.FC = () => {
                       required
                       value={inviteRoleId}
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setInviteRoleId(e.target.value)}
-                        className="w-full bg-white dark:bg-zinc-900/60 border border-border/80 rounded-xl pl-10 pr-4 py-2.5 text-xs font-light text-white focus:outline-none focus:border-blue-500/50 transition appearance-none cursor-pointer"
+                        className="w-full bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-border/80 rounded-xl pl-10 pr-4 py-2.5 text-xs font-light text-slate-900 dark:text-white focus:outline-none focus:border-blue-500/50 transition appearance-none cursor-pointer"
                       >
-                        <option value="" className="bg-zinc-950">Select workspace permission group</option>
+                        <option value="" className="bg-white dark:bg-zinc-950 text-slate-900 dark:text-white">Select workspace permission group</option>
                         {roles.map((r: Role) => (
-                        <option key={r.id} value={r.id} className="bg-zinc-950">
+                        <option key={r.id} value={r.id} className="bg-white dark:bg-zinc-950 text-slate-900 dark:text-white">
                           {r.name}
                         </option>
                       ))}
@@ -686,7 +686,7 @@ export const MembersManagement: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowInviteModal(false)}
-                    className="px-4 py-2.5 rounded-xl bg-slate-100/60 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 hover:bg-slate-200/60 dark:bg-white/10 text-white text-xs font-semibold transition"
+                    className="px-4 py-2.5 rounded-xl bg-slate-100/60 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 hover:bg-slate-200/60 dark:hover:bg-white/10 text-slate-700 dark:text-white text-xs font-semibold transition"
                   >
                     Cancel
                   </button>

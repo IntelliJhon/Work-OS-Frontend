@@ -349,9 +349,9 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
       {/* Scrollable list of comments */}
       <div className="flex-1 overflow-y-auto pr-1 space-y-4 max-h-[400px]">
         {parentComments.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 text-center space-y-2 border border-dashed border-zinc-800 rounded-2xl bg-white/1">
-            <MessageSquare className="w-8 h-8 text-zinc-600 animate-pulse" />
-            <p className="text-xs font-bold text-slate-600 dark:text-zinc-400">No discussions yet</p>
+          <div className="flex flex-col items-center justify-center py-10 text-center space-y-2 border border-dashed border-slate-200 dark:border-zinc-800 rounded-2xl bg-slate-50/20 dark:bg-white/1">
+            <MessageSquare className="w-8 h-8 text-slate-400 dark:text-zinc-600 animate-pulse" />
+            <p className="text-xs font-bold text-slate-700 dark:text-zinc-400">No discussions yet</p>
             <p className="text-[10px] text-slate-500 dark:text-zinc-500">Ask a question or tag team members to start working.</p>
           </div>
         ) : (
@@ -360,10 +360,10 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
             return (
               <div key={c.id} className="space-y-3">
                 {/* Parent Comment */}
-                <div className="group/item relative flex space-x-3 p-3 bg-zinc-900/40 hover:bg-zinc-900/70 border border-slate-100 dark:border-white/5 rounded-2xl transition duration-200">
+                <div className="group/item relative flex space-x-3 p-3 bg-white dark:bg-zinc-900/40 hover:bg-slate-50/50 dark:hover:bg-zinc-900/70 border border-slate-200/80 dark:border-white/5 rounded-2xl shadow-sm transition duration-200">
                   {/* Initials Avatar */}
                   <div 
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-extrabold text-slate-900 dark:text-white"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-extrabold text-white"
                     style={{ backgroundColor: getAvatarBg(c.userName) }}
                   >
                     {getInitials(c.userName)}
@@ -372,7 +372,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="text-xs font-extrabold text-slate-900 dark:text-white hover:underline cursor-pointer">{c.userName}</span>
+                        <span className="text-xs font-extrabold text-slate-800 dark:text-zinc-200 hover:underline cursor-pointer">{c.userName}</span>
                         <span className="text-[9px] text-slate-500 dark:text-zinc-500 ml-2 font-medium">
                           {new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
@@ -411,7 +411,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                             href={url} 
                             target="_blank" 
                             rel="noopener noreferrer" 
-                            className="flex items-center space-x-1.5 px-2 py-1 rounded-lg bg-black/40 border border-slate-100 dark:border-white/5 text-[10px] text-blue-400 hover:bg-black/60 transition"
+                            className="flex items-center space-x-1.5 px-2 py-1 rounded-lg bg-slate-100 dark:bg-black/40 border border-slate-200/80 dark:border-white/5 text-[10px] text-blue-600 dark:text-blue-400 hover:bg-slate-200 dark:hover:bg-black/60 transition"
                           >
                             {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
                               <ImageIcon className="w-3.5 h-3.5" />
@@ -464,8 +464,8 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                             onClick={() => user && addReaction(user.tenantId, projectId, entityId, c.id, reaction, user.id)}
                             className={`flex items-center space-x-1 px-1.5 py-0.5 rounded-lg text-[10px] font-bold border transition ${
                               hasReacted 
-                                ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' 
-                                : 'bg-black/20 border-zinc-800 text-slate-500 dark:text-zinc-500 hover:text-slate-700 dark:text-zinc-300'
+                                ? 'bg-blue-500/10 border-blue-500/30 text-blue-500 dark:text-blue-400' 
+                                : 'bg-slate-100/50 dark:bg-black/20 border-slate-200 dark:border-zinc-800 text-slate-550 dark:text-zinc-500 hover:text-slate-700 dark:text-zinc-350'
                             }`}
                           >
                             <span>{reaction}</span>
@@ -482,9 +482,9 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                   <div key={reply.id} className="flex pl-8 space-x-2.5 group/item relative">
                     <CornerDownRight className="w-4 h-4 text-slate-800 dark:text-zinc-300 mt-2 shrink-0" />
                     
-                    <div className="flex-1 flex space-x-3 p-2.5 bg-zinc-950/20 hover:bg-zinc-950/40 border border-slate-100 dark:border-white/5 rounded-2xl transition duration-200">
+                    <div className="flex-1 flex space-x-3 p-2.5 bg-white dark:bg-zinc-950/20 hover:bg-slate-50/50 dark:hover:bg-zinc-950/40 border border-slate-200/80 dark:border-white/5 rounded-2xl shadow-sm transition duration-200">
                       <div 
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-extrabold text-slate-900 dark:text-white"
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-extrabold text-white"
                         style={{ backgroundColor: getAvatarBg(reply.userName) }}
                       >
                         {getInitials(reply.userName)}
@@ -493,7 +493,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                       <div className="flex-1 space-y-0.5">
                         <div className="flex items-center justify-between">
                           <div>
-                            <span className="text-[11px] font-extrabold text-slate-900 dark:text-white">{reply.userName}</span>
+                            <span className="text-[11px] font-extrabold text-slate-800 dark:text-zinc-200">{reply.userName}</span>
                             <span className="text-[8px] text-slate-500 dark:text-zinc-500 ml-2 font-medium">
                               {new Date(reply.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
@@ -548,8 +548,8 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                                 onClick={() => user && addReaction(user.tenantId, projectId, entityId, reply.id, reaction, user.id)}
                                 className={`flex items-center space-x-1 px-1 py-0.5 rounded text-[8px] font-bold border transition ${
                                   hasReacted 
-                                    ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' 
-                                    : 'bg-black/20 border-zinc-800 text-slate-500 dark:text-zinc-500 hover:text-slate-700 dark:text-zinc-300'
+                                    ? 'bg-blue-500/10 border-blue-500/30 text-blue-500 dark:text-blue-400' 
+                                    : 'bg-slate-100/50 dark:bg-black/20 border-slate-200/80 dark:border-zinc-800 text-slate-555 dark:text-zinc-550 hover:text-slate-700 dark:text-zinc-355'
                                 }`}
                               >
                                 <span>{reaction}</span>
@@ -567,7 +567,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                 {activeReplyId === c.id && (
                   <div className="pl-8 flex space-x-2.5 items-end">
                     <CornerDownRight className="w-4 h-4 text-slate-800 dark:text-zinc-300 mb-2 shrink-0" />
-                    <div className="flex-1 relative flex items-center bg-zinc-950 border border-zinc-800 rounded-2xl px-3 py-1.5 focus-within:border-blue-500/40">
+                    <div className="flex-1 relative flex items-center bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl px-3 py-1.5 focus-within:border-blue-500/40 shadow-sm">
                       <textarea
                         ref={replyTextareaRef}
                         rows={1}
@@ -575,7 +575,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                         onChange={(e) => handleTextareaChange(e, true)}
                         onKeyDown={(e) => handleKeyDown(e, true)}
                         placeholder={`Reply to ${c.userName}... (Use @ to tag)`}
-                        className="flex-1 bg-transparent text-xs text-white focus:outline-none resize-none placeholder-zinc-500 pr-10 min-h-[22px] max-h-[80px]"
+                        className="flex-1 bg-transparent text-xs text-slate-800 dark:text-white focus:outline-none resize-none placeholder-slate-400 dark:placeholder-zinc-500 pr-10 min-h-[22px] max-h-[80px]"
                       />
 
                       {/* inline mentions autocomplete inside reply */}
@@ -623,26 +623,26 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
         {/* Markdown Hint Toolbar */}
         <div className="flex items-center space-x-2.5 text-[10px] text-slate-500 dark:text-zinc-500 px-1">
           <span className="font-extrabold uppercase tracking-wide text-zinc-600 mr-2">Editor:</span>
-          <button className="flex items-center space-x-0.5 hover:text-slate-700 dark:text-zinc-300 cursor-help" title="Use **text** for bold text">
-            <Bold className="w-3 h-3 text-zinc-600" />
+          <button className="flex items-center space-x-0.5 hover:text-slate-750 dark:text-zinc-300 cursor-help" title="Use **text** for bold text">
+            <Bold className="w-3 h-3 text-slate-500 dark:text-zinc-400" />
             <span>Bold</span>
           </button>
-          <button className="flex items-center space-x-0.5 hover:text-slate-700 dark:text-zinc-300 cursor-help" title="Use *text* for italic text">
-            <Italic className="w-3 h-3 text-zinc-600" />
+          <button className="flex items-center space-x-0.5 hover:text-slate-750 dark:text-zinc-300 cursor-help" title="Use *text* for italic text">
+            <Italic className="w-3 h-3 text-slate-500 dark:text-zinc-400" />
             <span>Italic</span>
           </button>
-          <button className="flex items-center space-x-0.5 hover:text-slate-700 dark:text-zinc-300 cursor-help" title="Use `code` for code snippets">
-            <Code className="w-3 h-3 text-zinc-600" />
+          <button className="flex items-center space-x-0.5 hover:text-slate-750 dark:text-zinc-300 cursor-help" title="Use `code` for code snippets">
+            <Code className="w-3 h-3 text-slate-500 dark:text-zinc-400" />
             <span>Code</span>
           </button>
-          <button className="flex items-center space-x-0.5 hover:text-slate-700 dark:text-zinc-300 cursor-help" title="Use - [ ] for checklists">
-            <CheckSquare className="w-3 h-3 text-zinc-600" />
+          <button className="flex items-center space-x-0.5 hover:text-slate-750 dark:text-zinc-300 cursor-help" title="Use - [ ] for checklists">
+            <CheckSquare className="w-3 h-3 text-slate-500 dark:text-zinc-400" />
             <span>Checklist</span>
           </button>
         </div>
 
         {/* Input Bar */}
-        <div className="relative flex items-end space-x-2.5 bg-zinc-950 border border-zinc-800 rounded-2xl p-2 focus-within:border-blue-500/40 transition duration-150">
+        <div className="relative flex items-end space-x-2.5 bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl p-2 focus-within:border-blue-500/40 shadow-sm transition duration-150">
           <textarea
             ref={textareaRef}
             rows={2}
@@ -650,7 +650,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
             onChange={(e) => handleTextareaChange(e, false)}
             onKeyDown={(e) => handleKeyDown(e, false)}
             placeholder="Add notes, checklists, or comments... Use @ to mention."
-            className="flex-1 bg-transparent text-xs text-white focus:outline-none resize-none placeholder-zinc-500 min-h-[36px] max-h-[140px] leading-relaxed"
+            className="flex-1 bg-transparent text-xs text-slate-800 dark:text-white focus:outline-none resize-none placeholder-slate-400 dark:placeholder-zinc-500 min-h-[36px] max-h-[140px] leading-relaxed"
           />
 
           {/* Autocomplete mentions panel */}
@@ -705,7 +705,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
             />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="p-2 rounded-xl hover:bg-slate-100/60 dark:bg-white/5 text-slate-600 dark:text-zinc-400 hover:text-zinc-200 transition"
+              className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 transition"
               title="Attach document"
             >
               <Paperclip className="w-4 h-4" />

@@ -141,7 +141,7 @@ export const ProjectMembersDrawer: React.FC<ProjectMembersDrawerProps> = ({
       <div className="absolute inset-0" onClick={onClose} />
 
       {/* Drawer Content Body */}
-      <div className="w-full max-w-md h-full bg-zinc-950 border-l border-border/80 shadow-2xl relative flex flex-col glow-primary animate-slide-in-right z-10">
+      <div className="w-full max-w-md h-full bg-white dark:bg-zinc-950 border-l border-slate-200 dark:border-border/80 shadow-2xl relative flex flex-col glow-primary animate-slide-in-right z-10">
         
         {/* Drawer Header */}
         <div className="p-6 border-b border-border/60 flex items-center justify-between">
@@ -200,11 +200,11 @@ export const ProjectMembersDrawer: React.FC<ProjectMembersDrawerProps> = ({
                     required
                     value={selectedUserId}
                     onChange={(e) => setSelectedUserId(e.target.value)}
-                    className="w-full bg-zinc-900 border border-border/80 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500/50 appearance-none cursor-pointer"
+                    className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-border/80 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500/50 appearance-none cursor-pointer"
                   >
-                    <option value="" className="bg-zinc-950">Select workspace team member</option>
+                    <option value="" className="bg-white dark:bg-zinc-950 text-slate-900 dark:text-white">Select workspace team member</option>
                     {workspaceUsers.map((u) => (
-                      <option key={u.id} value={u.id} className="bg-zinc-950">
+                      <option key={u.id} value={u.id} className="bg-white dark:bg-zinc-950 text-slate-900 dark:text-white">
                         {u.firstName} {u.lastName} ({u.email})
                       </option>
                     ))}
@@ -219,11 +219,11 @@ export const ProjectMembersDrawer: React.FC<ProjectMembersDrawerProps> = ({
                     required
                     value={selectedRoleId}
                     onChange={(e) => setSelectedRoleId(e.target.value)}
-                    className="w-full bg-zinc-900 border border-border/80 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500/50 appearance-none cursor-pointer"
+                    className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-border/80 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500/50 appearance-none cursor-pointer"
                   >
-                    <option value="" className="bg-zinc-950">Assign project level role permissions</option>
+                    <option value="" className="bg-white dark:bg-zinc-950 text-slate-900 dark:text-white">Assign project level role permissions</option>
                     {roles.map((r) => (
-                      <option key={r.id} value={r.id} className="bg-zinc-950">
+                      <option key={r.id} value={r.id} className="bg-white dark:bg-zinc-950 text-slate-900 dark:text-white">
                         {r.name}
                       </option>
                     ))}
@@ -287,10 +287,10 @@ export const ProjectMembersDrawer: React.FC<ProjectMembersDrawerProps> = ({
                             <select
                               value={member.roleId}
                               onChange={(e) => handleRoleChange(member.userId, e.target.value)}
-                              className="bg-transparent border-0 hover:bg-slate-100/60 dark:bg-white/5 p-1 rounded font-medium text-white focus:outline-none text-[10px] cursor-pointer"
+                              className="bg-transparent border-0 hover:bg-slate-100/60 dark:bg-white/5 p-1 rounded font-medium text-slate-900 dark:text-white focus:outline-none text-[10px] cursor-pointer"
                             >
                               {roles.map((r) => (
-                                <option key={r.id} value={r.id} className="bg-zinc-950">{r.name}</option>
+                                <option key={r.id} value={r.id} className="bg-white dark:bg-zinc-950 text-slate-900 dark:text-white">{r.name}</option>
                               ))}
                             </select>
                           ) : (
@@ -317,7 +317,7 @@ export const ProjectMembersDrawer: React.FC<ProjectMembersDrawerProps> = ({
         </div>
 
         {/* Drawer Footer info */}
-        <div className="p-4 border-t border-slate-100 dark:border-white/5 bg-zinc-950 text-center text-[9px] text-slate-500 dark:text-zinc-500 font-light flex items-center justify-center space-x-1 select-none">
+        <div className="p-4 border-t border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-zinc-950 text-center text-[9px] text-slate-500 dark:text-zinc-500 font-light flex items-center justify-center space-x-1 select-none">
           <HelpCircle className="w-3 h-3" />
           <span>Project memberships override general workspace roles within this stage.</span>
         </div>

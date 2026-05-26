@@ -65,7 +65,8 @@ export const AppRouter: React.FC = () => {
               <Route path="/projects/:id" element={<ProjectDetail />}>
                 <Route index element={<Navigate to="workflow" replace />} />
                 <Route path="workflow" element={<ProjectWorkflow />} />
-                <Route path="sprints" element={<ProjectSprints />} />
+                <Route path="sprints" element={<Navigate to="../activities" replace />} />
+                <Route path="activities" element={<ProjectSprints />} />
                 <Route path="gates" element={<ProjectGates />} />
                 <Route path="activity" element={<ActivityFeed />} />
               </Route>
@@ -76,9 +77,13 @@ export const AppRouter: React.FC = () => {
               <Route path="/dashboard/tasks" element={<TasksPage />} />
               <Route
                 path="/dashboard/sprints"
+                element={<Navigate to="/dashboard/activities" replace />}
+              />
+              <Route
+                path="/dashboard/activities"
                 element={
                   <div className="glass-panel rounded-2xl p-8 glow-primary">
-                    <h2 className="text-xl font-bold mb-2">Sprints</h2>
+                    <h2 className="text-xl font-bold mb-2">Activities</h2>
                     <p className="text-muted-foreground text-sm font-light">
                       Plan cycles, configure story weights, and run agile retrospectives. (Phase 2 Component)
                     </p>

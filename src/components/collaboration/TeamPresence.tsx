@@ -8,7 +8,7 @@ import { Users, Eye, Radio } from 'lucide-react';
 
 interface TeamPresenceProps {
   projectId: string;
-  currentPage: 'workflow' | 'sprints' | 'gates';
+  currentPage: 'workflow' | 'sprints' | 'gates' | 'activities';
 }
 
 export const TeamPresence: React.FC<TeamPresenceProps> = ({ projectId, currentPage }) => {

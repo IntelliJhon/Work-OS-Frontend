@@ -101,7 +101,7 @@ export const DashboardLayout: React.FC = () => {
     // Determine sub-page page context
     let page = 'detail';
     if (isProjectPage && pathParts[3]) {
-      page = pathParts[3]; // workflow, sprints, gates, activity
+      page = pathParts[3]; // workflow, sprints, activities, gates, activity
     }
 
     if (!projectId) return;
@@ -215,10 +215,10 @@ export const DashboardLayout: React.FC = () => {
                    (parsed?.projectId ? projectsList.find(p => p.id === parsed.projectId) : null);
       if (proj) return `/projects/${proj.id}/workflow`;
     }
-    if (type === 'sprint') {
+    if (type === 'sprint' || type === 'activity') {
       const proj = projectsList.find((p) => p.sprints?.some((sp) => sp.id === id)) || 
                    (parsed?.projectId ? projectsList.find(p => p.id === parsed.projectId) : null);
-      if (proj) return `/projects/${proj.id}/sprints`;
+      if (proj) return `/projects/${proj.id}/activities`;
     }
     if (type === 'gate') {
       const proj = projectsList.find((p) => p.gates?.some((gt) => gt.id === id)) || 
@@ -245,7 +245,7 @@ export const DashboardLayout: React.FC = () => {
     // Default project fallback
     if (projectsList.length > 0) {
       const pId = parsed?.projectId || projectsList[0].id;
-      return `/projects/${pId}/${type === 'gate' ? 'gates' : type === 'sprint' ? 'sprints' : 'workflow'}`;
+      return `/projects/${pId}/${type === 'gate' ? 'gates' : (type === 'sprint' || type === 'activity') ? 'activities' : 'workflow'}`;
     }
 
     return null;

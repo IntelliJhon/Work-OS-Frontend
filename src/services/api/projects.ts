@@ -12,6 +12,7 @@ export interface Project {
   phases?: Phase[];
   gates?: QualityGate[];
   sprints?: Sprint[];
+  activities?: Activity[];
 }
 
 export interface Phase {
@@ -40,17 +41,30 @@ export interface QualityGate {
   updatedAt: string;
 }
 
-export interface Sprint {
+export interface Activity {
   id: string;
   tenantId: string;
   projectId: string;
   phaseId: string;
+  title: string;
+  isSprintRelevant: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Sprint {
+  id: string;
+  activityId: string;
+  projectId: string;
+  tenantId: string;
   name: string;
   status: 'planning' | 'active' | 'closed' | 'cancelled';
   startDate: string | null;
   endDate: string | null;
   cadenceType: 'WEEK' | 'MONTH' | 'CUSTOM' | null;
   cadenceInterval: number | null;
+  goal?: string | null;
+  phaseId?: string;
   createdAt: string;
   updatedAt: string;
 }

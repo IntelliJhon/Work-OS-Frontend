@@ -24,8 +24,8 @@ export const ProjectDetail: React.FC = () => {
   const { isConnected } = useSocket();
   const [membersDrawerOpen, setMembersDrawerOpen] = useState(false);
 
-  const getCurrentPageName = (): 'workflow' | 'sprints' | 'gates' => {
-    if (location.pathname.endsWith('/sprints')) return 'sprints';
+  const getCurrentPageName = (): 'workflow' | 'activities' | 'gates' => {
+    if (location.pathname.endsWith('/sprints') || location.pathname.endsWith('/activities')) return 'activities';
     if (location.pathname.endsWith('/gates')) return 'gates';
     return 'workflow';
   };
@@ -78,7 +78,7 @@ export const ProjectDetail: React.FC = () => {
 
   const tabs = [
     { name: 'Workflow Timeline', path: `/projects/${id}/workflow`, icon: GitBranch },
-    { name: 'Sprints Planner', path: `/projects/${id}/sprints`, icon: Activity },
+    { name: 'Activities Planner', path: `/projects/${id}/activities`, icon: Activity },
     { name: 'Quality Gates Checklist', path: `/projects/${id}/gates`, icon: ShieldCheck },
     { name: 'Operational Timeline', path: `/projects/${id}/activity`, icon: Clock },
   ];
@@ -192,7 +192,7 @@ export const ProjectDetail: React.FC = () => {
             )}
           </div>
           <div className="text-[10px] text-muted-foreground font-light mt-2 border-t border-slate-100 dark:border-white/5 pt-2 flex justify-between">
-            <span>Sprints in Phase: {project.sprints?.filter((s) => s.phaseId === activePhase?.id).length || 0}</span>
+            <span>Activities in Phase: {project.sprints?.filter((s) => s.phaseId === activePhase?.id).length || 0}</span>
             <span>Quality Gates: {project.gates?.filter((g) => g.phaseId === activePhase?.id).length || 0}</span>
           </div>
         </div>

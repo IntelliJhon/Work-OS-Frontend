@@ -186,3 +186,47 @@
 .dark .glow-accent {
   box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
 }
+
+/* Custom Sliding Drawer Animations */
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-left {
+  will-change: transform;
+  animation: slide-in-left 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  will-change: transform;
+  animation: slide-in-right 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fade-in-backdrop {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in-backdrop {
+  will-change: opacity;
+  animation: fade-in-backdrop 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
