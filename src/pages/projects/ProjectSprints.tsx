@@ -49,7 +49,7 @@ const createActivitySchema = z.object({
 
 const createSprintSchema = z.object({
   name: z.string().min(3, 'Sprint name must be at least 3 characters'),
-  cadence: z.enum(['Weekly', 'Bi-Weekly', 'Monthly', 'Custom']),
+  cadence: z.enum(['Daily', 'Weekly', 'Bi-Weekly', 'Monthly', 'Custom']),
   startDate: z.string().min(1, 'Start Date is required'),
   endDate: z.string().min(1, 'End Date is required'),
   goal: z.string().optional(),
@@ -331,7 +331,9 @@ export const ProjectSprints: React.FC = () => {
     if (isNaN(start.getTime())) return;
     
     const end = new Date(start);
-    if (watchedCadence === 'Weekly') {
+    if (watchedCadence === 'Daily') {
+      end.setDate(start.getDate() + 1);
+    } else if (watchedCadence === 'Weekly') {
       end.setDate(start.getDate() + 7);
     } else if (watchedCadence === 'Bi-Weekly') {
       end.setDate(start.getDate() + 14);
@@ -390,7 +392,10 @@ export const ProjectSprints: React.FC = () => {
     let cadenceType: 'WEEK' | 'MONTH' | 'CUSTOM' = 'WEEK';
     let cadenceInterval = 1;
 
-    if (values.cadence === 'Weekly') {
+    if (values.cadence === 'Daily') {
+      cadenceType = 'CUSTOM';
+      cadenceInterval = 1;
+    } else if (values.cadence === 'Weekly') {
       cadenceType = 'WEEK';
       cadenceInterval = 1;
     } else if (values.cadence === 'Bi-Weekly') {
@@ -433,6 +438,9 @@ export const ProjectSprints: React.FC = () => {
     if (type === 'MONTH') {
       if (interval === 1) return 'Monthly Cycle';
       return `${interval}-Month Cycle`;
+    }
+    if (type === 'CUSTOM' && interval === 1) {
+      return 'Daily Cycle';
     }
     return 'Custom Cycle';
   };
@@ -1754,6 +1762,7 @@ export const ProjectSprints: React.FC = () => {
                     {...sprintForm.register('cadence')}
                     className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 cursor-pointer font-bold text-slate-700 dark:text-zinc-300"
                   >
+                    <option value="Daily">Daily Cycle</option>
                     <option value="Weekly">Weekly Cycle</option>
                     <option value="Bi-Weekly">Bi-Weekly Cycle</option>
                     <option value="Monthly">Monthly Cycle</option>
