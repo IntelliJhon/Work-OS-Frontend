@@ -42,7 +42,7 @@ const createActivitySchema = z.object({
   title: z.string().min(3, 'Activity title must be at least 3 characters'),
   phaseId: z.string().min(1, 'Target Phase is required'),
   isSprintRelevant: z.boolean(),
-  frequency: z.enum(['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY']).optional().nullable(),
+  frequency: z.enum(['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY']).or(z.literal('')).optional().nullable(),
   startDate: z.string().optional().nullable(),
   endDate: z.string().optional().nullable(),
 });
@@ -1648,6 +1648,9 @@ export const ProjectSprints: React.FC = () => {
                       <option value="BIWEEKLY">Bi-Weekly</option>
                       <option value="MONTHLY">Monthly</option>
                     </select>
+                    {activityForm.formState.errors.frequency && (
+                      <p className="text-[10px] text-red-400 font-bold">{activityForm.formState.errors.frequency.message}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -1657,6 +1660,9 @@ export const ProjectSprints: React.FC = () => {
                       {...activityForm.register('startDate')}
                       className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer"
                     />
+                    {activityForm.formState.errors.startDate && (
+                      <p className="text-[10px] text-red-400 font-bold">{activityForm.formState.errors.startDate.message}</p>
+                    )}
                   </div>
                 </div>
 
