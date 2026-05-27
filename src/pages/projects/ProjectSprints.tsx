@@ -36,6 +36,7 @@ import { useCollaborationStore } from '../../store/collaborationStore';
 import { usersApi } from '../../services/api/users';
 import type { User } from '../../services/api/users';
 import { CommentsSystem } from '../../components/collaboration/CommentsSystem';
+import { useConfirm } from '../../components/ui/ConfirmDialog';
 
 const createActivitySchema = z.object({
   title: z.string().min(3, 'Activity title must be at least 3 characters'),
@@ -88,6 +89,7 @@ interface InteractiveTask {
 export const ProjectSprints: React.FC = () => {
   const { project, refetch: refetchProject } = useOutletContext<{ project: Project; refetch: () => void }>();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
 
   // Socket and Collaboration context
   const { socket, isConnected } = useSocket();
@@ -726,16 +728,20 @@ export const ProjectSprints: React.FC = () => {
   };
 
   // Governance Sprint Rules Check: Close Sprint
-  const handleCloseSprintAttempt = (sprint: Sprint) => {
+  const handleCloseSprintAttempt = async (sprint: Sprint) => {
     const tasksForSprint = dbTasks.filter((task) => task.sprintId === sprint.id);
     const incompleteTasks = tasksForSprint.filter((t) => t.status !== 'done' && t.status !== 'completed');
 
     if (incompleteTasks.length > 0) {
       setShowBlockerModal(true);
     } else {
-      if (confirm('Are you ready to close this sprint cycle? The sprint status will be updated, locking all task weights into ledger history.')) {
-        closeSprintMutation.mutate(sprint.id);
-      }
+      const ok = await confirm({
+        title: 'Close Sprint Cycle',
+        message: 'Are you ready to close this sprint cycle? The sprint status will be updated, locking all task weights into ledger history.',
+        confirmLabel: 'Close Sprint',
+        variant: 'warning',
+      });
+      if (ok) closeSprintMutation.mutate(sprint.id);
     }
   };
 
@@ -858,11 +864,15 @@ export const ProjectSprints: React.FC = () => {
                         {/* Delete button — visible on hover */}
                         <PermissionGate permission={PERMISSIONS.PROJECT_MANAGE} behavior="hide">
                           <button
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.stopPropagation();
-                              if (confirm(`Delete activity "${act.title}"? This cannot be undone.`)) {
-                                deleteActivityMutation.mutate(act.id);
-                              }
+                              const ok = await confirm({
+                                title: 'Delete Activity',
+                                message: `Delete activity "${act.title}"? This cannot be undone.`,
+                                confirmLabel: 'Delete',
+                                variant: 'danger',
+                              });
+                              if (ok) deleteActivityMutation.mutate(act.id);
                             }}
                             disabled={isDeleting}
                             className={`opacity-0 group-hover:opacity-100 transition-all duration-200 p-1 rounded-lg ${
@@ -1064,8 +1074,14 @@ export const ProjectSprints: React.FC = () => {
 
                                 {canEditFull && (
                                   <button
-                                    onClick={() => {
-                                      if (confirm('Delete this task?')) handleDeleteTask(task.id);
+                                    onClick={async () => {
+                                      const ok = await confirm({
+                                        title: 'Delete Task',
+                                        message: 'Permanently delete this task? This cannot be undone.',
+                                        confirmLabel: 'Delete Task',
+                                        variant: 'danger',
+                                      });
+                                      if (ok) handleDeleteTask(task.id);
                                     }}
                                     className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition cursor-pointer"
                                   >
@@ -1913,7 +1929,7 @@ export const ProjectSprints: React.FC = () => {
                   disabled={!addTaskName.trim()}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition duration-150 active:scale-95 shadow cursor-pointer disabled:opacity-50"
                 >
-                  Create Deliverable
+                  Create Task
                 </button>
               </div>
             </div>

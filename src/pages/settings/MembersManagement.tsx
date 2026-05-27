@@ -11,6 +11,7 @@ import type { Role } from '../../services/api/roles';
 import { useAuthStore } from '../../store/authStore';
 import { usePermissions } from '../../features/auth/usePermissions';
 import { PERMISSIONS } from '../../features/auth/permission.constants';
+import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { 
   Users, Mail, UserPlus, RefreshCw, Trash2, Shield, Search,
   ChevronLeft, ChevronRight, X, Clock, Check, AlertCircle, ShieldAlert
@@ -19,6 +20,7 @@ import {
 export const MembersManagement: React.FC = () => {
   const { user: currentUser } = useAuthStore();
   const { can } = usePermissions();
+  const confirm = useConfirm();
   const { socket, isConnected } = useSocket();
 
   // State
@@ -232,7 +234,14 @@ export const MembersManagement: React.FC = () => {
   };
 
   const handleRevokeInvite = async (id: string, email: string) => {
-    if (!window.confirm(`Are you sure you want to revoke the invitation for ${email}?`)) return;
+    const ok = await confirm({
+      title: 'Revoke Invitation',
+      message: `Are you sure you want to revoke the invitation for ${email}?`,
+      confirmLabel: 'Revoke Invitation',
+      cancelLabel: 'Cancel',
+      variant: 'danger',
+    });
+    if (!ok) return;
     setErrorMsg('');
     setSuccessMsg('');
     try {
@@ -259,7 +268,14 @@ export const MembersManagement: React.FC = () => {
   };
 
   const handleRemoveMember = async (userId: string, userEmail: string) => {
-    if (!window.confirm(`Are you sure you want to remove ${userEmail} from this workspace?`)) return;
+    const ok = await confirm({
+      title: 'Remove Member',
+      message: `Are you sure you want to remove ${userEmail} from this workspace?`,
+      confirmLabel: 'Remove Member',
+      cancelLabel: 'Cancel',
+      variant: 'danger',
+    });
+    if (!ok) return;
     setErrorMsg('');
     setSuccessMsg('');
     try {

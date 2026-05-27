@@ -5,6 +5,7 @@ import { ThemeProvider } from './app/providers/ThemeProvider';
 import { AuthProvider } from './app/providers/AuthProvider';
 import { AppRouter } from './app/router';
 import { queryClient } from './services/api/queryClient';
+import { ConfirmProvider } from './components/ui/ConfirmDialog';
 
 export const App: React.FC = () => {
   return (
@@ -12,7 +13,9 @@ export const App: React.FC = () => {
       <ThemeProvider>
         <AuthProvider>
           <SocketProvider>
-            <AppRouter />
+            <ConfirmProvider>
+              <AppRouter />
+            </ConfirmProvider>
           </SocketProvider>
         </AuthProvider>
       </ThemeProvider>

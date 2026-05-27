@@ -6,6 +6,7 @@ import type { User } from '../../services/api/users';
 import { CommentsSystem } from '../collaboration/CommentsSystem';
 import { usePermissions } from '../../features/auth/usePermissions';
 import { useAuthStore } from '../../store/authStore';
+import { useConfirm } from '../ui/ConfirmDialog';
 
 interface TaskDrawerProps {
   task: Task | null;
@@ -32,6 +33,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
 }) => {
   const { role } = usePermissions();
   const { user } = useAuthStore();
+  const confirm = useConfirm();
   const project = projects.find((p) => p.id === task?.projectId);
 
   const isFullAccess = user?.role === 'Admin' || user?.role === 'Project Manager' || project?.pmId === user?.id;
@@ -166,7 +168,13 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
 
   const handleDeleteClick = async () => {
     if (!canDelete) return;
-    if (window.confirm('Are you sure you want to permanently delete this task?')) {
+    const ok = await confirm({
+      title: 'Delete Task',
+      message: 'Are you sure you want to permanently delete this task? This cannot be undone.',
+      confirmLabel: 'Delete Task',
+      variant: 'danger',
+    });
+    if (ok) {
       await onDeleteTask(task.id);
       onClose();
     }

@@ -3,6 +3,7 @@ import { useSocket } from '../../services/socket/socket-context';
 import { rolesApi } from '../../services/api/roles';
 import type { Role } from '../../services/api/roles';
 import { usePermissions } from '../../features/auth/usePermissions';
+import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { 
   Shield, Check, X, ShieldAlert, Plus, Save, AlertCircle, Info, Trash
 } from 'lucide-react';
@@ -27,6 +28,7 @@ const PERMISSION_KEYS = [
 export const RolesManagement: React.FC = () => {
   const { socket } = useSocket();
   const { can } = usePermissions();
+  const confirm = useConfirm();
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -159,7 +161,14 @@ export const RolesManagement: React.FC = () => {
       return;
     }
 
-    if (!window.confirm(`Are you sure you want to delete the custom role: ${name}? Users mapped to this role will lose their custom configurations.`)) return;
+    const ok = await confirm({
+      title: 'Delete Custom Role',
+      message: `Are you sure you want to delete the custom role: ${name}? Users mapped to this role will lose their custom configurations.`,
+      confirmLabel: 'Delete Role',
+      cancelLabel: 'Cancel',
+      variant: 'danger',
+    });
+    if (!ok) return;
     setErrorMsg('');
     setSuccessMsg('');
 

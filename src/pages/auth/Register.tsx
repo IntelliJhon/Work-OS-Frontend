@@ -116,7 +116,7 @@ export const Register: React.FC = () => {
           <input
             {...register('companyName')}
             placeholder="e.g. Acme Corporation"
-            className="w-full px-4 py-3 rounded-xl text-sm text-white glass-input bg-card focus:outline-none"
+            className="w-full px-4 py-3 rounded-xl text-sm text-slate-900 dark:text-white glass-input bg-card focus:outline-none"
           />
           {errors.companyName && (
             <p className="text-[10px] text-red-400 font-light">{errors.companyName.message}</p>
@@ -131,7 +131,7 @@ export const Register: React.FC = () => {
           <input
             {...register('slug')}
             placeholder="e.g. acme-corp"
-            className="w-full px-4 py-3 rounded-xl text-sm text-white glass-input bg-card focus:outline-none"
+            className="w-full px-4 py-3 rounded-xl text-sm text-slate-900 dark:text-white glass-input bg-card focus:outline-none"
           />
           {errors.slug && (
             <p className="text-[10px] text-red-400 font-light">{errors.slug.message}</p>
@@ -146,7 +146,7 @@ export const Register: React.FC = () => {
           <input
             {...register('ownerName')}
             placeholder="e.g. Jane Doe"
-            className="w-full px-4 py-3 rounded-xl text-sm text-white glass-input bg-card focus:outline-none"
+            className="w-full px-4 py-3 rounded-xl text-sm text-slate-900 dark:text-white glass-input bg-card focus:outline-none"
           />
           {errors.ownerName && (
             <p className="text-[10px] text-red-400 font-light">{errors.ownerName.message}</p>
@@ -162,7 +162,7 @@ export const Register: React.FC = () => {
             {...register('email')}
             type="email"
             placeholder="admin@company.com"
-            className="w-full px-4 py-3 rounded-xl text-sm text-white glass-input bg-card focus:outline-none"
+            className="w-full px-4 py-3 rounded-xl text-sm text-slate-900 dark:text-white glass-input bg-card focus:outline-none"
           />
           {errors.email && (
             <p className="text-[10px] text-red-400 font-light">{errors.email.message}</p>
@@ -178,7 +178,7 @@ export const Register: React.FC = () => {
             {...register('password')}
             type="password"
             placeholder="Min 8 chars, 1 uppercase, 1 digit"
-            className="w-full px-4 py-3 rounded-xl text-sm text-white glass-input bg-card focus:outline-none"
+            className="w-full px-4 py-3 rounded-xl text-sm text-slate-900 dark:text-white glass-input bg-card focus:outline-none"
           />
           {errors.password && (
             <p className="text-[10px] text-red-400 font-light">{errors.password.message}</p>
@@ -194,7 +194,7 @@ export const Register: React.FC = () => {
             {...register('confirmPassword')}
             type="password"
             placeholder="••••••••"
-            className="w-full px-4 py-3 rounded-xl text-sm text-white glass-input bg-card focus:outline-none"
+            className="w-full px-4 py-3 rounded-xl text-sm text-slate-900 dark:text-white glass-input bg-card focus:outline-none"
           />
           {errors.confirmPassword && (
             <p className="text-[10px] text-red-400 font-light">{errors.confirmPassword.message}</p>

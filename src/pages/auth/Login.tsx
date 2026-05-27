@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -95,16 +96,16 @@ export const Login: React.FC = () => {
   };
 
   if (isTransitioning) {
-    return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#070b19] text-slate-900 dark:text-white">
+    return createPortal(
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-50 dark:bg-[#070b19] text-slate-900 dark:text-white transition-all duration-300">
         {/* Soft floating background glows */}
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-blue-500/10 blur-[150px] animate-pulse duration-[10000ms]" />
-        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[150px] animate-pulse duration-[8000ms]" />
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-blue-500/5 dark:bg-blue-500/10 blur-[150px] animate-pulse duration-[10000ms]" />
+        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-indigo-500/5 dark:bg-indigo-500/10 blur-[150px] animate-pulse duration-[8000ms]" />
 
         <div className="relative z-10 flex flex-col items-center max-w-sm w-full px-6 text-center">
           {/* Brand Logo with pulse/bounce */}
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center shadow-2xl glow-primary animate-bounce mb-8">
-            <span className="font-bold text-slate-900 dark:text-white text-4xl tracking-wider select-none">W</span>
+            <span className="font-bold text-white text-4xl tracking-wider select-none">W</span>
           </div>
 
           {/* Loader text */}
@@ -112,25 +113,26 @@ export const Login: React.FC = () => {
             <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white/90 drop-shadow-md transition-all duration-300">
               {transitionStep}
             </h3>
-            <p className="text-xs text-blue-400/80 font-mono tracking-wider">
+            <p className="text-xs text-blue-600 dark:text-blue-400 font-mono tracking-wider">
               {transitionProgress}% Complete
             </p>
           </div>
 
           {/* Progress bar container */}
-          <div className="w-full h-1.5 bg-slate-100/60 dark:bg-white/5 rounded-full overflow-hidden border border-slate-100 dark:border-white/5 shadow-inner mt-8">
+          <div className="w-full h-1.5 bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden border border-slate-300/40 dark:border-white/5 shadow-inner mt-8">
             <div 
               className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-[75ms] ease-out shadow-[0_0_12px_rgba(59,130,246,0.8)]"
               style={{ width: `${transitionProgress}%` }}
             />
           </div>
 
-          <div className="mt-12 flex items-center space-x-2 text-[10px] text-muted-foreground/60 tracking-widest uppercase">
+          <div className="mt-12 flex items-center space-x-2 text-[10px] text-slate-500 dark:text-muted-foreground/60 tracking-widest uppercase">
             <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
             <span>Secured by SSL & RBAC</span>
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
 
@@ -159,7 +161,7 @@ export const Login: React.FC = () => {
           <input
             {...register('workspace')}
             placeholder="e.g. acme-corp"
-            className="w-full px-4 py-3 rounded-xl text-sm text-white glass-input bg-card focus:outline-none"
+            className="w-full px-4 py-3 rounded-xl text-sm text-slate-900 dark:text-white glass-input bg-card focus:outline-none"
           />
           {errors.workspace && (
             <p className="text-[10px] text-red-400 font-light">{errors.workspace.message}</p>
@@ -175,7 +177,7 @@ export const Login: React.FC = () => {
             {...register('email')}
             type="email"
             placeholder="name@company.com"
-            className="w-full px-4 py-3 rounded-xl text-sm text-white glass-input bg-card focus:outline-none"
+            className="w-full px-4 py-3 rounded-xl text-sm text-slate-900 dark:text-white glass-input bg-card focus:outline-none"
           />
           {errors.email && (
             <p className="text-[10px] text-red-400 font-light">{errors.email.message}</p>
@@ -191,7 +193,7 @@ export const Login: React.FC = () => {
             {...register('password')}
             type="password"
             placeholder="••••••••"
-            className="w-full px-4 py-3 rounded-xl text-sm text-white glass-input bg-card focus:outline-none"
+            className="w-full px-4 py-3 rounded-xl text-sm text-slate-900 dark:text-white glass-input bg-card focus:outline-none"
           />
           {errors.password && (
             <p className="text-[10px] text-red-400 font-light">{errors.password.message}</p>

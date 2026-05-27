@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
@@ -467,8 +468,8 @@ export const DashboardLayout: React.FC = () => {
       />
 
       {/* Sign Out Premium Fullscreen Overlay */}
-      {isSigningOut && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#070b19] text-slate-900 dark:text-white transition-opacity duration-500">
+      {isSigningOut && createPortal(
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-50 dark:bg-[#070b19] text-slate-900 dark:text-white transition-all duration-300">
           {/* Soft floating background glows */}
           <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-red-500/5 blur-[150px] animate-pulse duration-[10000ms]" />
           <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-orange-500/5 blur-[150px] animate-pulse duration-[8000ms]" />
@@ -476,7 +477,7 @@ export const DashboardLayout: React.FC = () => {
           <div className="relative z-10 flex flex-col items-center max-w-sm w-full px-6 text-center">
             {/* Brand Logo with pulse */}
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-red-500 to-orange-600 flex items-center justify-center shadow-2xl glow-primary animate-pulse mb-8">
-              <span className="font-bold text-slate-900 dark:text-white text-4xl tracking-wider select-none">W</span>
+              <span className="font-bold text-white text-4xl tracking-wider select-none">W</span>
             </div>
 
             {/* Loader text */}
@@ -484,25 +485,26 @@ export const DashboardLayout: React.FC = () => {
               <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white/90 drop-shadow-md">
                 {signOutStep}
               </h3>
-              <p className="text-xs text-orange-400/80 font-mono tracking-wider">
+              <p className="text-xs text-orange-600 dark:text-orange-400 font-mono tracking-wider">
                 Session Termination: {signOutProgress}%
               </p>
             </div>
 
             {/* Progress bar container */}
-            <div className="w-full h-1.5 bg-slate-100/60 dark:bg-white/5 rounded-full overflow-hidden border border-slate-100 dark:border-white/5 shadow-inner mt-8">
+            <div className="w-full h-1.5 bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden border border-slate-300/40 dark:border-white/5 shadow-inner mt-8">
               <div 
                 className="h-full bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 rounded-full transition-all duration-[75ms] ease-out shadow-[0_0_12px_rgba(239,68,68,0.8)]"
                 style={{ width: `${signOutProgress}%` }}
               />
             </div>
 
-            <div className="mt-12 flex items-center space-x-2 text-[10px] text-muted-foreground/60 tracking-widest uppercase">
+            <div className="mt-12 flex items-center space-x-2 text-[10px] text-slate-500 dark:text-muted-foreground/60 tracking-widest uppercase">
               <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
               <span>Secure Session Encrypted</span>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

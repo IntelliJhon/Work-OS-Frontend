@@ -6,6 +6,7 @@ import type { User } from '../../services/api/users';
 import { rolesApi } from '../../services/api/roles';
 import type { Role } from '../../services/api/roles';
 import { usePermissions } from '../../features/auth/usePermissions';
+import { useConfirm } from '../ui/ConfirmDialog';
 import { 
   X, Users, UserPlus, Trash2, Shield, AlertCircle, Check, HelpCircle
 } from 'lucide-react';
@@ -24,6 +25,7 @@ export const ProjectMembersDrawer: React.FC<ProjectMembersDrawerProps> = ({
   onClose,
 }) => {
   const { can } = usePermissions();
+  const confirm = useConfirm();
   const canManage = can('project.manage' as any) || can('admin' as any);
 
   // Data State
@@ -121,7 +123,14 @@ export const ProjectMembersDrawer: React.FC<ProjectMembersDrawerProps> = ({
   };
 
   const handleRemoveMember = async (userId: string, userEmail: string) => {
-    if (!window.confirm(`Are you sure you want to remove ${userEmail} from this project?`)) return;
+    const ok = await confirm({
+      title: 'Remove Member',
+      message: `Are you sure you want to remove ${userEmail} from this project?`,
+      confirmLabel: 'Remove Member',
+      cancelLabel: 'Cancel',
+      variant: 'danger',
+    });
+    if (!ok) return;
     setErrorMsg('');
     setSuccessMsg('');
     try {

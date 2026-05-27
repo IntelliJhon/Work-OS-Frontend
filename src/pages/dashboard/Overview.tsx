@@ -222,7 +222,7 @@ export const Overview: React.FC = () => {
           className="flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-sm transition-all shadow-xl glow-primary"
         >
           <Plus className="w-4.5 h-4.5" />
-          <span>Provision Project</span>
+          <span>Create Project</span>
         </button>
       </div>
 
@@ -434,79 +434,81 @@ export const Overview: React.FC = () => {
 
       </div>
 
-      {/* Provision Project Modal */}
+      {/* SIDEBAR DRAWER: Create Project */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
-          <div className="w-full max-w-md glass-panel-heavy rounded-2xl p-6 border border-border shadow-2xl animate-scale-in">
-            <div className="flex items-center justify-between border-b border-border pb-3 mb-5">
-              <div className="flex items-center space-x-2 text-foreground">
-                <Sparkles className="w-5 h-5 text-blue-500" />
-                <h4 className="font-bold text-lg">Provision New Project</h4>
-              </div>
+        <>
+          <div
+            className="fixed inset-0 bg-black/20 backdrop-blur-[1px] z-40 animate-fade-in-backdrop"
+            onClick={() => setShowCreateModal(false)}
+          />
+          <div className="fixed top-0 right-0 h-screen w-[320px] md:w-[440px] bg-slate-50 dark:bg-zinc-950 border-l border-slate-200 dark:border-border z-50 shadow-2xl flex flex-col p-6 animate-slide-in-right overflow-y-auto">
+            {/* Header */}
+            <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-4 mb-6">
+              <h4 className="text-sm font-black uppercase text-slate-900 dark:text-white tracking-wider flex items-center space-x-1.5">
+                <Sparkles className="w-5 h-5 text-blue-400" />
+                <span>Create New Project</span>
+              </h4>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="p-1 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
+                className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                  Project Title
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Apollo Go-Live Suite"
-                  {...register('name')}
-                  className="w-full px-4 py-3 rounded-xl bg-white dark:bg-card border border-slate-200 dark:border-border text-slate-900 dark:text-foreground text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-light"
-                />
-                {errors.name && (
-                  <p className="text-[10px] font-bold text-red-400 tracking-wider">
-                    {errors.name.message}
-                  </p>
-                )}
+            {/* Form */}
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 flex-1 flex flex-col justify-between">
+              <div className="space-y-6">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Project Title</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Apollo Go-Live Suite"
+                    {...register('name')}
+                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500"
+                  />
+                  {errors.name && (
+                    <p className="text-[10px] text-red-400 font-bold">{errors.name.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Scope Description</label>
+                  <textarea
+                    rows={4}
+                    placeholder="Deliverable details, milestones, sprint intervals..."
+                    {...register('description')}
+                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 resize-none"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                  Scope Description
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Deliverable details, milestones, sprint intervals..."
-                  {...register('description')}
-                  className="w-full px-4 py-3 rounded-xl bg-white dark:bg-card border border-slate-200 dark:border-border text-slate-900 dark:text-foreground text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-light"
-                />
-              </div>
-
-              <div className="pt-2 flex space-x-3 justify-end text-xs">
+              <div className="flex justify-end space-x-2 pt-4 border-t border-slate-200 dark:border-white/5">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2.5 rounded-xl hover:bg-muted font-semibold text-muted-foreground hover:text-foreground transition-all border border-transparent"
+                  className="px-4 py-2 border border-slate-200 dark:border-zinc-800 hover:bg-slate-200 dark:hover:bg-white/5 rounded-xl text-xs font-bold text-slate-700 dark:text-zinc-300 transition duration-150 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={createProjectMutation.isPending}
-                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg glow-primary flex items-center space-x-1.5"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition duration-150 active:scale-95 shadow cursor-pointer disabled:opacity-50 flex items-center space-x-1.5"
                 >
                   {createProjectMutation.isPending ? (
                     <>
                       <div className="w-3.5 h-3.5 rounded-full border-2 border-white/20 border-t-white animate-spin" />
-                      <span>Provisioning...</span>
+                      <span>Creating...</span>
                     </>
                   ) : (
-                    <span>Provision Deliverable</span>
+                    <span>Create Project</span>
                   )}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

@@ -5,6 +5,7 @@ import { notificationsApi } from '../../services/api/notifications';
 import { projectsApi } from '../../services/api/projects';
 import type { Project } from '../../services/api/projects';
 import { AlertBadge } from '../../components/notifications/AlertBadge';
+import { useConfirm } from '../../components/ui/ConfirmDialog';
 import {
   Bell,
   CheckCheck,
@@ -35,6 +36,7 @@ interface NotificationPayloadEnriched {
 export const NotificationCenter: React.FC = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'workflow' | 'approvals' | 'sprints'>('all');
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
 
@@ -190,8 +192,15 @@ export const NotificationCenter: React.FC = () => {
     }
   };
 
-  const handleMarkAllRead = () => {
-    if (confirm('Mark all active system notifications as read?')) {
+  const handleMarkAllRead = async () => {
+    const ok = await confirm({
+      title: 'Mark All as Read',
+      message: 'Mark all active system notifications as read?',
+      confirmLabel: 'Mark as Read',
+      cancelLabel: 'Cancel',
+      variant: 'info',
+    });
+    if (ok) {
       markAllReadMutation.mutate();
     }
   };

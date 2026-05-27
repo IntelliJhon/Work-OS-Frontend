@@ -182,7 +182,7 @@ export const AcceptInvite: React.FC = () => {
               <input
                 {...register('firstName')}
                 placeholder="John"
-                className="w-full px-4 py-3 rounded-xl text-sm text-white glass-input bg-card focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl text-sm text-slate-900 dark:text-white glass-input bg-card focus:outline-none"
               />
             </div>
             {errors.firstName && (
@@ -198,7 +198,7 @@ export const AcceptInvite: React.FC = () => {
               <input
                 {...register('lastName')}
                 placeholder="Doe"
-                className="w-full px-4 py-3 rounded-xl text-sm text-white glass-input bg-card focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl text-sm text-slate-900 dark:text-white glass-input bg-card focus:outline-none"
               />
             </div>
             {errors.lastName && (
@@ -216,7 +216,7 @@ export const AcceptInvite: React.FC = () => {
             {...register('password')}
             type="password"
             placeholder="Min. 8 characters"
-            className="w-full px-4 py-3 rounded-xl text-sm text-white glass-input bg-card focus:outline-none"
+            className="w-full px-4 py-3 rounded-xl text-sm text-slate-900 dark:text-white glass-input bg-card focus:outline-none"
           />
           {errors.password && (
             <p className="text-[10px] text-red-400 font-light">{errors.password.message}</p>
@@ -231,7 +231,7 @@ export const AcceptInvite: React.FC = () => {
             {...register('confirmPassword')}
             type="password"
             placeholder="••••••••"
-            className="w-full px-4 py-3 rounded-xl text-sm text-white glass-input bg-card focus:outline-none"
+            className="w-full px-4 py-3 rounded-xl text-sm text-slate-900 dark:text-white glass-input bg-card focus:outline-none"
           />
           {errors.confirmPassword && (
             <p className="text-[10px] text-red-400 font-light">{errors.confirmPassword.message}</p>

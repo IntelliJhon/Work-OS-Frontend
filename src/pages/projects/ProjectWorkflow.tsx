@@ -5,6 +5,7 @@ import type { Phase, Project } from '../../services/api/projects';
 import { phasesApi } from '../../services/api/phases';
 import { PermissionGate } from '../../features/auth/PermissionGate';
 import { PERMISSIONS } from '../../features/auth/permission.constants';
+import { useConfirm } from '../../components/ui/ConfirmDialog';
 import {
   GitBranch,
   Play,
@@ -24,6 +25,7 @@ import {
 export const ProjectWorkflow: React.FC = () => {
   const { project, refetch } = useOutletContext<{ project: Project; refetch: () => void }>();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -267,24 +269,24 @@ export const ProjectWorkflow: React.FC = () => {
 
                   if (!gateApproved) {
                     return (
-                      <div className="flex items-start space-x-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/25 animate-fade-in">
-                        <ShieldCheck className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                      <div className="flex items-start space-x-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25 animate-fade-in shadow-sm dark:shadow-none">
+                        <ShieldCheck className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                         <div className="space-y-1 flex-1 min-w-0">
-                          <p className="text-xs font-extrabold text-amber-300">
+                          <p className="text-xs font-extrabold text-amber-800 dark:text-amber-300">
                             Quality Gate Approval Required
                           </p>
-                          <p className="text-[10px] text-amber-200/70 leading-relaxed">
+                          <p className="text-[10px] text-amber-700 dark:text-amber-200/70 leading-relaxed font-medium">
                             This phase cannot be locked or completed until its quality gate checklist is approved.
-                            Go to the <span className="font-bold text-amber-300">Quality Gates</span> tab, review all criteria, and sign off the gate first.
+                            Go to the <span className="font-bold text-amber-850 dark:text-amber-300 underline underline-offset-2">Quality Gates</span> tab, review all criteria, and sign off the gate first.
                           </p>
                           <div className="flex items-center space-x-1.5 pt-1">
                             <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-zinc-400">Gate Status:</span>
                             <span className={`text-[9px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded border ${
                               gateStatus === 'rejected'
-                                ? 'bg-red-500/10 border-red-500/20 text-red-400'
+                                ? 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/25 text-red-750 dark:text-red-400'
                                 : gateStatus === 'resubmitted'
-                                ? 'bg-blue-500/10 border-blue-500/20 text-blue-400'
-                                : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                                ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/25 text-blue-750 dark:text-blue-400'
+                                : 'bg-amber-100/50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/25 text-amber-750 dark:text-amber-400'
                             }`}>
                               {gateStatus}
                             </span>
@@ -336,11 +338,15 @@ export const ProjectWorkflow: React.FC = () => {
                         tooltipMessage="Only Project Managers can complete lifecycle stages"
                       >
                         <button
-                          onClick={() => {
-                            if (!gateApproved) return; // extra safety — backend also blocks
-                            if (confirm('Verify that all sprint increments and quality gate criteria have been closed before locking this lifecycle stage.')) {
-                              completeMutation.mutate(selectedPhase.id);
-                            }
+                          onClick={async () => {
+                            if (!gateApproved) return;
+                            const ok = await confirm({
+                              title: 'Lock & Complete Phase',
+                              message: 'Verify that all sprint increments and quality gate criteria have been closed before locking this lifecycle stage.',
+                              confirmLabel: 'Lock & Complete',
+                              variant: 'warning',
+                            });
+                            if (ok) completeMutation.mutate(selectedPhase.id);
                           }}
                           disabled={isPending || !gateApproved}
                           title={!gateApproved ? 'Approve the quality gate checklist before completing this phase' : undefined}
