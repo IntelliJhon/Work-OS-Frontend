@@ -186,9 +186,14 @@ export const Login: React.FC = () => {
 
         {/* Password Input */}
         <div className="space-y-1.5">
-          <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
-            Password
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
+              Password
+            </label>
+            <Link to="/forgot-password" className="text-[10px] text-blue-400 hover:underline font-light">
+              Forgot Password?
+            </Link>
+          </div>
           <input
             {...register('password')}
             type="password"

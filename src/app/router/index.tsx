@@ -8,6 +8,7 @@ import { DashboardLayout } from '../layouts/DashboardLayout';
 // Lazy load pages for premium performance and separation
 const Login = lazy(() => import('../../pages/auth/Login'));
 const Register = lazy(() => import('../../pages/auth/Register'));
+const ForgotPassword = lazy(() => import('../../pages/auth/ForgotPassword'));
 const Overview = lazy(() => import('../../pages/dashboard/Overview'));
 const ProjectList = lazy(() => import('../../pages/projects/ProjectList'));
 const ProjectDetail = lazy(() => import('../../pages/projects/ProjectDetail'));
@@ -49,6 +50,7 @@ export const AppRouter: React.FC = () => {
             <Route element={<AuthLayout />}>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/invite/accept/:token" element={<AcceptInvite />} />
             </Route>
           </Route>
