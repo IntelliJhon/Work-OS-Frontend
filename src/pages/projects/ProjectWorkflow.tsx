@@ -151,7 +151,7 @@ export const ProjectWorkflow: React.FC = () => {
           Standardized Lifecycle Flow
         </h3>
         
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3.5">
           {phases.map((phase, idx) => {
             const styles = getStatusStyles(phase.status);
             const isSelected = selectedPhase?.id === phase.id;
@@ -185,7 +185,7 @@ export const ProjectWorkflow: React.FC = () => {
 
                 {/* Connecting arrow indicator for desktop (draw after each except last node) */}
                 {idx < phases.length - 1 && (
-                  <div className="hidden md:flex absolute -right-2 top-1/2 -translate-y-1/2 z-10 p-0.5 rounded-full bg-background border border-border">
+                  <div className="hidden lg:flex absolute -right-2 top-1/2 -translate-y-1/2 z-10 p-0.5 rounded-full bg-background border border-border">
                     <ArrowRight className="w-2.5 h-2.5 text-zinc-600" />
                   </div>
                 )}
