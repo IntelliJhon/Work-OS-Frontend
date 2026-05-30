@@ -322,6 +322,14 @@ export const ProjectSprints: React.FC = () => {
   // Watch activity form fields for auto end-date calculation
   const watchedActivityFrequency = activityForm.watch('frequency');
   const watchedActivityStartDate = activityForm.watch('startDate');
+  const watchedIsSprintRelevant = activityForm.watch('isSprintRelevant');
+
+  // Reset frequency when isSprintRelevant becomes false
+  useEffect(() => {
+    if (!watchedIsSprintRelevant) {
+      activityForm.setValue('frequency', null);
+    }
+  }, [watchedIsSprintRelevant, activityForm]);
 
   // Auto-calculate endDate for sprint form
   useEffect(() => {
@@ -1642,54 +1650,84 @@ export const ProjectSprints: React.FC = () => {
                   )}
                 </div>
 
-                {/* Frequency + Start Date row */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Frequency</label>
-                    <select
-                      {...activityForm.register('frequency')}
-                      className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer font-semibold"
-                    >
-                      <option value="">None</option>
-                      <option value="DAILY">Daily</option>
-                      <option value="WEEKLY">Weekly</option>
-                      <option value="BIWEEKLY">Bi-Weekly</option>
-                      <option value="MONTHLY">Monthly</option>
-                    </select>
-                    {activityForm.formState.errors.frequency && (
-                      <p className="text-[10px] text-red-400 font-bold">{activityForm.formState.errors.frequency.message}</p>
-                    )}
-                  </div>
+                {/* Frequency + Start Date / End Date section */}
+                {watchedIsSprintRelevant ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-4 animate-fade-in">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Frequency</label>
+                        <select
+                          {...activityForm.register('frequency')}
+                          className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer font-semibold"
+                        >
+                          <option value="">None</option>
+                          <option value="DAILY">Daily</option>
+                          <option value="WEEKLY">Weekly</option>
+                          <option value="BIWEEKLY">Bi-Weekly</option>
+                          <option value="MONTHLY">Monthly</option>
+                        </select>
+                        {activityForm.formState.errors.frequency && (
+                          <p className="text-[10px] text-red-400 font-bold">{activityForm.formState.errors.frequency.message}</p>
+                        )}
+                      </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Start Date</label>
-                    <input
-                      type="date"
-                      {...activityForm.register('startDate')}
-                      className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer"
-                    />
-                    {activityForm.formState.errors.startDate && (
-                      <p className="text-[10px] text-red-400 font-bold">{activityForm.formState.errors.startDate.message}</p>
-                    )}
-                  </div>
-                </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Start Date</label>
+                        <input
+                          type="date"
+                          {...activityForm.register('startDate')}
+                          className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+                        />
+                        {activityForm.formState.errors.startDate && (
+                          <p className="text-[10px] text-red-400 font-bold">{activityForm.formState.errors.startDate.message}</p>
+                        )}
+                      </div>
+                    </div>
 
-                {/* Calculated End Date — auto-filled, read-only display */}
-                {watchedActivityStartDate && watchedActivityFrequency && (
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Calculated End Date</label>
-                    <div className="flex items-center gap-2">
+                    {/* Calculated End Date — auto-filled, read-only display */}
+                    {watchedActivityStartDate && watchedActivityFrequency && (
+                      <div className="space-y-1.5 animate-fade-in">
+                        <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Calculated End Date</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="date"
+                            {...activityForm.register('endDate')}
+                            readOnly
+                            className="w-full bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20 rounded-xl px-3 py-2 text-xs text-blue-700 dark:text-blue-300 focus:outline-none cursor-not-allowed font-mono"
+                          />
+                          <span className="text-[9px] uppercase font-black text-blue-400 whitespace-nowrap tracking-wider">Auto-calc</span>
+                        </div>
+                        <p className="text-[9px] text-slate-400 dark:text-zinc-600 font-medium">
+                          End date is calculated automatically from the start date and frequency.
+                        </p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="grid grid-cols-2 gap-4 animate-fade-in">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Start Date</label>
+                      <input
+                        type="date"
+                        {...activityForm.register('startDate')}
+                        className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+                      />
+                      {activityForm.formState.errors.startDate && (
+                        <p className="text-[10px] text-red-400 font-bold">{activityForm.formState.errors.startDate.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">End Date</label>
                       <input
                         type="date"
                         {...activityForm.register('endDate')}
-                        readOnly
-                        className="w-full bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20 rounded-xl px-3 py-2 text-xs text-blue-700 dark:text-blue-300 focus:outline-none cursor-not-allowed font-mono"
+                        className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer"
                       />
-                      <span className="text-[9px] uppercase font-black text-blue-400 whitespace-nowrap tracking-wider">Auto-calc</span>
+                      {activityForm.formState.errors.endDate && (
+                        <p className="text-[10px] text-red-400 font-bold">{activityForm.formState.errors.endDate.message}</p>
+                      )}
                     </div>
-                    <p className="text-[9px] text-slate-400 dark:text-zinc-600 font-medium">
-                      End date is calculated automatically from the start date and frequency.
-                    </p>
                   </div>
                 )}
 
