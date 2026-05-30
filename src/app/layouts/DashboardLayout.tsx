@@ -230,7 +230,7 @@ export const DashboardLayout: React.FC = () => {
       const createdFrom = parsed?.createdFrom;
       const projectId = parsed?.projectId;
       if (createdFrom === 'sprint' && projectId) {
-        return `/projects/${projectId}/sprints`;
+        return `/projects/${projectId}/activities`;
       }
       if (createdFrom === 'sidebar') {
         return `/dashboard/tasks`;
@@ -238,7 +238,7 @@ export const DashboardLayout: React.FC = () => {
       
       const sprintId = parsed?.sprintId;
       if (sprintId && projectId) {
-        return `/projects/${projectId}/sprints`;
+        return `/projects/${projectId}/activities`;
       }
       return `/dashboard/tasks`;
     }

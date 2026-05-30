@@ -22,7 +22,8 @@ import {
   Square,
   MessageSquare,
   ClipboardList,
-  Layers
+  Layers,
+  Calendar
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -82,6 +83,8 @@ interface InteractiveTask {
   weight: number;
   assignee: string;
   dueDate?: string;
+  startDate?: string;
+  priority?: 'low' | 'medium' | 'high' | 'critical';
   description?: string;
   subtasks?: SubTask[];
 }
@@ -107,8 +110,10 @@ export const ProjectSprints: React.FC = () => {
 
   // Form states for new task
   const [addTaskName, setAddTaskName] = useState('');
-  const [addTaskWeight, setAddTaskWeight] = useState(3);
+  const [addTaskWeight, setAddTaskWeight] = useState(0);
   const [addTaskAssignee, setAddTaskAssignee] = useState('unassigned@acme.com');
+  const [addTaskPriority, setAddTaskPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('medium');
+  const [addTaskStartDate, setAddTaskStartDate] = useState('');
   const [addTaskDueDate, setAddTaskDueDate] = useState('');
   const [addTaskDesc, setAddTaskDesc] = useState('');
 
@@ -118,8 +123,13 @@ export const ProjectSprints: React.FC = () => {
   // Fetch active tenant members for assignment dropdowns
   const [members, setMembers] = useState<User[]>([]);
 
+  const getMemberDisplayName = (m: User) => {
+    const fullName = `${m.firstName || ''} ${m.lastName || ''}`.trim();
+    return fullName ? `${fullName} (${m.email.split('@')[0]})` : m.email.split('@')[0];
+  };
+
   useEffect(() => {
-    usersApi.list()
+    usersApi.list({ limit: 1000 })
       .then((res) => setMembers(res))
       .catch((err) => console.error('[ProjectSprints] Failed to load members', err));
   }, []);
@@ -209,6 +219,8 @@ export const ProjectSprints: React.FC = () => {
 
       const customFields = task.customFields || {};
       const dueDate = customFields.dueDate || undefined;
+      const startDate = customFields.startDate || undefined;
+      const priority = customFields.priority || 'medium';
       const storyPoints = customFields.storyPoints || 0;
       const subtasks = Array.isArray(customFields.subtasks) ? customFields.subtasks : [];
 
@@ -230,6 +242,8 @@ export const ProjectSprints: React.FC = () => {
         weight: storyPoints,
         assignee: assigneeEmail,
         dueDate,
+        startDate,
+        priority: priority as any,
         description: task.description || undefined,
         subtasks,
       };
@@ -483,6 +497,8 @@ export const ProjectSprints: React.FC = () => {
       const newCustomFields = { ...existingCustomFields };
 
       if (updates.weight !== undefined) newCustomFields.storyPoints = updates.weight;
+      if (updates.priority !== undefined) newCustomFields.priority = updates.priority;
+      if (updates.startDate !== undefined) newCustomFields.startDate = updates.startDate;
       if (updates.dueDate !== undefined) {
         newCustomFields.dueDate = updates.dueDate;
         payload.dueDate = updates.dueDate;
@@ -555,7 +571,8 @@ export const ProjectSprints: React.FC = () => {
         description: addTaskDesc.trim() || undefined,
         status: 'to_do',
         customFields: {
-          priority: 'medium' as const,
+          priority: addTaskPriority,
+          startDate: addTaskStartDate || undefined,
           dueDate: addTaskDueDate || undefined,
           storyPoints: addTaskWeight,
           phaseId: selectedActivity.phaseId,
@@ -598,8 +615,10 @@ export const ProjectSprints: React.FC = () => {
       }
 
       setAddTaskName('');
-      setAddTaskWeight(3);
+      setAddTaskWeight(0);
       setAddTaskAssignee('unassigned@acme.com');
+      setAddTaskPriority('medium');
+      setAddTaskStartDate('');
       setAddTaskDueDate('');
       setAddTaskDesc('');
       setShowAddTaskModal(false);
@@ -927,8 +946,8 @@ export const ProjectSprints: React.FC = () => {
               {/* Activity Info Panel */}
               <div className="glass-panel-heavy rounded-2xl p-6 border border-slate-200 dark:border-border space-y-4 bg-white dark:bg-zinc-950">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 border-b border-slate-100 dark:border-white/5 pb-4">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center space-x-2">
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <h4 className="text-xl font-bold text-slate-900 dark:text-white">
                         {selectedActivity.title}
                       </h4>
@@ -943,6 +962,32 @@ export const ProjectSprints: React.FC = () => {
                         {selectedActivity.isSprintRelevant ? 'Sprint-Relevant Activity' : 'Standard Activity'}
                       </span>
                     </div>
+
+                    {/* Rich schedule and date range displayed directly below activity title */}
+                    {(selectedActivity.startDate || selectedActivity.endDate) && (
+                      <div className="flex flex-wrap items-center gap-2 pt-1.5">
+                        {selectedActivity.frequency && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20">
+                            <Clock className="w-3 h-3 text-blue-500" />
+                            <span>
+                              {selectedActivity.frequency === 'DAILY' && 'Daily'}
+                              {selectedActivity.frequency === 'WEEKLY' && 'Weekly'}
+                              {selectedActivity.frequency === 'BIWEEKLY' && 'Bi-Weekly'}
+                              {selectedActivity.frequency === 'MONTHLY' && 'Monthly'}
+                            </span>
+                          </span>
+                        )}
+
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-slate-100 dark:bg-zinc-800/60 text-slate-600 dark:text-zinc-300 border border-slate-200/60 dark:border-zinc-700/50">
+                          <Calendar className="w-3 h-3 text-slate-400 dark:text-zinc-400" />
+                          <span>
+                            {selectedActivity.startDate ? new Date(selectedActivity.startDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                            &nbsp;–&nbsp;
+                            {selectedActivity.endDate ? new Date(selectedActivity.endDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                          </span>
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -951,42 +996,6 @@ export const ProjectSprints: React.FC = () => {
                     ? 'Sprint cycles are supported inside this activity container. Set up sprints below to run your agile operational delivery.'
                     : 'Standard operational checklist. Add deliverables and collaborate with team comments.'}
                 </p>
-
-                {/* Schedule badge — shown when frequency + dates are set on this activity */}
-                {!selectedActivity.isSprintRelevant && selectedActivity.frequency && (
-                  <div className="flex flex-wrap items-center gap-3 pt-1">
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg border bg-blue-500/10 border-blue-500/20 text-blue-500">
-                      <Clock className="w-3 h-3" />
-                      {selectedActivity.frequency === 'DAILY' && 'Daily'}
-                      {selectedActivity.frequency === 'WEEKLY' && 'Weekly'}
-                      {selectedActivity.frequency === 'BIWEEKLY' && 'Bi-Weekly'}
-                      {selectedActivity.frequency === 'MONTHLY' && 'Monthly'}
-                      &nbsp;Frequency
-                    </span>
-
-                    {selectedActivity.startDate && (
-                      <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-zinc-500">
-                        <span className="text-slate-400 dark:text-zinc-600">Start:</span>
-                        <span className="text-slate-700 dark:text-zinc-300">
-                          {new Date(selectedActivity.startDate).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' })}
-                        </span>
-                      </span>
-                    )}
-
-                    {selectedActivity.startDate && selectedActivity.endDate && (
-                      <span className="text-slate-300 dark:text-zinc-700 text-xs">→</span>
-                    )}
-
-                    {selectedActivity.endDate && (
-                      <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-zinc-500">
-                        <span className="text-slate-400 dark:text-zinc-600">End:</span>
-                        <span className="text-slate-700 dark:text-zinc-300">
-                          {new Date(selectedActivity.endDate).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' })}
-                        </span>
-                      </span>
-                    )}
-                  </div>
-                )}
               </div>
 
               {/* Ternary Branches */}
@@ -1052,6 +1061,19 @@ export const ProjectSprints: React.FC = () => {
                                   }`}>
                                     {task.status.replace(/_/g, ' ')}
                                   </span>
+                                  {task.priority && (
+                                    <span className={`text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded border capitalize ${
+                                      task.priority === 'critical'
+                                        ? 'bg-rose-500/10 border-rose-500/25 text-rose-400'
+                                        : task.priority === 'high'
+                                        ? 'bg-amber-500/10 border-amber-500/25 text-amber-400'
+                                        : task.priority === 'medium'
+                                        ? 'bg-blue-500/10 border-blue-500/20 text-blue-400'
+                                        : 'bg-zinc-500/10 border-zinc-500/20 text-slate-500 dark:text-zinc-500'
+                                    }`}>
+                                      {task.priority}
+                                    </span>
+                                  )}
                                 </div>
                                 {task.description && (
                                   <p className="text-xs text-muted-foreground font-light line-clamp-1">{task.description}</p>
@@ -1140,7 +1162,57 @@ export const ProjectSprints: React.FC = () => {
                       <PermissionGate permission={PERMISSIONS.PROJECT_MANAGE} behavior="hide">
                         <button
                           onClick={() => {
-                            sprintForm.reset();
+                            // Find next sprint start/end dates
+                            let nextStart = new Date();
+                            if (nestedSprints && nestedSprints.length > 0) {
+                              const sorted = [...nestedSprints].filter(s => s.endDate).sort((a, b) => new Date(b.endDate!).getTime() - new Date(a.endDate!).getTime());
+                              if (sorted.length > 0 && sorted[0].endDate) {
+                                const lastEnd = new Date(sorted[0].endDate);
+                                nextStart = new Date(lastEnd);
+                                nextStart.setDate(lastEnd.getDate() + 1);
+                              }
+                            } else if (selectedActivity?.startDate) {
+                              nextStart = new Date(selectedActivity.startDate);
+                            }
+
+                            // Format start date as yyyy-mm-dd
+                            const yyyy = nextStart.getFullYear();
+                            const mm = String(nextStart.getMonth() + 1).padStart(2, '0');
+                            const dd = String(nextStart.getDate()).padStart(2, '0');
+                            const startStr = `${yyyy}-${mm}-${dd}`;
+
+                            // Calculate end date based on selected activity's frequency
+                            let nextEnd = new Date(nextStart);
+                            const freq = selectedActivity?.frequency || 'WEEKLY';
+                            if (freq === 'DAILY') {
+                              nextEnd.setDate(nextStart.getDate() + 1);
+                            } else if (freq === 'WEEKLY') {
+                              nextEnd.setDate(nextStart.getDate() + 7);
+                            } else if (freq === 'BIWEEKLY') {
+                              nextEnd.setDate(nextStart.getDate() + 14);
+                            } else if (freq === 'MONTHLY') {
+                              nextEnd.setMonth(nextStart.getMonth() + 1);
+                            }
+
+                            const endYyyy = nextEnd.getFullYear();
+                            const endMm = String(nextEnd.getMonth() + 1).padStart(2, '0');
+                            const endDd = String(nextEnd.getDate()).padStart(2, '0');
+                            const endStr = `${endYyyy}-${endMm}-${endDd}`;
+
+                            // Map frequency to cadence enum
+                            let cadenceVal = 'Weekly';
+                            if (freq === 'DAILY') cadenceVal = 'Daily';
+                            else if (freq === 'WEEKLY') cadenceVal = 'Weekly';
+                            else if (freq === 'BIWEEKLY') cadenceVal = 'Bi-Weekly';
+                            else if (freq === 'MONTHLY') cadenceVal = 'Monthly';
+
+                            sprintForm.reset({
+                              name: `Sprint ${nestedSprints.length + 1}`,
+                              cadence: cadenceVal as any,
+                              startDate: startStr,
+                              endDate: endStr,
+                              goal: ''
+                            });
                             setShowCreateSprintModal(true);
                           }}
                           className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow cursor-pointer active:scale-95"
@@ -1389,9 +1461,19 @@ export const ProjectSprints: React.FC = () => {
 
                                       <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 dark:border-white/5 text-[9px] text-slate-500 font-bold uppercase tracking-wider">
                                         <div className="flex items-center space-x-2">
-                                          <span className="bg-purple-500/10 border border-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded font-mono text-[8px]">
-                                            {task.weight} SP
-                                          </span>
+                                          {task.priority && (
+                                            <span className={`px-1.5 py-0.5 rounded text-[8px] font-mono border uppercase tracking-wider ${
+                                              task.priority === 'critical'
+                                                ? 'bg-rose-500/10 border-rose-500/25 text-rose-400 font-extrabold'
+                                                : task.priority === 'high'
+                                                ? 'bg-amber-500/10 border-amber-500/25 text-amber-400 font-extrabold'
+                                                : task.priority === 'medium'
+                                                ? 'bg-blue-500/10 border-blue-500/20 text-blue-400 font-extrabold'
+                                                : 'bg-zinc-500/10 border-zinc-500/20 text-slate-500 dark:text-zinc-500'
+                                            }`}>
+                                              {task.priority}
+                                            </span>
+                                          )}
                                           {task.dueDate && (
                                             <span className="flex items-center space-x-0.5">
                                               <Clock className="w-2.5 h-2.5 text-zinc-600" />
@@ -1489,28 +1571,40 @@ export const ProjectSprints: React.FC = () => {
                   >
                     <option value="unassigned@acme.com">Unassigned</option>
                     {members.map((m) => (
-                      <option key={m.id} value={m.email}>{m.email.split('@')[0]}</option>
+                      <option key={m.id} value={m.email}>{getMemberDisplayName(m)}</option>
                     ))}
                   </select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Story Points</label>
+                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Priority</label>
                   <select
                     disabled={!canEditFull}
-                    value={activeTask.weight}
-                    onChange={(e) => handleUpdateTaskDetail(activeTask.id, { weight: Number(e.target.value) })}
-                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 disabled:opacity-75 cursor-pointer font-mono"
+                    value={activeTask.priority || 'medium'}
+                    onChange={(e) => handleUpdateTaskDetail(activeTask.id, { priority: e.target.value as any })}
+                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 disabled:opacity-75 cursor-pointer"
                   >
-                    {[0, 1, 2, 3, 5, 8, 13, 21].map((pts) => (
-                      <option key={pts} value={pts}>{pts} SP</option>
-                    ))}
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
                   </select>
                 </div>
               </div>
 
-              {/* Due date & Status grid */}
+              {/* Start Date & Due Date grid */}
               <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Start Date</label>
+                  <input
+                    type="date"
+                    disabled={!canEditFull}
+                    value={activeTask.startDate ? activeTask.startDate.substring(0, 10) : ''}
+                    onChange={(e) => handleUpdateTaskDetail(activeTask.id, { startDate: e.target.value || undefined })}
+                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 disabled:opacity-75 cursor-pointer"
+                  />
+                </div>
+
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Due Date</label>
                   <input
@@ -1521,22 +1615,23 @@ export const ProjectSprints: React.FC = () => {
                     className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 disabled:opacity-75 cursor-pointer"
                   />
                 </div>
+              </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Status</label>
-                  <select
-                    disabled={!canUpdate}
-                    value={activeTask.status}
-                    onChange={(e) => handleToggleTaskStatus(activeTask.id, e.target.value as any)}
-                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 disabled:opacity-75 cursor-pointer font-extrabold uppercase text-[10px]"
-                  >
-                    <option value="to_do">To Do</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="in_review">In Review</option>
-                    <option value="done">Done</option>
-                    <option value="blocked">Blocked</option>
-                  </select>
-                </div>
+              {/* Status field */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Status</label>
+                <select
+                  disabled={!canUpdate}
+                  value={activeTask.status}
+                  onChange={(e) => handleToggleTaskStatus(activeTask.id, e.target.value as any)}
+                  className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 disabled:opacity-75 cursor-pointer font-extrabold uppercase text-[10px]"
+                >
+                  <option value="to_do">To Do</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="in_review">In Review</option>
+                  <option value="done">Done</option>
+                  <option value="blocked">Blocked</option>
+                </select>
               </div>
 
               {/* Subtasks checklists */}
@@ -1765,87 +1860,76 @@ export const ProjectSprints: React.FC = () => {
         </>
       )}
 
-      {/* MODAL: Create Sprint */}
+      {/* SIDEBAR DRAWER: Create Sprint Cycle (Slides in from the right) */}
       {showCreateSprintModal && selectedActivity && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-panel-heavy rounded-2xl w-full max-w-md p-6 border border-slate-200 dark:border-border text-foreground space-y-4 bg-white dark:bg-zinc-950">
-            <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-3">
+        <>
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-[1px] z-45 animate-fade-in-backdrop" onClick={() => setShowCreateSprintModal(false)} />
+          <div className="fixed top-0 right-0 h-screen w-[320px] md:w-[440px] bg-slate-50 dark:bg-zinc-950 border-l border-slate-200 dark:border-border z-50 shadow-2xl flex flex-col p-6 animate-slide-in-right overflow-y-auto">
+            <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-4 mb-4">
               <h4 className="text-sm font-black uppercase text-slate-900 dark:text-white tracking-wider flex items-center space-x-1.5">
                 <PlusCircle className="w-5 h-5 text-purple-400" />
                 <span>Create Sprint Cycle</span>
               </h4>
-              <button onClick={() => setShowCreateSprintModal(false)} className="text-slate-500 hover:text-white cursor-pointer">
+              <button onClick={() => setShowCreateSprintModal(false)} className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-white/5 text-slate-500 hover:text-white transition cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={sprintForm.handleSubmit(onSprintSubmit)} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Sprint Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Sprint 1 - Core Backend Setup"
-                  {...sprintForm.register('name')}
-                  className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500"
-                />
-                {sprintForm.formState.errors.name && (
-                  <p className="text-[10px] text-red-400 font-bold">{sprintForm.formState.errors.name.message}</p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={sprintForm.handleSubmit(onSprintSubmit)} className="space-y-6 flex-1 flex flex-col justify-between">
+              <div className="space-y-6">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Frequency</label>
-                  <select
-                    {...sprintForm.register('cadence')}
-                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 cursor-pointer font-bold text-slate-700 dark:text-zinc-300"
-                  >
-                    <option value="Daily">Daily Cycle</option>
-                    <option value="Weekly">Weekly Cycle</option>
-                    <option value="Bi-Weekly">Bi-Weekly Cycle</option>
-                    <option value="Monthly">Monthly Cycle</option>
-                    <option value="Custom">Custom Cadence</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Start Date</label>
+                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Sprint Name</label>
                   <input
-                    type="date"
-                    {...sprintForm.register('startDate')}
-                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-850 dark:text-zinc-200 focus:outline-none focus:border-purple-500 cursor-pointer"
+                    type="text"
+                    placeholder="e.g. Sprint 1 - Core Backend Setup"
+                    {...sprintForm.register('name')}
+                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500"
                   />
-                  {sprintForm.formState.errors.startDate && (
-                    <p className="text-[10px] text-red-400 font-bold">{sprintForm.formState.errors.startDate.message}</p>
+                  {sprintForm.formState.errors.name && (
+                    <p className="text-[10px] text-red-400 font-bold">{sprintForm.formState.errors.name.message}</p>
                   )}
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5 col-span-2">
-                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Calculated End Date</label>
-                  <input
-                    type="date"
-                    {...sprintForm.register('endDate')}
-                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-850 dark:text-zinc-200 focus:outline-none focus:border-purple-500 cursor-pointer"
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Start Date</label>
+                    <input
+                      type="date"
+                      readOnly
+                      {...sprintForm.register('startDate')}
+                      className="w-full bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-850 rounded-xl px-3 py-2 text-xs text-slate-500 dark:text-zinc-450 focus:outline-none cursor-not-allowed font-mono"
+                    />
+                    {sprintForm.formState.errors.startDate && (
+                      <p className="text-[10px] text-red-400 font-bold">{sprintForm.formState.errors.startDate.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">End Date</label>
+                    <input
+                      type="date"
+                      readOnly
+                      {...sprintForm.register('endDate')}
+                      className="w-full bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-850 rounded-xl px-3 py-2 text-xs text-slate-500 dark:text-zinc-450 focus:outline-none cursor-not-allowed font-mono"
+                    />
+                    {sprintForm.formState.errors.endDate && (
+                      <p className="text-[10px] text-red-400 font-bold">{sprintForm.formState.errors.endDate.message}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Goal / Objective</label>
+                  <textarea
+                    placeholder="What is the key delivery goal of this sprint cycle?"
+                    {...sprintForm.register('goal')}
+                    rows={3}
+                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 resize-none leading-relaxed"
                   />
-                  {sprintForm.formState.errors.endDate && (
-                    <p className="text-[10px] text-red-400 font-bold">{sprintForm.formState.errors.endDate.message}</p>
-                  )}
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Goal / Objective</label>
-                <textarea
-                  placeholder="What is the key delivery goal of this sprint cycle?"
-                  {...sprintForm.register('goal')}
-                  rows={2}
-                  className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 resize-none leading-relaxed"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2 pt-2">
+              <div className="flex justify-end space-x-2 pt-4 border-t border-slate-200 dark:border-white/5">
                 <button
                   type="button"
                   onClick={() => setShowCreateSprintModal(false)}
@@ -1863,7 +1947,7 @@ export const ProjectSprints: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>
+        </>
       )}
 
       {/* MODAL: Blocker Alert for Close Sprint */}
@@ -1939,33 +2023,46 @@ export const ProjectSprints: React.FC = () => {
                     >
                       <option value="unassigned@acme.com">Unassigned</option>
                       {members.map((m) => (
-                        <option key={m.id} value={m.email}>{m.email.split('@')[0]}</option>
+                        <option key={m.id} value={m.email}>{getMemberDisplayName(m)}</option>
                       ))}
                     </select>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Story Points (SP)</label>
+                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Priority</label>
                     <select
-                      value={addTaskWeight}
-                      onChange={(e) => setAddTaskWeight(Number(e.target.value))}
-                      className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer font-mono"
+                      value={addTaskPriority}
+                      onChange={(e) => setAddTaskPriority(e.target.value as any)}
+                      className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer"
                     >
-                      {[0, 1, 2, 3, 5, 8, 13, 21].map((pts) => (
-                        <option key={pts} value={pts}>{pts} SP</option>
-                      ))}
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="critical">Critical</option>
                     </select>
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Due Date</label>
-                  <input
-                    type="date"
-                    value={addTaskDueDate}
-                    onChange={(e) => setAddTaskDueDate(e.target.value)}
-                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-850 rounded-xl px-3 py-2 text-xs text-slate-850 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Start Date</label>
+                    <input
+                      type="date"
+                      value={addTaskStartDate}
+                      onChange={(e) => setAddTaskStartDate(e.target.value)}
+                      className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-850 rounded-xl px-3 py-2 text-xs text-slate-850 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Due Date</label>
+                    <input
+                      type="date"
+                      value={addTaskDueDate}
+                      onChange={(e) => setAddTaskDueDate(e.target.value)}
+                      className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-850 rounded-xl px-3 py-2 text-xs text-slate-850 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+                    />
+                  </div>
                 </div>
               </div>
 

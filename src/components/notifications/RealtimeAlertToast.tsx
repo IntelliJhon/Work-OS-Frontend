@@ -83,7 +83,7 @@ export const RealtimeAlertToast: React.FC = () => {
       }
     } else if (type === 'sprint') {
       if (projectId) {
-        navigate(`/projects/${projectId}/sprints`);
+        navigate(`/projects/${projectId}/activities`);
       } else {
         navigate(`/dashboard/sprints`);
       }
@@ -96,7 +96,7 @@ export const RealtimeAlertToast: React.FC = () => {
     } else if (type === 'task') {
       const createdFrom = parsed?.createdFrom;
       if (createdFrom === 'sprint' && projectId) {
-        navigate(`/projects/${projectId}/sprints`);
+        navigate(`/projects/${projectId}/activities`);
       } else {
         navigate(`/dashboard/tasks`);
       }

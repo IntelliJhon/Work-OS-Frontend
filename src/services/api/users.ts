@@ -25,10 +25,10 @@ export const usersApi = {
   list: async (params?: { page?: number; limit?: number; search?: string; roleId?: string }): Promise<any> => {
     const { data } = await apiClient.get<any>('/users', { params });
     if (data && data.users) {
-      if (!params || (!params.page && !params.limit)) {
-        return data.users;
+      if (params && params.page !== undefined) {
+        return data;
       }
-      return data;
+      return data.users;
     }
     return data;
   },

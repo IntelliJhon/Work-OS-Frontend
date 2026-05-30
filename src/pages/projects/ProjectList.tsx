@@ -258,7 +258,7 @@ export const ProjectList: React.FC = () => {
                   to={`/projects/${project.id}/workflow`}
                   className="px-4 py-2.5 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400 hover:bg-blue-600 hover:text-white transition-all font-semibold flex items-center space-x-1"
                 >
-                  <span>Governance Suite</span>
+                  <span>Edit</span>
                   <ArrowRight className="w-3.5 h-3.5 animate-pulse" />
                 </Link>
               </div>

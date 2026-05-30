@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Link, useParams } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { GuestRoute } from './GuestRoute';
 import { AuthLayout } from '../layouts/AuthLayout';
@@ -40,6 +40,12 @@ const PageLoader = () => (
   </div>
 );
 
+// Redirects /projects/:id/sprints to /projects/:id/activities to prevent relative resolution / double-slash blank page bug
+const ProjectSprintsRedirect: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={`/projects/${id}/activities`} replace />;
+};
+
 export const AppRouter: React.FC = () => {
   return (
     <BrowserRouter>
@@ -67,7 +73,7 @@ export const AppRouter: React.FC = () => {
               <Route path="/projects/:id" element={<ProjectDetail />}>
                 <Route index element={<Navigate to="workflow" replace />} />
                 <Route path="workflow" element={<ProjectWorkflow />} />
-                <Route path="sprints" element={<Navigate to="../activities" replace />} />
+                <Route path="sprints" element={<ProjectSprintsRedirect />} />
                 <Route path="activities" element={<ProjectSprints />} />
                 <Route path="gates" element={<ProjectGates />} />
                 <Route path="activity" element={<ActivityFeed />} />

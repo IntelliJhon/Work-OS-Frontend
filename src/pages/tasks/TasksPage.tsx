@@ -108,7 +108,7 @@ export const TasksPage: React.FC = () => {
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const res = await usersApi.list();
+      const res = await usersApi.list({ limit: 1000 });
       return Array.isArray(res) ? res : [];
     },
   });

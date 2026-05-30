@@ -53,7 +53,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
       loadComments(user.tenantId, projectId);
       
       // Load members for @mention
-      usersApi.list()
+      usersApi.list({ limit: 1000 })
         .then((res) => setMembers(res))
         .catch((err) => console.error('[Comments] Failed to load members', err));
     }

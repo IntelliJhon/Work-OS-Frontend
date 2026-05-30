@@ -147,7 +147,7 @@ export const NotificationCenter: React.FC = () => {
     if (type === 'sprint') {
       const proj = projects.find((p) => p.sprints?.some((sp) => sp.id === id)) || 
                    (parsed?.projectId ? projects.find(p => p.id === parsed.projectId) : null);
-      if (proj) return `/projects/${proj.id}/sprints`;
+      if (proj) return `/projects/${proj.id}/activities`;
     }
     if (type === 'gate') {
       const proj = projects.find((p) => p.gates?.some((gt) => gt.id === id)) || 
@@ -158,7 +158,7 @@ export const NotificationCenter: React.FC = () => {
       const createdFrom = parsed?.createdFrom;
       const projectId = parsed?.projectId;
       if (createdFrom === 'sprint' && projectId) {
-        return `/projects/${projectId}/sprints`;
+        return `/projects/${projectId}/activities`;
       }
       if (createdFrom === 'sidebar') {
         return `/dashboard/tasks`;
@@ -166,7 +166,7 @@ export const NotificationCenter: React.FC = () => {
       
       const sprintId = parsed?.sprintId;
       if (sprintId && projectId) {
-        return `/projects/${projectId}/sprints`;
+        return `/projects/${projectId}/activities`;
       }
       return `/dashboard/tasks`;
     }
@@ -174,7 +174,7 @@ export const NotificationCenter: React.FC = () => {
     // Default project fallback
     if (projects.length > 0) {
       const pId = parsed?.projectId || projects[0].id;
-      return `/projects/${pId}/${type === 'gate' ? 'gates' : type === 'sprint' ? 'sprints' : 'workflow'}`;
+      return `/projects/${pId}/${type === 'gate' ? 'gates' : (type === 'sprint' || type === 'activity') ? 'activities' : 'workflow'}`;
     }
 
     return null;
