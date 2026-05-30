@@ -13,6 +13,7 @@ export interface Task {
   status: 'to_do' | 'in_progress' | 'in_review' | 'done' | 'blocked' | string;
   customFields?: {
     priority?: 'low' | 'medium' | 'high' | 'critical';
+    startDate?: string;
     dueDate?: string;
     storyPoints?: number;
     subtasks?: { id: string; title: string; done: boolean }[];
