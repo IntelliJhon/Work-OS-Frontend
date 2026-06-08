@@ -46,6 +46,8 @@ const createActivitySchema = z.object({
   frequency: z.enum(['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY']).or(z.literal('')).optional().nullable(),
   startDate: z.string().optional().nullable(),
   endDate: z.string().optional().nullable(),
+  assigneeId: z.string().optional().nullable(),
+  priority: z.enum(['low', 'medium', 'high', 'critical']).or(z.literal('')).optional().nullable(),
 });
 
 const createSprintSchema = z.object({
@@ -253,12 +255,104 @@ export const ProjectSprints: React.FC = () => {
   // Mutations
   const createActivityMutation = useMutation({
     mutationFn: activitiesApi.create,
-    onSuccess: (newActivity) => {
+    onSuccess: async (newActivity, variables) => {
       queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
       refetchActivities();
       setSelectedActivityId(newActivity.id);
       setShowCreateActivityModal(false);
       activityForm.reset();
+
+      if (!newActivity.isSprintRelevant) {
+        try {
+          const projectStories = await storiesApi.list(project.id);
+          let targetStoryId = '';
+
+          if (projectStories.length > 0) {
+            targetStoryId = projectStories[0].id;
+          } else {
+            const projectEpics = await epicsApi.list(project.id);
+            let targetEpicId = '';
+
+            if (projectEpics.length > 0) {
+              targetEpicId = projectEpics[0].id;
+            } else {
+              const newEpic = await epicsApi.create({
+                projectId: project.id,
+                name: 'General Epic',
+                description: 'Default Epic provisioned automatically for tasks.',
+              });
+              targetEpicId = newEpic.id;
+            }
+
+            const newStory = await storiesApi.create({
+              projectId: project.id,
+              epicId: targetEpicId,
+              name: 'General Story',
+              description: 'Default Story provisioned automatically for tasks.',
+            });
+            targetStoryId = newStory.id;
+          }
+
+          const payload = {
+            projectId: project.id,
+            storyId: targetStoryId,
+            activityId: newActivity.id,
+            sprintId: null,
+            assigneeId: variables.assigneeId || user?.id || null,
+            name: newActivity.title.trim(),
+            description: '',
+            status: 'to_do',
+            customFields: {
+              priority: (variables.priority || 'medium') as any,
+              startDate: newActivity.startDate ? newActivity.startDate.split('T')[0] : undefined,
+              dueDate: newActivity.endDate ? newActivity.endDate.split('T')[0] : undefined,
+              storyPoints: 1,
+              phaseId: newActivity.phaseId,
+              subtasks: [],
+              createdFrom: 'sprint',
+            },
+          };
+
+          const createdTask = await tasksApi.create(payload);
+          queryClient.invalidateQueries({ queryKey: ['tasks'] });
+
+          const actorName = user ? `${user.firstName} ${user.lastName}` : 'System';
+          if (user?.tenantId) {
+            addActivity(user.tenantId, project.id, {
+              projectId: project.id,
+              type: 'task_created',
+              title: 'Activity Deliverable Added',
+              message: `${actorName} created task "${createdTask.name}" in activity.`,
+              severity: 'low',
+              actor: actorName
+            });
+          }
+
+          if (socket && isConnected) {
+            const assigneeEmail = variables.assigneeId
+              ? members.find((m) => m.id === variables.assigneeId)?.email || 'unassigned@acme.com'
+              : user?.email || 'unassigned@acme.com';
+
+            socket.emit('kanban_task_created', {
+              projectId: project.id,
+              sprintId: null,
+              task: {
+                id: createdTask.id,
+                name: createdTask.name,
+                status: 'to_do',
+                weight: 1,
+                assignee: assigneeEmail,
+                dueDate: newActivity.endDate ? newActivity.endDate.split('T')[0] : undefined,
+                description: '',
+                subtasks: []
+              },
+              actorName
+            });
+          }
+        } catch (err) {
+          console.error('Failed to auto-create task for activity', err);
+        }
+      }
     }
   });
 
@@ -316,6 +410,8 @@ export const ProjectSprints: React.FC = () => {
       frequency: null,
       startDate: null,
       endDate: null,
+      assigneeId: '',
+      priority: 'medium',
     }
   });
 
@@ -405,6 +501,8 @@ export const ProjectSprints: React.FC = () => {
       frequency: values.frequency || null,
       startDate: startISO,
       endDate: endISO,
+      assigneeId: values.assigneeId || null,
+      priority: values.priority || 'medium',
     });
   };
 
@@ -830,13 +928,13 @@ export const ProjectSprints: React.FC = () => {
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-2">
             <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-1.5">
               <ClipboardList className="w-4 h-4 text-blue-400" />
-              <span>Activities Planner</span>
+              <span>Task planner</span>
             </h4>
             <PermissionGate permission={PERMISSIONS.PROJECT_MANAGE} behavior="hide">
               <button
                 onClick={() => setShowCreateActivityModal(true)}
                 className="p-1 rounded-lg hover:bg-slate-100/60 dark:bg-white/5 text-blue-400 hover:text-white transition-all cursor-pointer"
-                title="Create New Activity"
+                title="Create New Task"
               >
                 <Plus className="w-4.5 h-4.5" />
               </button>
@@ -852,13 +950,13 @@ export const ProjectSprints: React.FC = () => {
           ) : activities.length === 0 ? (
             <div className="p-6 text-center border border-dashed border-border rounded-2xl bg-slate-100/60 dark:bg-white/5">
               <ActivityIcon className="w-8 h-8 text-slate-500 mx-auto mb-2" />
-              <p className="text-xs text-muted-foreground font-light">No activities provisioned.</p>
+              <p className="text-xs text-muted-foreground font-light">No tasks provisioned.</p>
               <PermissionGate permission={PERMISSIONS.PROJECT_MANAGE} behavior="hide">
                 <button
                   onClick={() => setShowCreateActivityModal(true)}
                   className="mt-3 text-xs bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer"
                 >
-                  Create New Activity
+                  Create New Task
                 </button>
               </PermissionGate>
             </div>
@@ -902,8 +1000,8 @@ export const ProjectSprints: React.FC = () => {
                             onClick={async (e) => {
                               e.stopPropagation();
                               const ok = await confirm({
-                                title: 'Delete Activity',
-                                message: `Delete activity "${act.title}"? This cannot be undone.`,
+                                title: 'Delete Task',
+                                message: `Delete task "${act.title}"? This cannot be undone.`,
                                 confirmLabel: 'Delete',
                                 variant: 'danger',
                               });
@@ -915,7 +1013,7 @@ export const ProjectSprints: React.FC = () => {
                                 ? 'opacity-50 cursor-not-allowed'
                                 : 'hover:bg-red-500/15 hover:text-red-400 text-slate-400 dark:text-zinc-500'
                             }`}
-                            title="Delete activity"
+                            title="Delete task"
                           >
                             {isDeleting ? (
                               <span className="block w-3.5 h-3.5 border-2 border-red-400/40 border-t-red-400 rounded-full animate-spin" />
@@ -959,7 +1057,7 @@ export const ProjectSprints: React.FC = () => {
                           ? 'text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/20'
                           : 'text-slate-600 dark:text-zinc-400 bg-slate-100/60 dark:bg-white/5 border-border'
                       }`}>
-                        {selectedActivity.isSprintRelevant ? 'Sprint-Relevant Activity' : 'Standard Activity'}
+                        {selectedActivity.isSprintRelevant ? 'Sprint-Relevant Task' : 'Standard Task'}
                       </span>
                     </div>
 
@@ -993,7 +1091,7 @@ export const ProjectSprints: React.FC = () => {
 
                 <p className="text-xs text-slate-700 dark:text-zinc-400 font-light leading-relaxed">
                   {selectedActivity.isSprintRelevant 
-                    ? 'Sprint cycles are supported inside this activity container. Set up sprints below to run your agile operational delivery.'
+                    ? 'Sprint cycles are supported inside this task container. Set up sprints below to run your agile operational delivery.'
                     : 'Standard operational checklist. Add deliverables and collaborate with team comments.'}
                 </p>
               </div>
@@ -1012,13 +1110,13 @@ export const ProjectSprints: React.FC = () => {
                         <button
                           onClick={() => {
                             setAddTaskName('');
-                            setAddTaskWeight(1);
-                            setAddTaskAssignee('admin@acme.com');
+                            setAddTaskWeight(0);
+                            setAddTaskAssignee('unassigned@acme.com');
                             setAddTaskDueDate('');
                             setAddTaskDesc('');
                             setShowAddTaskModal(true);
                           }}
-                          className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow cursor-pointer active:scale-95 animate-fade-in"
+                          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow border border-blue-500/20 active:scale-95 duration-150 cursor-pointer"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           <span>Add Task</span>
@@ -1137,7 +1235,7 @@ export const ProjectSprints: React.FC = () => {
                   <div className="glass-panel-heavy rounded-2xl p-6 border border-slate-200 dark:border-border space-y-4 bg-white dark:bg-zinc-950">
                     <h5 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-1.5">
                       <MessageSquare className="w-4 h-4 text-blue-400 animate-pulse" />
-                      <span>Activity Collaboration Thread</span>
+                      <span>Task Collaboration Thread</span>
                     </h5>
                     <div className="h-[360px] border border-slate-200/60 dark:border-zinc-850 rounded-2xl bg-slate-50/60 dark:bg-zinc-950/80 p-4 shadow-inner backdrop-blur-sm">
                       <CommentsSystem
@@ -1511,8 +1609,8 @@ export const ProjectSprints: React.FC = () => {
           ) : (
             <div className="p-12 text-center border border-dashed border-border rounded-2xl bg-slate-100/60 dark:bg-white/5">
               <ActivityIcon className="w-10 h-10 text-slate-500 mx-auto mb-2 animate-pulse" />
-              <h4 className="text-sm font-bold text-slate-800 dark:text-zinc-300">No Activity Selected</h4>
-              <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">Select an Activity from the planner sidebar to view stages, checklists, and cycles.</p>
+              <h4 className="text-sm font-bold text-slate-800 dark:text-zinc-300">No Task Selected</h4>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">Select a Task from the planner sidebar to view stages, checklists, and cycles.</p>
             </div>
           )}
         </div>
@@ -1707,7 +1805,7 @@ export const ProjectSprints: React.FC = () => {
             <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-4 mb-4">
               <h4 className="text-sm font-black uppercase text-slate-900 dark:text-white tracking-wider flex items-center space-x-1.5">
                 <PlusCircle className="w-5 h-5 text-blue-400" />
-                <span>Plan New Activity</span>
+                <span>Create New Task</span>
               </h4>
               <button onClick={() => setShowCreateActivityModal(false)} className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-white/5 text-slate-500 hover:text-white transition cursor-pointer">
                 <X className="w-5 h-5" />
@@ -1717,7 +1815,7 @@ export const ProjectSprints: React.FC = () => {
             <form onSubmit={activityForm.handleSubmit(onActivitySubmit)} className="space-y-6 flex-1 flex flex-col justify-between">
               <div className="space-y-6">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Activity Title</label>
+                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Task Title</label>
                   <input
                     type="text"
                     placeholder="e.g. System Integration Testing"
@@ -1742,6 +1840,40 @@ export const ProjectSprints: React.FC = () => {
                   </select>
                   {activityForm.formState.errors.phaseId && (
                     <p className="text-[10px] text-red-400 font-bold">{activityForm.formState.errors.phaseId.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Task Assignee</label>
+                  <select
+                    {...activityForm.register('assigneeId')}
+                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+                  >
+                    <option value="">Unassigned</option>
+                    {members.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {getMemberDisplayName(member)}
+                      </option>
+                    ))}
+                  </select>
+                  {activityForm.formState.errors.assigneeId && (
+                    <p className="text-[10px] text-red-400 font-bold">{activityForm.formState.errors.assigneeId.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Task Priority</label>
+                  <select
+                    {...activityForm.register('priority')}
+                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                  {activityForm.formState.errors.priority && (
+                    <p className="text-[10px] text-red-400 font-bold">{activityForm.formState.errors.priority.message}</p>
                   )}
                 </div>
 
@@ -1834,7 +1966,7 @@ export const ProjectSprints: React.FC = () => {
                     className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 bg-background border-border cursor-pointer"
                   />
                   <label htmlFor="isSprintRelevant" className="text-xs font-semibold text-slate-800 dark:text-zinc-300 cursor-pointer select-none">
-                    Sprint-Relevant Activity (enables nested sprint execution cycles)
+                    Sprint-Relevant Task (enables nested sprint execution cycles)
                   </label>
                 </div>
               </div>
@@ -1852,7 +1984,7 @@ export const ProjectSprints: React.FC = () => {
                   disabled={createActivityMutation.isPending}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition duration-150 active:scale-95 shadow cursor-pointer"
                 >
-                  {createActivityMutation.isPending ? 'Planning...' : 'Plan Activity'}
+                  {createActivityMutation.isPending ? 'Creating...' : 'Create Task'}
                 </button>
               </div>
             </form>

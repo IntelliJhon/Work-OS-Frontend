@@ -103,35 +103,33 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({ isOpen, onClose, gat
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="w-full max-w-xl bg-card border border-border rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="px-6 py-5 bg-gradient-to-r from-emerald-600/10 via-teal-600/5 to-transparent border-b border-border flex items-center justify-between shrink-0">
+        <div className="px-6 py-5 bg-gradient-to-r from-emerald-600/10 via-teal-600/5 to-transparent border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-500 dark:text-emerald-400">
               <FileCheck className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center space-x-1.5">
                 <span>Sign off Quality Gate</span>
-                <Sparkles className="w-3.5 h-3.5 text-yellow-400 animate-pulse" />
+                <Sparkles className="w-3.5 h-3.5 text-yellow-500 dark:text-yellow-400 animate-pulse" />
               </h2>
               <p className="text-[10px] text-slate-600 dark:text-zinc-400">Review deliverables, evidence documents, and authorize phase transition.</p>
             </div>
           </div>
-        </div>
-
-        {/* Content body */}
+        </div>        {/* Content body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           
           {/* Evidence Attachments */}
           <div className="space-y-2">
             <h3 className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-zinc-400 flex items-center space-x-1">
-              <ScrollText className="w-3.5 h-3.5 text-blue-400" />
+              <ScrollText className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
               <span>Evidence Documentation ({gateFiles.length})</span>
             </h3>
             {gateFiles.length === 0 ? (
-              <div className="p-3.5 rounded-2xl bg-red-500/5 border border-red-500/20 text-xs text-red-400 flex items-start space-x-2">
+              <div className="p-3.5 rounded-2xl bg-red-500/5 border border-red-500/20 text-xs text-red-500 dark:text-red-400 flex items-start space-x-2">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span className="font-light">
                   <strong>Compliance Evidence is not uploaded.</strong> You must upload at least one compliance evidence document in the vault before this gate can be approved.
@@ -143,11 +141,11 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({ isOpen, onClose, gat
                   <button
                     key={file.id}
                     onClick={() => setSelectedPreviewFile(file)}
-                    className="flex items-center space-x-2.5 p-2 rounded-xl bg-zinc-900 border border-slate-100 dark:border-white/5 text-left hover:bg-zinc-800/80 transition"
+                    className="flex items-center space-x-2.5 p-2 rounded-xl bg-slate-50 hover:bg-slate-100/80 dark:bg-zinc-900 dark:hover:bg-zinc-800/80 border border-slate-200 dark:border-zinc-800 text-left transition"
                   >
-                    <FileText className="w-4 h-4 text-blue-400 shrink-0" />
+                    <FileText className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-slate-700 dark:text-zinc-300 truncate">{file.originalName}</p>
+                      <p className="text-xs font-bold text-slate-800 dark:text-zinc-300 truncate">{file.originalName}</p>
                       <p className="text-[9px] text-slate-500 dark:text-zinc-500 uppercase font-extrabold">{(file.size / 1024).toFixed(0)} KB</p>
                     </div>
                   </button>
@@ -159,7 +157,7 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({ isOpen, onClose, gat
           {/* Gate Criteria Checklist */}
           <div className="space-y-2.5">
             <h3 className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-zinc-400 flex items-center space-x-1">
-              <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+              <CheckCircle className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
               <span>Deliverable Requirements Checklist</span>
             </h3>
             <p className="text-[10px] text-slate-600 dark:text-zinc-400 italic">Please manually inspect all deliverables and verify they satisfy standard compliance.</p>
@@ -171,28 +169,28 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({ isOpen, onClose, gat
                   onClick={() => toggleChecklist(k)}
                   className={`w-full flex items-center space-x-3 p-3 rounded-2xl border transition text-left ${
                     checklist[k] 
-                      ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-300' 
-                      : 'bg-zinc-900 border-border text-slate-600 dark:text-zinc-400 hover:bg-zinc-850'
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300' 
+                      : 'bg-slate-50 border-slate-200 hover:bg-slate-100 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800/80 text-slate-800'
                   }`}
                 >
                   <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition ${
-                    checklist[k] ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-zinc-600'
+                    checklist[k] ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-zinc-700'
                   }`}>
                     {checklist[k] && <Check className="w-3 h-3 stroke-[3]" />}
                   </div>
-                  <span className="text-xs font-medium">{k}</span>
+                  <span className="text-xs font-semibold">{k}</span>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Secure Audit Signature Panel */}
-          <div className="p-4 rounded-3xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-white/5 space-y-3">
+          <div className="p-4 rounded-3xl bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-800 space-y-3">
             <div className="flex items-start space-x-2.5">
-              <ShieldAlert className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <ShieldAlert className="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
               <div>
-                <h4 className="text-xs font-extrabold text-zinc-200">Legal Authorization Signature</h4>
-                <p className="text-[10px] text-slate-500 dark:text-zinc-500 leading-relaxed">
+                <h4 className="text-xs font-extrabold text-slate-900 dark:text-zinc-200">Legal Authorization Signature</h4>
+                <p className="text-[10px] text-slate-500 dark:text-zinc-400 leading-relaxed">
                   By signing, you confirm that all deliverables have been thoroughly inspected and satisfy Acme's security, quality, and operational standards.
                 </p>
               </div>
@@ -201,20 +199,20 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({ isOpen, onClose, gat
             <div className="space-y-2">
               <label className="text-[9px] uppercase tracking-wider text-slate-600 dark:text-zinc-400 font-extrabold flex justify-between">
                 <span>Type full name to sign: <span className="text-slate-700 dark:text-zinc-300 italic">{user?.firstName} {user?.lastName}</span></span>
-                {isSignatureMatched && <span className="text-emerald-400 font-bold flex items-center space-x-0.5"><UserCheck className="w-3 h-3" /> <span>Authorized</span></span>}
+                {isSignatureMatched && <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center space-x-0.5"><UserCheck className="w-3 h-3" /> <span>Authorized</span></span>}
               </label>
               <input
                 type="text"
                 value={signature}
                 onChange={e => setSignature(e.target.value)}
                 placeholder={`${user?.firstName} ${user?.lastName}`}
-                className="w-full bg-black/40 border border-border hover:border-zinc-700 focus:border-emerald-500/50 focus:outline-none rounded-xl px-3 py-2 text-xs font-mono text-zinc-200"
+                className="w-full bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 focus:border-emerald-500/50 focus:outline-none rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-600"
               />
             </div>
           </div>
 
           {error && (
-            <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex items-start space-x-2">
+            <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs text-red-500 dark:text-red-400 flex items-start space-x-2">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -223,10 +221,10 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({ isOpen, onClose, gat
         </div>
 
         {/* Footer controls */}
-        <div className="px-6 py-4 bg-zinc-950 border-t border-border flex items-center justify-between shrink-0">
+        <div className="px-6 py-4 bg-slate-50 dark:bg-zinc-950 border-t border-slate-200 dark:border-zinc-850 flex items-center justify-between shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-zinc-400 hover:text-zinc-200 transition"
+            className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 transition"
           >
             Cancel
           </button>
@@ -320,39 +318,39 @@ export const RejectModal: React.FC<RejectModalProps> = ({ isOpen, onClose, gate,
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="w-full max-w-md bg-card border border-border rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+      <div className="w-full max-w-md bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
         
         {/* Header */}
-        <div className="px-6 py-5 bg-gradient-to-r from-red-600/10 via-orange-600/5 to-transparent border-b border-border flex items-center justify-between">
+        <div className="px-6 py-5 bg-gradient-to-r from-red-600/10 via-orange-600/5 to-transparent border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/25 flex items-center justify-center text-red-400">
+            <div className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/25 flex items-center justify-center text-red-500 dark:text-red-400">
               <XCircle className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">Reject Gate Sign-off</h2>
-              <p className="text-[10px] text-slate-600 dark:text-zinc-400 font-medium">Record blockers and request immediate remediation.</p>
+              <p className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">Record blockers and request immediate remediation.</p>
             </div>
           </div>
         </div>
 
         {/* Form Body */}
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 bg-white dark:bg-zinc-950">
           <div className="space-y-2">
             <label className="text-[9px] uppercase tracking-wider text-slate-600 dark:text-zinc-400 font-extrabold flex justify-between">
               <span>Detailed Rejection Rationale</span>
-              <span className="text-red-400 font-extrabold">Required</span>
+              <span className="text-red-500 dark:text-red-400 font-extrabold">Required</span>
             </label>
             <textarea
               rows={4}
               value={reason}
               onChange={e => setReason(e.target.value)}
               placeholder="Detail exactly why this quality gate does not meet required specifications. Tag team members using @..."
-              className="w-full bg-black/40 border border-border hover:border-zinc-700 focus:border-red-500/50 focus:outline-none rounded-xl p-3 text-xs text-white placeholder-zinc-500 leading-relaxed resize-none"
+              className="w-full bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 focus:border-red-500/50 focus:outline-none rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-600 leading-relaxed resize-none"
             />
           </div>
 
           {error && (
-            <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex items-start space-x-2">
+            <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs text-red-500 dark:text-red-400 flex items-start space-x-2">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -360,10 +358,10 @@ export const RejectModal: React.FC<RejectModalProps> = ({ isOpen, onClose, gate,
         </div>
 
         {/* Footer controls */}
-        <div className="px-6 py-4 bg-zinc-950 border-t border-border flex items-center justify-between">
+        <div className="px-6 py-4 bg-slate-50 dark:bg-zinc-950 border-t border-slate-200 dark:border-zinc-850 flex items-center justify-between">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-zinc-400 hover:text-zinc-200 transition"
+            className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 transition"
           >
             Cancel
           </button>
@@ -428,43 +426,43 @@ export const RemediationModal: React.FC<RemediationModalProps> = ({ isOpen, onCl
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="w-full max-w-md bg-card border border-border rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+      <div className="w-full max-w-md bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
         
         {/* Header */}
-        <div className="px-6 py-5 bg-gradient-to-r from-orange-600/10 via-amber-600/5 to-transparent border-b border-border flex items-center justify-between">
+        <div className="px-6 py-5 bg-gradient-to-r from-orange-600/10 via-amber-600/5 to-transparent border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/25 flex items-center justify-center text-orange-400">
+            <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/25 flex items-center justify-center text-orange-500 dark:text-orange-400">
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">File Remediation Action</h2>
-              <p className="text-[10px] text-slate-600 dark:text-zinc-400 font-medium">Create outstanding tasks to bypass blockers.</p>
+              <p className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">Create outstanding tasks to bypass blockers.</p>
             </div>
           </div>
         </div>
 
         {/* Form Body */}
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 bg-white dark:bg-zinc-950">
           <div className="space-y-2">
             <label className="text-[9px] uppercase tracking-wider text-slate-600 dark:text-zinc-400 font-extrabold flex justify-between">
               <span>Remediation checklist instructions</span>
-              <span className="text-orange-400 font-extrabold">Checklist Format</span>
+              <span className="text-orange-500 dark:text-orange-400 font-extrabold">Checklist Format</span>
             </label>
             <textarea
               rows={5}
               value={remediationNotes}
               onChange={e => setRemediationNotes(e.target.value)}
               placeholder="Use checklist format:\n- [ ] Fix critical security leak\n- [ ] Update legal review doc\n- [ ] Re-run static code analysis"
-              className="w-full bg-black/40 border border-border hover:border-zinc-700 focus:border-orange-500/50 focus:outline-none rounded-xl p-3 text-xs text-white placeholder-zinc-500 leading-relaxed font-mono resize-none"
+              className="w-full bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 focus:border-orange-500/50 focus:outline-none rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-650 leading-relaxed font-mono resize-none"
             />
           </div>
         </div>
 
         {/* Footer controls */}
-        <div className="px-6 py-4 bg-zinc-950 border-t border-border flex items-center justify-between">
+        <div className="px-6 py-4 bg-slate-50 dark:bg-zinc-955 border-t border-slate-200 dark:border-zinc-850 flex items-center justify-between">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-zinc-400 hover:text-zinc-200 transition"
+            className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-zinc-400 hover:text-slate-950 dark:hover:text-zinc-200 transition"
           >
             Cancel
           </button>

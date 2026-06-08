@@ -77,7 +77,7 @@ export const RealtimeAlertToast: React.FC = () => {
 
     if (type === 'phase') {
       if (projectId) {
-        navigate(`/projects/${projectId}/workflow`);
+        navigate(`/projects/${projectId}/analytics`);
       } else {
         navigate(`/dashboard/workflow`);
       }

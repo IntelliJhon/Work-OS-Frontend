@@ -11,8 +11,8 @@ import {
   Radio,
   ChevronRight,
   Loader2,
-  Clock,
-  Users
+  Users,
+  BarChart3
 } from 'lucide-react';
 import { useSocket } from '../../services/socket/socket-context';
 import TeamPresence from '../../components/collaboration/TeamPresence';
@@ -24,9 +24,10 @@ export const ProjectDetail: React.FC = () => {
   const { isConnected } = useSocket();
   const [membersDrawerOpen, setMembersDrawerOpen] = useState(false);
 
-  const getCurrentPageName = (): 'workflow' | 'activities' | 'gates' => {
+  const getCurrentPageName = (): 'workflow' | 'activities' | 'gates' | 'analytics' => {
     if (location.pathname.endsWith('/sprints') || location.pathname.endsWith('/activities')) return 'activities';
     if (location.pathname.endsWith('/gates')) return 'gates';
+    if (location.pathname.endsWith('/analytics')) return 'analytics';
     return 'workflow';
   };
 
@@ -77,10 +78,10 @@ export const ProjectDetail: React.FC = () => {
   const projectStatus = isFullyComplete ? 'completed' : (project.status === 'completed' ? 'active' : project.status);
 
   const tabs = [
+    { name: 'Analytics', path: `/projects/${id}/analytics`, icon: BarChart3 },
     { name: 'Workflow Timeline', path: `/projects/${id}/workflow`, icon: GitBranch },
-    { name: 'Activities Planner', path: `/projects/${id}/activities`, icon: Activity },
+    { name: 'Task Planner', path: `/projects/${id}/activities`, icon: Activity },
     { name: 'Quality Gates Checklist', path: `/projects/${id}/gates`, icon: ShieldCheck },
-    { name: 'Operational Timeline', path: `/projects/${id}/activity`, icon: Clock },
   ];
 
   return (
@@ -119,7 +120,10 @@ export const ProjectDetail: React.FC = () => {
         {/* Action Widgets / Context badge */}
         <div className="flex flex-wrap items-center gap-3">
           {project && (
-            <TeamPresence projectId={project.id} currentPage={getCurrentPageName()} />
+            <TeamPresence 
+              projectId={project.id} 
+              currentPage={getCurrentPageName()} 
+            />
           )}
 
           <div
@@ -222,7 +226,7 @@ export const ProjectDetail: React.FC = () => {
         {tabs.map((tab) => {
           const TabIcon = tab.icon;
           const isActive = location.pathname.startsWith(tab.path) || 
-            (tab.path.endsWith('/workflow') && (location.pathname === `/projects/${id}` || location.pathname === `/projects/${id}/`));
+            (tab.path.endsWith('/analytics') && (location.pathname === `/projects/${id}` || location.pathname === `/projects/${id}/`));
           
           return (
             <Link

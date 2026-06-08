@@ -17,7 +17,7 @@ const ProjectSprints = lazy(() => import('../../pages/projects/ProjectSprints'))
 const ProjectGates = lazy(() => import('../../pages/projects/ProjectGates'));
 const NotificationCenter = lazy(() => import('../../pages/notifications/NotificationCenter'));
 const AccessDenied = lazy(() => import('../../pages/error/AccessDenied'));
-const ActivityFeed = lazy(() => import('../../pages/projects/ActivityFeed'));
+const ProjectAnalytics = lazy(() => import('../../pages/projects/ProjectAnalytics'));
 const SettingsLayout = lazy(() => import('../layouts/SettingsLayout'));
 const MembersManagement = lazy(() => import('../../pages/settings/MembersManagement'));
 const RolesManagement = lazy(() => import('../../pages/settings/RolesManagement'));
@@ -71,12 +71,12 @@ export const AppRouter: React.FC = () => {
               <Route path="/dashboard/projects" element={<Navigate to="/projects" replace />} />
               
               <Route path="/projects/:id" element={<ProjectDetail />}>
-                <Route index element={<Navigate to="workflow" replace />} />
+                <Route index element={<Navigate to="analytics" replace />} />
+                <Route path="analytics" element={<ProjectAnalytics />} />
                 <Route path="workflow" element={<ProjectWorkflow />} />
                 <Route path="sprints" element={<ProjectSprintsRedirect />} />
                 <Route path="activities" element={<ProjectSprints />} />
                 <Route path="gates" element={<ProjectGates />} />
-                <Route path="activity" element={<ActivityFeed />} />
               </Route>
 
               <Route path="/notifications" element={<NotificationCenter />} />
