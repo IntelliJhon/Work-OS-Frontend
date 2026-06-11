@@ -51,6 +51,8 @@ export interface Activity {
   frequency: 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | null;
   startDate: string | null;
   endDate: string | null;
+  assigneeId?: string | null;
+  priority?: 'low' | 'medium' | 'high' | 'critical' | null;
   createdAt: string;
   updatedAt: string;
 }
