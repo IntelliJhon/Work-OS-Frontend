@@ -50,4 +50,9 @@ export const uploadsApi = {
     const { data } = await apiClient.get<UploadRow[]>(`/uploads/${entityType}/${entityId}`);
     return data;
   },
+
+  getDownloadUrl: async (id: string): Promise<{ downloadUrl: string }> => {
+    const { data } = await apiClient.get<{ downloadUrl: string }>(`/uploads/${id}/download-url`);
+    return data;
+  },
 };

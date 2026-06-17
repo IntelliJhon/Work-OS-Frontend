@@ -29,6 +29,25 @@ export const DragDropUpload: React.FC<DragDropUploadProps> = ({
   const [progress, setProgress] = useState(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
+
+  const handleDownload = async (fileId: string) => {
+    try {
+      setDownloadingFileId(fileId);
+      const { downloadUrl } = await uploadsApi.getDownloadUrl(fileId);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.target = '_self';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('Failed to download file:', err);
+      setErrorMsg('Failed to download file. Please try again.');
+    } finally {
+      setDownloadingFileId(null);
+    }
+  };
 
   // Query to fetch existing uploads for this entity
   const { data: uploads = [], isLoading, refetch } = useQuery({
@@ -252,15 +271,19 @@ export const DragDropUpload: React.FC<DragDropUploadProps> = ({
                 </div>
 
                 <div className="flex items-center space-x-1">
-                  <a
-                    href={file.publicUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-1.5 rounded hover:bg-slate-100/60 dark:bg-white/5 text-slate-600 dark:text-zinc-400 hover:text-white transition-all"
+                  <button
+                    type="button"
+                    onClick={() => handleDownload(file.id)}
+                    disabled={downloadingFileId === file.id}
+                    className="p-1.5 rounded hover:bg-blue-500/10 text-slate-600 dark:text-zinc-400 hover:text-blue-500 transition-all disabled:opacity-50 cursor-pointer"
                     title="Download Evidence File"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                  </a>
+                    {downloadingFileId === file.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
+                    ) : (
+                      <Download className="w-3.5 h-3.5" />
+                    )}
+                  </button>
                 </div>
               </div>
             ))}
