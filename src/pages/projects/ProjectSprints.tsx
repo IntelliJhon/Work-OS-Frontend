@@ -919,6 +919,12 @@ export const ProjectSprints: React.FC = () => {
     return name.substring(0, 2).toUpperCase();
   };
 
+  const isActiveActivityDone = useMemo(() => {
+    if (!selectedActivity) return false;
+    const activityTasks = dbTasks.filter((t) => t.activityId === selectedActivity.id);
+    return activityTasks.length > 0 && activityTasks.every((t) => t.status === 'done');
+  }, [dbTasks, selectedActivity]);
+
   return (
     <div className="space-y-6 text-foreground animate-fade-in relative min-h-screen pb-16">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -967,6 +973,10 @@ export const ProjectSprints: React.FC = () => {
                 const parentPhase = getParentPhase(act);
                 const isDeleting = deleteActivityMutation.isPending && deleteActivityMutation.variables === act.id;
 
+                const activityTasks = dbTasks.filter((t) => t.activityId === act.id);
+                const hasTasks = activityTasks.length > 0;
+                const isDone = hasTasks && activityTasks.every((t) => t.status === 'done');
+
                 return (
                   <div
                     key={act.id}
@@ -977,12 +987,24 @@ export const ProjectSprints: React.FC = () => {
                     }}
                     className={`group p-3.5 rounded-xl border cursor-pointer transition-all duration-300 relative ${
                       isSelected
-                        ? 'border-blue-500 bg-blue-500/10 shadow-lg text-blue-400 glow-primary'
-                        : 'border-border bg-slate-100/60 dark:bg-white/5 text-slate-600 dark:text-zinc-400 hover:bg-slate-200/60 dark:hover:bg-white/10 hover:border-zinc-700'
+                        ? isDone
+                          ? 'border-emerald-500 bg-emerald-500/10 shadow-lg text-emerald-400 dark:text-emerald-350 shadow-emerald-500/25'
+                          : 'border-blue-500 bg-blue-500/10 shadow-lg text-blue-400 glow-primary'
+                        : isDone
+                          ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-600 dark:text-emerald-450 hover:bg-emerald-500/10 hover:border-emerald-500/60'
+                          : 'border-border bg-slate-100/60 dark:bg-white/5 text-slate-600 dark:text-zinc-400 hover:bg-slate-200/60 dark:hover:bg-white/10 hover:border-zinc-700'
                     }`}
                   >
                     <div className="flex justify-between items-start">
-                      <p className={`text-xs font-extrabold truncate max-w-[110px] ${isSelected ? 'text-blue-600 dark:text-white' : 'text-slate-800 dark:text-zinc-300'}`}>
+                      <p className={`text-xs font-extrabold truncate max-w-[110px] ${
+                        isSelected
+                          ? isDone
+                            ? 'text-emerald-600 dark:text-white'
+                            : 'text-blue-600 dark:text-white'
+                          : isDone
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-slate-800 dark:text-zinc-300'
+                      }`}>
                         {act.title}
                       </p>
                       <div className="flex items-center gap-1">
@@ -993,6 +1015,12 @@ export const ProjectSprints: React.FC = () => {
                         }`}>
                           {act.isSprintRelevant ? 'Sprint' : 'Standard'}
                         </span>
+                        
+                        {isDone && (
+                          <span className="text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded border bg-emerald-500/15 border-emerald-500/30 text-emerald-500 dark:text-emerald-400">
+                            Done
+                          </span>
+                        )}
 
                         {/* Delete button — visible on hover */}
                         <PermissionGate permission={PERMISSIONS.PROJECT_MANAGE} behavior="hide">
@@ -1004,7 +1032,7 @@ export const ProjectSprints: React.FC = () => {
                                 message: `Delete task "${act.title}"? This cannot be undone.`,
                                 confirmLabel: 'Delete',
                                 variant: 'danger',
-                              });
+                               });
                               if (ok) deleteActivityMutation.mutate(act.id);
                             }}
                             disabled={isDeleting}
@@ -1025,8 +1053,8 @@ export const ProjectSprints: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-[9px] text-slate-500 dark:text-zinc-500 font-bold uppercase tracking-wider mt-2.5">
-                      <span className="truncate max-w-[120px] text-blue-400">
+                    <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider mt-2.5">
+                      <span className={`truncate max-w-[120px] ${isDone ? 'text-emerald-500/80 dark:text-emerald-400/80' : 'text-blue-400'}`}>
                         🔑 {parentPhase?.name || 'N/A'}
                       </span>
                     </div>
@@ -1042,13 +1070,22 @@ export const ProjectSprints: React.FC = () => {
           {selectedActivity ? (
             <div className="space-y-6">
               {/* Activity Info Panel */}
-              <div className="glass-panel-heavy rounded-2xl p-6 border border-slate-200 dark:border-border space-y-4 bg-white dark:bg-zinc-950">
+              <div className={`glass-panel-heavy rounded-2xl p-6 border space-y-4 bg-white dark:bg-zinc-950 transition-all duration-300 ${
+                isActiveActivityDone 
+                  ? 'border-emerald-500/30 bg-emerald-500/5' 
+                  : 'border-slate-200 dark:border-border'
+              }`}>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 border-b border-slate-100 dark:border-white/5 pb-4">
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <h4 className="text-xl font-bold text-slate-900 dark:text-white">
                         {selectedActivity.title}
                       </h4>
+                      {isActiveActivityDone && (
+                        <span className="flex items-center space-x-1 text-[9px] uppercase font-black bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 dark:text-emerald-400 px-2 py-0.5 rounded">
+                          Done
+                        </span>
+                      )}
                       <span className="flex items-center space-x-1 text-[9px] uppercase font-bold bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded">
                         Stage Gate: {getParentPhase(selectedActivity)?.name || 'N/A'}
                       </span>
