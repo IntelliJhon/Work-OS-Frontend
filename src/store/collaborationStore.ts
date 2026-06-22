@@ -21,7 +21,7 @@ export interface Comment {
   createdAt: string;
   parentId?: string; // for threading
   reactions: Record<string, string[]>; // e.g., { '👍': ['userId1', 'userId2'], '❤️': [] }
-  attachments?: string[];
+  attachments?: (string | { id: string; name: string; url: string })[];
 }
 
 export interface ActivityEvent {

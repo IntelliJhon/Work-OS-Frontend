@@ -3,8 +3,8 @@ import { apiClient } from './client';
 export interface Task {
   id: string;
   tenantId: string;
-  projectId: string;
-  storyId: string;
+  projectId: string | null;
+  storyId: string | null;
   activityId?: string | null;
   sprintId: string | null;
   assigneeId: string | null;
@@ -16,7 +16,23 @@ export interface Task {
     startDate?: string;
     dueDate?: string;
     storyPoints?: number;
-    subtasks?: { id: string; title: string; done: boolean }[];
+    subtasks?: {
+      id: string;
+      title: string;
+      done: boolean;
+      comments?: {
+        id: string;
+        userName: string;
+        userEmail: string;
+        text: string;
+        createdAt: string;
+        files?: {
+          id: string;
+          name: string;
+          publicUrl: string;
+        }[];
+      }[];
+    }[];
     phaseId?: string;
     createdFrom?: string;
   };
@@ -25,8 +41,8 @@ export interface Task {
 }
 
 export interface CreateTaskPayload {
-  projectId: string;
-  storyId: string;
+  projectId?: string | null;
+  storyId?: string | null;
   activityId?: string | null;
   sprintId?: string | null;
   assigneeId?: string | null;

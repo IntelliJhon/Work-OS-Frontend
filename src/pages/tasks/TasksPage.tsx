@@ -23,6 +23,7 @@ import { TaskTable } from '../../components/tasks/TaskTable';
 import { TaskAnalytics } from '../../components/tasks/TaskAnalytics';
 import { TaskDrawer } from '../../components/tasks/TaskDrawer';
 import { TaskActivityFeed } from '../../components/tasks/TaskActivityFeed';
+import { DatePickerInput } from '../../components/ui/DatePickerInput';
 
 // APIs & Stores
 import { tasksApi } from '../../services/api/tasks.api';
@@ -80,7 +81,6 @@ export const TasksPage: React.FC = () => {
   const [newTaskPhaseId, setNewTaskPhaseId] = useState('');
   const [newTaskAssigneeId, setNewTaskAssigneeId] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState('medium');
-  const [newTaskStoryPoints, setNewTaskStoryPoints] = useState(0);
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
   const [isCreatingTask, setIsCreatingTask] = useState(false);
 
@@ -259,8 +259,8 @@ export const TasksPage: React.FC = () => {
           actorName,
         });
 
-        addActivity(currentUser.tenantId, taskObj.projectId, {
-          projectId: taskObj.projectId,
+        addActivity(currentUser.tenantId, taskObj.projectId || 'global', {
+          projectId: taskObj.projectId || 'global',
           type: 'task_moved',
           title: 'Task status updated',
           message: `${actorName} moved "${taskObj.name}" to ${toStatus.replace('_', ' ')}.`,
@@ -316,8 +316,8 @@ export const TasksPage: React.FC = () => {
           taskId,
         });
 
-        addActivity(currentUser.tenantId, taskObj.projectId, {
-          projectId: taskObj.projectId,
+        addActivity(currentUser.tenantId, taskObj.projectId || 'global', {
+          projectId: taskObj.projectId || 'global',
           type: 'task_deleted',
           title: 'Task deleted',
           message: `Task was deleted by ${currentUser.firstName} ${currentUser.lastName}.`,
@@ -333,45 +333,48 @@ export const TasksPage: React.FC = () => {
 
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTaskName.trim() || !newTaskProjectId || isCreatingTask) return;
+    if (!newTaskName.trim() || isCreatingTask) return;
 
     setIsCreatingTask(true);
     try {
-      // 1. Fetch stories for selected project to satisfy backend non-null storyId constraint
-      const projectStories = await storiesApi.list(newTaskProjectId);
-      let targetStoryId = '';
+      let targetStoryId: string | null = null;
 
-      if (projectStories.length > 0) {
-        targetStoryId = projectStories[0].id;
-      } else {
-        // Fallback: Provision Epic and Story dynamically
-        const projectEpics = await epicsApi.list(newTaskProjectId);
-        let targetEpicId = '';
+      if (newTaskProjectId) {
+        // 1. Fetch stories for selected project to satisfy backend storyId constraint
+        const projectStories = await storiesApi.list(newTaskProjectId);
 
-        if (projectEpics.length > 0) {
-          targetEpicId = projectEpics[0].id;
+        if (projectStories.length > 0) {
+          targetStoryId = projectStories[0].id;
         } else {
-          const newEpic = await epicsApi.create({
-            projectId: newTaskProjectId,
-            name: 'General Epic',
-            description: 'Default Epic provisioned automatically for tasks.',
-          });
-          targetEpicId = newEpic.id;
-        }
+          // Fallback: Provision Epic and Story dynamically
+          const projectEpics = await epicsApi.list(newTaskProjectId);
+          let targetEpicId = '';
 
-        const newStory = await storiesApi.create({
-          projectId: newTaskProjectId,
-          epicId: targetEpicId,
-          name: 'General Story',
-          description: 'Default Story provisioned automatically for tasks.',
-        });
-        targetStoryId = newStory.id;
+          if (projectEpics.length > 0) {
+            targetEpicId = projectEpics[0].id;
+          } else {
+            const newEpic = await epicsApi.create({
+              projectId: newTaskProjectId,
+              name: 'General Epic',
+              description: 'Default Epic provisioned automatically for tasks.',
+            });
+            targetEpicId = newEpic.id;
+          }
+
+          const newStory = await storiesApi.create({
+            projectId: newTaskProjectId,
+            epicId: targetEpicId,
+            name: 'General Story',
+            description: 'Default Story provisioned automatically for tasks.',
+          });
+          targetStoryId = newStory.id;
+        }
       }
 
       // 2. Submit Create Task payload
       const payload = {
-        projectId: newTaskProjectId,
-        storyId: targetStoryId,
+        projectId: newTaskProjectId || null,
+        storyId: targetStoryId || null,
         sprintId: newTaskSprintId || null,
         assigneeId: newTaskAssigneeId || null,
         name: newTaskName.trim(),
@@ -380,7 +383,7 @@ export const TasksPage: React.FC = () => {
         customFields: {
           priority: newTaskPriority as any,
           dueDate: newTaskDueDate || undefined,
-          storyPoints: newTaskStoryPoints,
+          storyPoints: 0,
           phaseId: newTaskPhaseId || undefined,
           subtasks: [],
           createdFrom: 'sidebar',
@@ -393,14 +396,14 @@ export const TasksPage: React.FC = () => {
       // Emit created event
       if (socket && currentUser) {
         socket.emit('kanban_task_created', {
-          projectId: newTaskProjectId,
+          projectId: newTaskProjectId || null,
           sprintId: newTaskSprintId || null,
           task: newTask,
           actorName: `${currentUser.firstName} ${currentUser.lastName}`
         });
 
-        addActivity(currentUser.tenantId, newTaskProjectId, {
-          projectId: newTaskProjectId,
+        addActivity(currentUser.tenantId, newTaskProjectId || 'global', {
+          projectId: newTaskProjectId || 'global',
           type: 'task_created',
           title: 'Task created',
           message: `${currentUser.firstName} created task "${newTask.name}".`,
@@ -417,7 +420,6 @@ export const TasksPage: React.FC = () => {
       setNewTaskPhaseId('');
       setNewTaskAssigneeId('');
       setNewTaskPriority('medium');
-      setNewTaskStoryPoints(0);
       setNewTaskDueDate('');
       setShowAddModal(false);
     } catch (err) {
@@ -552,7 +554,7 @@ export const TasksPage: React.FC = () => {
       </div>
 
       {/* Metrics Cards Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Total Active */}
         <div className="glass-panel border border-border rounded-2xl p-4 flex items-center space-x-3 relative overflow-hidden group hover:border-blue-500/30 transition-all duration-300">
           <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
@@ -589,20 +591,8 @@ export const TasksPage: React.FC = () => {
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl -mr-8 -mt-8" />
         </div>
 
-        {/* Velocity */}
-        <div className="glass-panel border border-border rounded-2xl p-4 flex items-center space-x-3 relative overflow-hidden group hover:border-purple-500/30 transition-all duration-300">
-          <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
-            <Sparkles className="w-5 h-5 animate-pulse" />
-          </div>
-          <div>
-            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Velocity</div>
-            <div className="text-xl font-black text-foreground mt-0.5">{metrics.velocity} SP</div>
-          </div>
-          <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 rounded-full blur-2xl -mr-8 -mt-8" />
-        </div>
-
         {/* Assigned to Me */}
-        <div className="glass-panel border border-border rounded-2xl p-4 flex items-center space-x-3 col-span-2 md:col-span-1 relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-300">
+        <div className="glass-panel border border-border rounded-2xl p-4 flex items-center space-x-3 relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-300">
           <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             <User className="w-5 h-5" />
           </div>
@@ -775,9 +765,8 @@ export const TasksPage: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   {/* Project */}
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Project *</label>
+                    <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Project</label>
                     <select
-                      required
                       value={newTaskProjectId}
                       onChange={(e) => {
                         setNewTaskProjectId(e.target.value);
@@ -786,7 +775,7 @@ export const TasksPage: React.FC = () => {
                       }}
                       className="w-full px-3 py-2.5 glass-input text-foreground text-xs rounded-xl focus:outline-none [&>option]:bg-background [&>option]:text-foreground"
                     >
-                      <option value="">Select Project</option>
+                      <option value="">Select Project (Optional)</option>
                       {projects.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.name}
@@ -863,31 +852,13 @@ export const TasksPage: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Story Points */}
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Story Weight (SP)</label>
-                    <select
-                      value={newTaskStoryPoints}
-                      onChange={(e) => setNewTaskStoryPoints(Number(e.target.value))}
-                      className="w-full px-3 py-2.5 glass-input text-foreground text-xs rounded-xl focus:outline-none [&>option]:bg-background [&>option]:text-foreground"
-                    >
-                      <option value={0}>0 SP (None)</option>
-                      <option value={1}>1 SP</option>
-                      <option value={2}>2 SP</option>
-                      <option value={3}>3 SP</option>
-                      <option value={5}>5 SP</option>
-                      <option value={8}>8 SP</option>
-                    </select>
-                  </div>
-
                   {/* Due Date */}
-                  <div className="space-y-1.5 col-span-2">
+                  <div className="space-y-1.5">
                     <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Due Date</label>
-                    <input
-                      type="date"
+                    <DatePickerInput
                       value={newTaskDueDate}
-                      onChange={(e) => setNewTaskDueDate(e.target.value)}
-                      className="w-full px-3 py-2.5 glass-input text-foreground text-xs rounded-xl focus:outline-none cursor-pointer"
+                      onChange={(val) => setNewTaskDueDate(val)}
+                      placeholder="Select due date"
                     />
                   </div>
                 </div>
@@ -909,10 +880,10 @@ export const TasksPage: React.FC = () => {
                     {isCreatingTask ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Provisioning DB...</span>
+                        <span>Creating...</span>
                       </>
                     ) : (
-                      <span>Create Task</span>
+                      <span>Enter</span>
                     )}
                   </button>
                 </div>

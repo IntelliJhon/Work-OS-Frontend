@@ -8,8 +8,7 @@ import { usersApi } from '../../services/api/users';
 import type { User } from '../../services/api/users';
 import { 
   MessageSquare, Send, Reply, Trash2, Smile, Paperclip, 
-  CornerDownRight, CheckSquare, Bold, Italic, Code, 
-  ExternalLink, FileText, Image as ImageIcon
+  CornerDownRight, FileText, Image as ImageIcon, Download
 } from 'lucide-react';
 import { uploadsApi } from '../../services/api/uploads';
 
@@ -44,7 +43,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
   // Attachments State
   const [attachments, setAttachments] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
+  const [uploadedAttachments, setUploadedAttachments] = useState<{ id: string; name: string; url: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load baseline comments & tenant members
@@ -233,6 +232,23 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
     }
   };
 
+  const handleDownloadFile = async (fileId: string) => {
+    try {
+      const res = await uploadsApi.getDownloadUrl(fileId);
+      if (res && res.downloadUrl) {
+        const a = document.createElement('a');
+        a.href = res.downloadUrl;
+        a.target = '_self';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    } catch (err) {
+      console.error('[CommentDownload] Failed to get signed URL', err);
+      alert('Failed to download file');
+    }
+  };
+
   // Handle files uploading
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -242,8 +258,12 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
     setUploading(true);
     try {
       const res = await uploadsApi.upload(entityType, entityId, filesArray);
-      const urls = res.uploads.map((u) => u.publicUrl);
-      setUploadedUrls((prev) => [...prev, ...urls]);
+      const newAttachments = res.uploads.map((u) => ({
+        id: u.id,
+        name: u.originalName,
+        url: u.publicUrl,
+      }));
+      setUploadedAttachments((prev) => [...prev, ...newAttachments]);
     } catch (err) {
       console.error('[Comments] Upload failed', err);
     } finally {
@@ -255,7 +275,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
     if (!user || !user.tenantId) return;
     
     const text = parentId ? replyText : commentText;
-    if (!text.trim() && uploadedUrls.length === 0) return;
+    if (!text.trim() && uploadedAttachments.length === 0) return;
 
     addComment(user.tenantId, projectId, entityId, {
       entityId,
@@ -264,7 +284,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
       email: user.email,
       text: text,
       parentId,
-      attachments: uploadedUrls.length > 0 ? uploadedUrls : undefined
+      attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined
     });
 
     if (parentId) {
@@ -275,7 +295,7 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
     }
     
     setAttachments([]);
-    setUploadedUrls([]);
+    setUploadedAttachments([]);
   };
 
   // Get active lists
@@ -405,23 +425,53 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
                     {/* Attachments preview */}
                     {c.attachments && c.attachments.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
-                        {c.attachments.map((url, i) => (
-                          <a 
-                            key={i} 
-                            href={url} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="flex items-center space-x-1.5 px-2 py-1 rounded-lg bg-slate-100 dark:bg-black/40 border border-slate-200/80 dark:border-white/5 text-[10px] text-blue-600 dark:text-blue-400 hover:bg-slate-200 dark:hover:bg-black/60 transition"
-                          >
-                            {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                              <ImageIcon className="w-3.5 h-3.5" />
-                            ) : (
-                              <FileText className="w-3.5 h-3.5" />
-                            )}
-                            <span className="max-w-[120px] truncate">Attachment #{i+1}</span>
-                            <ExternalLink className="w-2.5 h-2.5 opacity-50" />
-                          </a>
-                        ))}
+                        {c.attachments.map((att, i) => {
+                          const isObject = typeof att === 'object' && att !== null;
+                          const url = isObject ? att.url : att;
+                          const name = isObject ? att.name : `Attachment #${i + 1}`;
+                          const isImage = url.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+                          
+                          const triggerDownload = async () => {
+                            if (isObject && att.id) {
+                              await handleDownloadFile(att.id);
+                            } else {
+                              // Legacy string URL download using fetch-to-blob
+                              try {
+                                const response = await fetch(url);
+                                const blob = await response.blob();
+                                const blobUrl = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = blobUrl;
+                                const urlParts = url.split('/');
+                                const filename = urlParts[urlParts.length - 1] || name;
+                                a.download = filename;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                window.URL.revokeObjectURL(blobUrl);
+                              } catch (err) {
+                                window.open(url, '_blank');
+                              }
+                            }
+                          };
+
+                          return (
+                            <button
+                              key={i}
+                              onClick={triggerDownload}
+                              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-[10px] text-purple-650 dark:text-purple-400 hover:bg-slate-205 dark:hover:bg-zinc-800 transition cursor-pointer"
+                              title="Click to download attachment"
+                            >
+                              {isImage ? (
+                                <ImageIcon className="w-3.5 h-3.5 shrink-0" />
+                              ) : (
+                                <FileText className="w-3.5 h-3.5 shrink-0" />
+                              )}
+                              <span className="max-w-[150px] truncate font-medium">{name}</span>
+                              <Download className="w-3.5 h-3.5 opacity-60 shrink-0" />
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
 
@@ -619,39 +669,71 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
       </div>
 
       {/* Main Comment Composer */}
-      <div className="relative pt-4 border-t border-slate-100 dark:border-white/5 space-y-2 shrink-0">
-        {/* Markdown Hint Toolbar */}
-        <div className="flex items-center space-x-2.5 text-[10px] text-slate-500 dark:text-zinc-500 px-1">
-          <span className="font-extrabold uppercase tracking-wide text-zinc-600 mr-2">Editor:</span>
-          <button className="flex items-center space-x-0.5 hover:text-slate-750 dark:text-zinc-300 cursor-help" title="Use **text** for bold text">
-            <Bold className="w-3 h-3 text-slate-500 dark:text-zinc-400" />
-            <span>Bold</span>
-          </button>
-          <button className="flex items-center space-x-0.5 hover:text-slate-750 dark:text-zinc-300 cursor-help" title="Use *text* for italic text">
-            <Italic className="w-3 h-3 text-slate-500 dark:text-zinc-400" />
-            <span>Italic</span>
-          </button>
-          <button className="flex items-center space-x-0.5 hover:text-slate-750 dark:text-zinc-300 cursor-help" title="Use `code` for code snippets">
-            <Code className="w-3 h-3 text-slate-500 dark:text-zinc-400" />
-            <span>Code</span>
-          </button>
-          <button className="flex items-center space-x-0.5 hover:text-slate-750 dark:text-zinc-300 cursor-help" title="Use - [ ] for checklists">
-            <CheckSquare className="w-3 h-3 text-slate-500 dark:text-zinc-400" />
-            <span>Checklist</span>
-          </button>
-        </div>
+      <div className="relative pt-4 border-t border-slate-100 dark:border-white/5 shrink-0">
 
         {/* Input Bar */}
-        <div className="relative flex items-end space-x-2.5 bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl p-2 focus-within:border-blue-500/40 shadow-sm transition duration-150">
-          <textarea
-            ref={textareaRef}
-            rows={2}
-            value={commentText}
-            onChange={(e) => handleTextareaChange(e, false)}
-            onKeyDown={(e) => handleKeyDown(e, false)}
-            placeholder="Add notes, checklists, or comments... Use @ to mention."
-            className="flex-1 bg-transparent text-xs text-slate-800 dark:text-white focus:outline-none resize-none placeholder-slate-400 dark:placeholder-zinc-500 min-h-[36px] max-h-[140px] leading-relaxed"
-          />
+        <div className="relative flex flex-col bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl p-3 focus-within:border-blue-500/40 shadow-sm transition duration-150">
+          
+          {/* Attachments preview inside the composer */}
+          {attachments.length > 0 && (
+            <div className="w-full mb-3 p-2.5 bg-slate-50 dark:bg-zinc-900 border border-slate-150 dark:border-zinc-800 rounded-xl flex items-center gap-2 flex-wrap">
+              {attachments.map((file, i) => (
+                <div key={i} className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 text-[10px] text-slate-700 dark:text-zinc-300 shadow-sm">
+                  <span className="max-w-[120px] truncate font-medium">{file.name}</span>
+                  <span className="text-[8px] text-slate-500 dark:text-zinc-500">({(file.size / 1024).toFixed(0)} KB)</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAttachments((prev) => prev.filter((_, idx) => idx !== i));
+                      setUploadedAttachments((prev) => prev.filter((_, idx) => idx !== i));
+                    }}
+                    className="ml-1 text-slate-400 hover:text-red-550 dark:hover:text-red-400 transition cursor-pointer font-bold text-[10px]"
+                    title="Remove attachment"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              {uploading && <span className="text-[9px] text-blue-550 animate-pulse font-medium">Uploading to cloud...</span>}
+            </div>
+          )}
+
+          <div className="flex items-end space-x-2.5">
+            <textarea
+              ref={textareaRef}
+              rows={2}
+              value={commentText}
+              onChange={(e) => handleTextareaChange(e, false)}
+              onKeyDown={(e) => handleKeyDown(e, false)}
+              placeholder="Add notes, checklists, or comments... Use @ to mention."
+              className="flex-1 bg-transparent text-xs text-slate-800 dark:text-white focus:outline-none resize-none placeholder-slate-400 dark:placeholder-zinc-500 min-h-[36px] max-h-[140px] leading-relaxed"
+            />
+
+            {/* Side Actions (Paperclip, Submit) */}
+            <div className="flex items-center space-x-1.5 shrink-0">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                className="hidden" 
+                multiple 
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 transition cursor-pointer"
+                title="Attach document"
+              >
+                <Paperclip className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => submitComment()}
+                disabled={uploading || (!commentText.trim() && attachments.length === 0)}
+                className="p-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition disabled:opacity-50 cursor-pointer"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
 
           {/* Autocomplete mentions panel */}
           {mentionSearch !== null && !activeReplyId && (
@@ -680,44 +762,6 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
               )}
             </div>
           )}
-
-          {/* Attachments preview inside the composer */}
-          {attachments.length > 0 && (
-            <div className="absolute bottom-full left-0 right-0 mb-2 p-2 bg-black/80 border border-zinc-800 rounded-xl flex items-center gap-2 flex-wrap">
-              {attachments.map((file, i) => (
-                <div key={i} className="flex items-center space-x-1.5 px-2 py-0.5 rounded-lg bg-zinc-900 border border-zinc-800 text-[10px] text-slate-700 dark:text-zinc-300">
-                  <span className="max-w-[100px] truncate">{file.name}</span>
-                  <span className="text-[8px] text-slate-500 dark:text-zinc-500">({(file.size / 1024).toFixed(0)} KB)</span>
-                </div>
-              ))}
-              {uploading && <span className="text-[9px] text-blue-400 animate-pulse">Uploading file...</span>}
-            </div>
-          )}
-
-          {/* Side Actions (Paperclip, Submit) */}
-          <div className="flex items-center space-x-1.5 shrink-0">
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleFileChange} 
-              className="hidden" 
-              multiple 
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 transition"
-              title="Attach document"
-            >
-              <Paperclip className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => submitComment()}
-              disabled={uploading}
-              className="p-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white shadow-lg transition cursor-pointer"
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </div>
         </div>
       </div>
     </div>

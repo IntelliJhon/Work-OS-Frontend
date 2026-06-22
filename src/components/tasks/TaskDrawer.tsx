@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Trash2, Plus, MessageSquare } from 'lucide-react';
+import { DatePickerInput } from '../ui/DatePickerInput';
 import type { Task } from '../../services/api/tasks.api';
 import type { Project, Sprint, Phase } from '../../services/api/projects';
 import type { User } from '../../services/api/users';
@@ -51,7 +52,6 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   // Custom fields
   const [priority, setPriority] = useState('medium');
   const [dueDate, setDueDate] = useState('');
-  const [storyPoints, setStoryPoints] = useState(0);
   const [phaseId, setPhaseId] = useState('');
   
   // Subtasks state
@@ -74,7 +74,6 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
       
       setPriority(task.customFields?.priority || 'medium');
       setDueDate(task.customFields?.dueDate || '');
-      setStoryPoints(task.customFields?.storyPoints || 0);
       setPhaseId(task.customFields?.phaseId || '');
       setSubtasks(task.customFields?.subtasks || []);
     }
@@ -87,7 +86,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
 
   // Field change savers
   const handleSaveField = async (fieldName: string, value: any) => {
-    const isRestrictedField = ['name', 'description', 'assigneeId', 'sprintId', 'priority', 'dueDate', 'storyPoints', 'phaseId'].includes(fieldName);
+    const isRestrictedField = ['name', 'description', 'assigneeId', 'sprintId', 'priority', 'dueDate', 'phaseId'].includes(fieldName);
     const hasPermission = isRestrictedField ? canEditFull : canUpdate;
     if (!hasPermission) return;
     try {
@@ -332,42 +331,20 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               </select>
             </div>
 
-            {/* Story Points */}
-            <div className="space-y-1.5">
-              <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Story Weight (SP)</label>
-              <select
-                value={storyPoints}
-                disabled={!canEditFull}
-                onChange={(e) => {
-                  setStoryPoints(Number(e.target.value));
-                  handleSaveField('storyPoints', Number(e.target.value));
-                }}
-                className="w-full px-3 py-2 glass-input text-foreground text-xs rounded-xl focus:outline-none [&>option]:bg-background [&>option]:text-foreground"
-              >
-                <option value={0}>0 SP (None)</option>
-                <option value={1}>1 SP</option>
-                <option value={2}>2 SP</option>
-                <option value={3}>3 SP</option>
-                <option value={5}>5 SP</option>
-                <option value={8}>8 SP</option>
-              </select>
-            </div>
+
 
             {/* Due Date */}
             <div className="space-y-1.5 col-span-2">
               <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Due Date</label>
-              <div className="relative">
-                <input
-                  type="date"
-                  value={dueDate}
-                  disabled={!canEditFull}
-                  onChange={(e) => {
-                    setDueDate(e.target.value);
-                    handleSaveField('dueDate', e.target.value);
-                  }}
-                  className="w-full px-3 py-2 glass-input text-foreground text-xs rounded-xl focus:outline-none cursor-pointer"
-                />
-              </div>
+              <DatePickerInput
+                value={dueDate}
+                disabled={!canEditFull}
+                onChange={(val) => {
+                  setDueDate(val);
+                  handleSaveField('dueDate', val);
+                }}
+                placeholder="No due date set"
+              />
             </div>
           </div>
 
@@ -451,7 +428,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
             </div>
             
             <CommentsSystem
-              projectId={task.projectId}
+              projectId={task.projectId || 'global'}
               entityId={task.id}
               entityType="TASK"
             />

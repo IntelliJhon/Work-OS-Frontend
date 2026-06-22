@@ -23,9 +23,12 @@ import {
   MessageSquare,
   ClipboardList,
   Layers,
-  Calendar
+  Calendar,
+  Paperclip,
+  Download
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
+import { DatePickerInput } from '../../components/ui/DatePickerInput';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
@@ -38,6 +41,7 @@ import { usersApi } from '../../services/api/users';
 import type { User } from '../../services/api/users';
 import { CommentsSystem } from '../../components/collaboration/CommentsSystem';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
+import { uploadsApi } from '../../services/api/uploads';
 
 const createActivitySchema = z.object({
   title: z.string().min(3, 'Activity title must be at least 3 characters'),
@@ -71,11 +75,27 @@ const createSprintSchema = z.object({
 type CreateActivityValues = z.infer<typeof createActivitySchema>;
 type CreateSprintValues = z.infer<typeof createSprintSchema>;
 
+interface SubTaskFile {
+  id: string;
+  name: string;
+  publicUrl: string;
+}
+
+interface SubTaskComment {
+  id: string;
+  userName: string;
+  userEmail: string;
+  text: string;
+  createdAt: string;
+  files?: SubTaskFile[];
+}
+
 // Beautiful rich task structure for premium operational Kanban collaboration
 interface SubTask {
   id: string;
   title: string;
   done: boolean;
+  comments?: SubTaskComment[];
 }
 
 interface InteractiveTask {
@@ -121,6 +141,11 @@ export const ProjectSprints: React.FC = () => {
 
   // Form states for subtasks in details side panel
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+
+  // Subtask Comments & Media states
+  const [expandedSubtaskIds, setExpandedSubtaskIds] = useState<string[]>([]);
+  const [subtaskCommentText, setSubtaskCommentText] = useState<Record<string, string>>({});
+  const [subtaskUploading, setSubtaskUploading] = useState<Record<string, boolean>>({});
 
   // Fetch active tenant members for assignment dropdowns
   const [members, setMembers] = useState<User[]>([]);
@@ -858,6 +883,109 @@ export const ProjectSprints: React.FC = () => {
 
     const updatedSubtasks = (task.subtasks || []).filter((sub) => sub.id !== subtaskId);
     handleUpdateTaskDetail(taskId, { subtasks: updatedSubtasks });
+  };
+
+  const toggleSubtaskExpanded = (subtaskId: string) => {
+    setExpandedSubtaskIds((prev) =>
+      prev.includes(subtaskId)
+        ? prev.filter((id) => id !== subtaskId)
+        : [...prev, subtaskId]
+    );
+  };
+
+  const handleUploadSubtaskFiles = async (
+    taskId: string,
+    subtaskId: string,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const filesArray = Array.from(e.target.files);
+
+    setSubtaskUploading((prev) => ({ ...prev, [subtaskId]: true }));
+    try {
+      const res = await uploadsApi.upload('TASK', taskId, filesArray);
+      
+      const newFiles = res.uploads.map((upload) => ({
+        id: upload.id,
+        name: upload.originalName,
+        publicUrl: upload.publicUrl,
+      }));
+
+      const task = activeSprintTasks.find((t) => t.id === taskId);
+      if (!task) return;
+
+      const newComment: SubTaskComment = {
+        id: `comment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        userName: user ? `${user.firstName} ${user.lastName}` : 'System',
+        userEmail: user?.email || '',
+        text: 'Uploaded attachments',
+        createdAt: new Date().toISOString(),
+        files: newFiles,
+      };
+
+      const updatedSubtasks = (task.subtasks || []).map((sub) => {
+        if (sub.id === subtaskId) {
+          return {
+            ...sub,
+            comments: [...(sub.comments || []), newComment],
+          };
+        }
+        return sub;
+      });
+
+      await handleUpdateTaskDetail(taskId, { subtasks: updatedSubtasks });
+    } catch (err) {
+      console.error('[SubtaskUpload] Upload failed', err);
+      alert('Failed to upload files to subtask thread');
+    } finally {
+      setSubtaskUploading((prev) => ({ ...prev, [subtaskId]: false }));
+    }
+  };
+
+  const handleAddSubtaskComment = async (taskId: string, subtaskId: string) => {
+    const commentText = subtaskCommentText[subtaskId]?.trim();
+    if (!commentText) return;
+
+    const task = activeSprintTasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    const newComment: SubTaskComment = {
+      id: `comment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      userName: user ? `${user.firstName} ${user.lastName}` : 'System',
+      userEmail: user?.email || '',
+      text: commentText,
+      createdAt: new Date().toISOString(),
+    };
+
+    const updatedSubtasks = (task.subtasks || []).map((sub) => {
+      if (sub.id === subtaskId) {
+        return {
+          ...sub,
+          comments: [...(sub.comments || []), newComment],
+        };
+      }
+      return sub;
+    });
+
+    await handleUpdateTaskDetail(taskId, { subtasks: updatedSubtasks });
+    setSubtaskCommentText((prev) => ({ ...prev, [subtaskId]: '' }));
+  };
+
+  const handleDownloadFile = async (fileId: string) => {
+    try {
+      const res = await uploadsApi.getDownloadUrl(fileId);
+      if (res && res.downloadUrl) {
+        const a = document.createElement('a');
+        a.href = res.downloadUrl;
+        a.target = '_self';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    } catch (err) {
+      console.error('[SubtaskDownload] Failed to get signed URL', err);
+      alert('Failed to download file');
+    }
   };
 
   // Governance Sprint Rules Check: Close Sprint
@@ -1731,23 +1859,21 @@ export const ProjectSprints: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Start Date</label>
-                  <input
-                    type="date"
-                    disabled={!canEditFull}
+                  <DatePickerInput
                     value={activeTask.startDate ? activeTask.startDate.substring(0, 10) : ''}
-                    onChange={(e) => handleUpdateTaskDetail(activeTask.id, { startDate: e.target.value || undefined })}
-                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 disabled:opacity-75 cursor-pointer"
+                    disabled={!canEditFull}
+                    onChange={(val) => handleUpdateTaskDetail(activeTask.id, { startDate: val || undefined })}
+                    placeholder="No start date"
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Due Date</label>
-                  <input
-                    type="date"
-                    disabled={!canEditFull}
+                  <DatePickerInput
                     value={activeTask.dueDate ? activeTask.dueDate.substring(0, 10) : ''}
-                    onChange={(e) => handleUpdateTaskDetail(activeTask.id, { dueDate: e.target.value || undefined })}
-                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 disabled:opacity-75 cursor-pointer"
+                    disabled={!canEditFull}
+                    onChange={(val) => handleUpdateTaskDetail(activeTask.id, { dueDate: val || undefined })}
+                    placeholder="No due date"
                   />
                 </div>
               </div>
@@ -1797,35 +1923,141 @@ export const ProjectSprints: React.FC = () => {
                 )}
 
                 {/* Subtasks listing */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {!activeTask.subtasks || activeTask.subtasks.length === 0 ? (
                     <p className="text-[10.5px] italic text-slate-500 font-light pl-1">No subtask list added.</p>
                   ) : (
-                    activeTask.subtasks.map((sub) => (
-                      <div key={sub.id} className="flex items-center justify-between p-2.5 bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl transition duration-150 hover:bg-slate-100 dark:hover:bg-zinc-900">
-                        <div
-                          className="flex items-center space-x-2.5 cursor-pointer flex-1"
-                          onClick={() => { if (canUpdate) handleToggleSubtask(activeTask.id, sub.id); }}
-                        >
-                          {sub.done ? (
-                            <CheckSquare className="w-4 h-4 text-purple-500 shrink-0" />
-                          ) : (
-                            <Square className="w-4 h-4 text-slate-500 shrink-0" />
+                    activeTask.subtasks.map((sub) => {
+                      const isExpanded = expandedSubtaskIds.includes(sub.id);
+                      const commentCount = sub.comments?.length || 0;
+                      const fileCount = sub.comments?.reduce((sum, c) => sum + (c.files?.length || 0), 0) || 0;
+                      return (
+                        <div key={sub.id} className="border border-slate-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-background/25 p-3 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div
+                              className="flex items-center space-x-2.5 cursor-pointer flex-1"
+                              onClick={() => { if (canUpdate) handleToggleSubtask(activeTask.id, sub.id); }}
+                            >
+                              {sub.done ? (
+                                <CheckSquare className="w-4 h-4 text-purple-500 shrink-0" />
+                              ) : (
+                                <Square className="w-4 h-4 text-slate-500 shrink-0" />
+                              )}
+                              <span className={`text-xs ${sub.done ? 'line-through text-slate-500' : 'text-slate-800 dark:text-zinc-300'}`}>
+                                {sub.title}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center space-x-2">
+                              {/* Toggle Thread Button */}
+                              <button
+                                onClick={() => toggleSubtaskExpanded(sub.id)}
+                                className={`p-1 rounded-lg transition-all flex items-center space-x-1 text-slate-550 hover:bg-slate-100 dark:hover:bg-zinc-900 ${isExpanded ? 'text-purple-500 bg-purple-500/10' : 'hover:text-purple-400'}`}
+                                title="Comments & media files thread"
+                              >
+                                <MessageSquare className="w-3.5 h-3.5" />
+                                {(commentCount > 0 || fileCount > 0) && (
+                                  <span className="text-[9px] font-bold">
+                                    {commentCount}
+                                  </span>
+                                )}
+                              </button>
+                              
+                              {canUpdate && (
+                                <button
+                                  onClick={() => handleDeleteSubtask(activeTask.id, sub.id)}
+                                  className="p-1 hover:bg-red-500/10 text-slate-500 hover:text-red-400 rounded transition cursor-pointer"
+                                >
+                                  <Trash className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Expanded Thread Section */}
+                          {isExpanded && (
+                            <div className="border-t border-slate-100 dark:border-white/5 pt-2.5 mt-2.5 space-y-3 animate-fade-in pl-1">
+                              {/* Thread List */}
+                              <div className="space-y-2 max-h-[220px] overflow-y-auto custom-scrollbar">
+                                {!sub.comments || sub.comments.length === 0 ? (
+                                  <p className="text-[10px] italic text-slate-500 dark:text-zinc-500 pl-1 font-light">No media or messages posted yet.</p>
+                                ) : (
+                                  sub.comments.map((comment) => (
+                                    <div key={comment.id} className="space-y-1 p-2 bg-slate-50/50 dark:bg-zinc-900/40 border border-slate-200/50 dark:border-white/5 rounded-lg text-[11px]">
+                                      <div className="flex justify-between items-center text-[9px] text-slate-500 dark:text-zinc-500 font-bold">
+                                        <span>{comment.userName}</span>
+                                        <span>{new Date(comment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                      </div>
+                                      {comment.text && <p className="text-slate-700 dark:text-zinc-300 leading-normal">{comment.text}</p>}
+                                      
+                                      {/* Files listed inside the comment */}
+                                      {comment.files && comment.files.length > 0 && (
+                                        <div className="flex flex-col gap-1 mt-1.5">
+                                          {comment.files.map((file) => (
+                                            <div key={file.id} className="flex items-center justify-between p-1.5 rounded-lg bg-white dark:bg-background border border-slate-100 dark:border-zinc-800 text-[10px]">
+                                              <span className="truncate max-w-[150px] text-slate-700 dark:text-zinc-400">{file.name}</span>
+                                              <button
+                                                onClick={() => handleDownloadFile(file.id)}
+                                                className="text-purple-500 hover:text-purple-400 font-bold transition flex items-center space-x-0.5 cursor-pointer"
+                                              >
+                                                <Download className="w-3.5 h-3.5" />
+                                                <span>Download</span>
+                                              </button>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                              
+                              {/* Composer to add comment or upload media */}
+                              <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-white/5">
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Write a comment or upload files..."
+                                    value={subtaskCommentText[sub.id] || ''}
+                                    onChange={(e) => setSubtaskCommentText(prev => ({ ...prev, [sub.id]: e.target.value }))}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddSubtaskComment(activeTask.id, sub.id); }}
+                                    className="flex-1 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500"
+                                  />
+                                  
+                                  {/* File input */}
+                                  <input
+                                    type="file"
+                                    id={`subtask-file-input-${sub.id}`}
+                                    className="hidden"
+                                    multiple
+                                    onChange={(e) => handleUploadSubtaskFiles(activeTask.id, sub.id, e)}
+                                  />
+                                  <button
+                                    onClick={() => document.getElementById(`subtask-file-input-${sub.id}`)?.click()}
+                                    className="p-1.5 rounded-xl hover:bg-slate-150 dark:hover:bg-zinc-900 text-slate-500 hover:text-white transition cursor-pointer"
+                                    title="Attach media files"
+                                    disabled={subtaskUploading[sub.id]}
+                                  >
+                                    <Paperclip className="w-4 h-4" />
+                                  </button>
+                                  
+                                  <button
+                                    onClick={() => handleAddSubtaskComment(activeTask.id, sub.id)}
+                                    disabled={subtaskUploading[sub.id] || (!subtaskCommentText[sub.id]?.trim())}
+                                    className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition duration-150 disabled:opacity-50 cursor-pointer"
+                                  >
+                                    Send
+                                  </button>
+                                </div>
+                                {subtaskUploading[sub.id] && (
+                                  <p className="text-[9px] text-purple-400 animate-pulse pl-1">Uploading media files to cloud storage...</p>
+                                )}
+                              </div>
+                            </div>
                           )}
-                          <span className={`text-xs ${sub.done ? 'line-through text-slate-500' : 'text-slate-800 dark:text-zinc-300'}`}>
-                            {sub.title}
-                          </span>
                         </div>
-                        {canUpdate && (
-                          <button
-                            onClick={() => handleDeleteSubtask(activeTask.id, sub.id)}
-                            className="p-1 hover:bg-red-500/10 text-slate-500 hover:text-red-400 rounded transition cursor-pointer"
-                          >
-                            <Trash className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -2215,21 +2447,19 @@ export const ProjectSprints: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Start Date</label>
-                    <input
-                      type="date"
+                    <DatePickerInput
                       value={addTaskStartDate}
-                      onChange={(e) => setAddTaskStartDate(e.target.value)}
-                      className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-850 rounded-xl px-3 py-2 text-xs text-slate-850 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+                      onChange={(val) => setAddTaskStartDate(val)}
+                      placeholder="Select start date"
                     />
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Due Date</label>
-                    <input
-                      type="date"
+                    <DatePickerInput
                       value={addTaskDueDate}
-                      onChange={(e) => setAddTaskDueDate(e.target.value)}
-                      className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-850 rounded-xl px-3 py-2 text-xs text-slate-850 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+                      onChange={(val) => setAddTaskDueDate(val)}
+                      placeholder="Select due date"
                     />
                   </div>
                 </div>

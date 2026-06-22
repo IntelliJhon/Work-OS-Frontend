@@ -25,6 +25,7 @@ import { tasksApi } from '../../services/api/tasks.api';
 import { usersApi } from '../../services/api/users';
 import type { User as UserType } from '../../services/api/users';
 import { useAuthStore } from '../../store/authStore';
+import { DatePickerInput } from '../../components/ui/DatePickerInput';
 
 interface SubTask {
   id: string;
@@ -1352,23 +1353,21 @@ export const ProjectAnalytics: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Start Date</label>
-                  <input
-                    type="date"
-                    disabled={!canEditFull}
+                  <DatePickerInput
                     value={activeTask.customFields?.startDate ? activeTask.customFields.startDate.substring(0, 10) : ''}
-                    onChange={(e) => handleUpdateTaskDetail(activeTask.id, { startDate: e.target.value || undefined })}
-                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 disabled:opacity-75 cursor-pointer"
+                    disabled={!canEditFull}
+                    onChange={(val) => handleUpdateTaskDetail(activeTask.id, { startDate: val || undefined })}
+                    placeholder="No start date"
                   />
                 </div>
 
                 <div className="space-y-1">
                   <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Due Date</label>
-                  <input
-                    type="date"
-                    disabled={!canEditFull}
+                  <DatePickerInput
                     value={activeTask.customFields?.dueDate ? activeTask.customFields.dueDate.substring(0, 10) : ''}
-                    onChange={(e) => handleUpdateTaskDetail(activeTask.id, { dueDate: e.target.value || undefined })}
-                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 disabled:opacity-75 cursor-pointer"
+                    disabled={!canEditFull}
+                    onChange={(val) => handleUpdateTaskDetail(activeTask.id, { dueDate: val || undefined })}
+                    placeholder="No due date"
                   />
                 </div>
               </div>
