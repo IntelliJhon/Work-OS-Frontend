@@ -1,64 +1,36 @@
 import React from 'react';
 import { Search, X, Filter } from 'lucide-react';
-import type { Project, Sprint, Phase } from '../../services/api/projects';
 import type { User } from '../../services/api/users';
 
 interface TaskFiltersProps {
-  projects: Project[];
-  sprints: Sprint[];
-  phases: Phase[];
   assignees: User[];
   
   // Selected filter values
   search: string;
-  projectId: string;
-  sprintId: string;
   assigneeId: string;
-  phaseId: string;
   status: string;
   priority: string;
 
   // Filter setters
   onSearchChange: (val: string) => void;
-  onProjectChange: (val: string) => void;
-  onSprintChange: (val: string) => void;
   onAssigneeChange: (val: string) => void;
-  onPhaseChange: (val: string) => void;
   onStatusChange: (val: string) => void;
   onPriorityChange: (val: string) => void;
   onClearFilters: () => void;
 }
 
 export const TaskFilters: React.FC<TaskFiltersProps> = ({
-  projects,
-  sprints,
-  phases,
   assignees,
   search,
-  projectId,
-  sprintId,
   assigneeId,
-  phaseId,
   status,
   priority,
   onSearchChange,
-  onProjectChange,
-  onSprintChange,
   onAssigneeChange,
-  onPhaseChange,
   onStatusChange,
   onPriorityChange,
   onClearFilters,
 }) => {
-  // Filter sprints and phases based on selected project
-  const filteredSprints = projectId
-    ? sprints.filter((s) => s.projectId === projectId)
-    : sprints;
-
-  const filteredPhases = projectId
-    ? phases.filter((p) => p.projectId === projectId)
-    : phases;
-
   return (
     <div className="glass-panel rounded-2xl p-5 border border-border space-y-4 glow-primary">
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
@@ -88,7 +60,7 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
             <Filter className="w-3.5 h-3.5" />
             <span>Active Filters</span>
           </span>
-          {(projectId || sprintId || assigneeId || phaseId || status || priority || search) && (
+          {(assigneeId || status || priority || search) && (
             <button
               onClick={onClearFilters}
               className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 font-bold transition-all cursor-pointer"
@@ -101,41 +73,7 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
       </div>
 
       {/* Filter Selectors Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-        {/* Project Selector */}
-        <div className="space-y-1">
-          <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Project</label>
-          <select
-            value={projectId}
-            onChange={(e) => onProjectChange(e.target.value)}
-            className="w-full px-3 py-2 glass-input text-foreground text-xs rounded-xl focus:outline-none transition-all cursor-pointer font-light [&>option]:bg-background [&>option]:text-foreground"
-          >
-            <option value="">All Projects</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Sprint Selector */}
-        <div className="space-y-1">
-          <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Sprint</label>
-          <select
-            value={sprintId}
-            onChange={(e) => onSprintChange(e.target.value)}
-            className="w-full px-3 py-2 glass-input text-foreground text-xs rounded-xl focus:outline-none transition-all cursor-pointer font-light [&>option]:bg-background [&>option]:text-foreground"
-          >
-            <option value="">All Sprints</option>
-            {filteredSprints.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name} ({s.status})
-              </option>
-            ))}
-          </select>
-        </div>
-
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {/* Assignee Selector */}
         <div className="space-y-1">
           <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Assignee</label>
@@ -148,23 +86,6 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
             {assignees.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.firstName} {u.lastName}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Phase Selector */}
-        <div className="space-y-1">
-          <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Phase</label>
-          <select
-            value={phaseId}
-            onChange={(e) => onPhaseChange(e.target.value)}
-            className="w-full px-3 py-2 glass-input text-foreground text-xs rounded-xl focus:outline-none transition-all cursor-pointer font-light [&>option]:bg-background [&>option]:text-foreground"
-          >
-            <option value="">All Phases</option>
-            {filteredPhases.map((ph) => (
-              <option key={ph.id} value={ph.id}>
-                {ph.name} ({ph.status})
               </option>
             ))}
           </select>

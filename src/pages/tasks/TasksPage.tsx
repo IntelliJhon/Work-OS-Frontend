@@ -11,16 +11,12 @@ import {
   Loader2, 
   ChevronRight, 
   X, 
-  Sparkles,
-  List,
-  BarChart3
+  Sparkles
 } from 'lucide-react';
 
 // Components
 import { TaskFilters } from '../../components/tasks/TaskFilters';
 import { TaskBoard } from '../../components/tasks/TaskBoard';
-import { TaskTable } from '../../components/tasks/TaskTable';
-import { TaskAnalytics } from '../../components/tasks/TaskAnalytics';
 import { TaskDrawer } from '../../components/tasks/TaskDrawer';
 import { TaskActivityFeed } from '../../components/tasks/TaskActivityFeed';
 import { DatePickerInput } from '../../components/ui/DatePickerInput';
@@ -62,14 +58,10 @@ export const TasksPage: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any | null>(null);
   const [isActivityFeedOpen, setIsActivityFeedOpen] = useState(true);
-  const [activeView, setActiveView] = useState<'board' | 'list' | 'analytics'>('board');
 
   // Filters State
   const [search, setSearch] = useState('');
-  const [selectedProjectId, setSelectedProjectId] = useState('');
-  const [selectedSprintId, setSelectedSprintId] = useState('');
   const [selectedAssigneeId, setSelectedAssigneeId] = useState('');
-  const [selectedPhaseId, setSelectedPhaseId] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
 
@@ -179,24 +171,21 @@ export const TasksPage: React.FC = () => {
   // Client-side Filters
   const filteredTasks = useMemo(() => {
     return tasks.filter((t) => {
+      // Show ONLY global/non-project-based tasks on this dashboard page
+      if (t.projectId) return false;
+
       const matchesSearch =
         !search ||
         t.name.toLowerCase().includes(search.toLowerCase()) ||
         (t.description && t.description.toLowerCase().includes(search.toLowerCase()));
 
-      const matchesProject = !selectedProjectId || t.projectId === selectedProjectId;
-      const matchesSprint = !selectedSprintId || t.sprintId === selectedSprintId;
       const matchesAssignee = !selectedAssigneeId || t.assigneeId === selectedAssigneeId;
-      const matchesPhase = !selectedPhaseId || t.customFields?.phaseId === selectedPhaseId;
       const matchesStatus = !selectedStatus || t.status === selectedStatus;
       const matchesPriority = !selectedPriority || t.customFields?.priority === selectedPriority;
 
       return (
         matchesSearch &&
-        matchesProject &&
-        matchesSprint &&
         matchesAssignee &&
-        matchesPhase &&
         matchesStatus &&
         matchesPriority
       );
@@ -204,30 +193,28 @@ export const TasksPage: React.FC = () => {
   }, [
     tasks,
     search,
-    selectedProjectId,
-    selectedSprintId,
     selectedAssigneeId,
-    selectedPhaseId,
     selectedStatus,
     selectedPriority,
   ]);
 
-  // Aggregate stats
+  // Aggregate stats (only for global tasks shown on this page)
   const metrics = useMemo(() => {
-    const active = tasks.filter(t => t.status !== 'done' && t.status !== 'blocked').length;
-    const blocked = tasks.filter(t => t.status === 'blocked').length;
+    const globalTasks = tasks.filter(t => !t.projectId);
+    const active = globalTasks.filter(t => t.status !== 'done' && t.status !== 'blocked').length;
+    const blocked = globalTasks.filter(t => t.status === 'blocked').length;
     
     const todayStr = new Date().toDateString();
-    const dueToday = tasks.filter(t => {
+    const dueToday = globalTasks.filter(t => {
       if (!t.customFields?.dueDate || t.status === 'done') return false;
       return new Date(t.customFields.dueDate).toDateString() === todayStr;
     }).length;
 
-    const velocity = tasks
+    const velocity = globalTasks
       .filter(t => t.status === 'done')
       .reduce((sum, t) => sum + (t.customFields?.storyPoints || 0), 0);
 
-    const assignedToMe = tasks.filter(t => t.assigneeId === currentUser?.id).length;
+    const assignedToMe = globalTasks.filter(t => t.assigneeId === currentUser?.id).length;
 
     return { active, blocked, dueToday, velocity, assignedToMe };
   }, [tasks, currentUser]);
@@ -432,22 +419,12 @@ export const TasksPage: React.FC = () => {
 
   const clearFilters = () => {
     setSearch('');
-    setSelectedProjectId('');
-    setSelectedSprintId('');
     setSelectedAssigneeId('');
-    setSelectedPhaseId('');
     setSelectedStatus('');
     setSelectedPriority('');
   };
 
-  // Filter sprints/phases in the Add dialog modal
-  const filteredSprintsForNewTask = newTaskProjectId
-    ? allSprints.filter(s => s.projectId === newTaskProjectId)
-    : [];
-
-  const filteredPhasesForNewTask = newTaskProjectId
-    ? allPhases.filter(p => p.projectId === newTaskProjectId)
-    : [];
+  // Sprints/phases are not used since project-based task creation is disabled here
 
   if (loadingTasks || loadingProjects) {
     return (
@@ -482,49 +459,6 @@ export const TasksPage: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-3">
-          {/* Dashboard View Switcher */}
-          <div className="flex items-center space-x-1 bg-muted border border-border p-1 rounded-xl">
-            <button
-              type="button"
-              onClick={() => setActiveView('board')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
-                activeView === 'board'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/10'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background'
-              }`}
-              title="Kanban Board View"
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Board</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveView('list')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
-                activeView === 'list'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/10'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background'
-              }`}
-              title="Spreadsheet List View"
-            >
-              <List className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">List</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveView('analytics')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
-                activeView === 'analytics'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/10'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background'
-              }`}
-              title="Operational Insights & Charts"
-            >
-              <BarChart3 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Analytics</span>
-            </button>
-          </div>
-
           {can(PERMISSIONS.TASK_CREATE) && (
             <button
               type="button"
@@ -536,20 +470,18 @@ export const TasksPage: React.FC = () => {
             </button>
           )}
 
-          {activeView !== 'analytics' && (
-            <button
-              type="button"
-              onClick={() => setIsActivityFeedOpen(!isActivityFeedOpen)}
-              className={`flex items-center space-x-2 px-3 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                isActivityFeedOpen 
-                  ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' 
-                  : 'bg-muted border-border text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Activity className="w-4 h-4" />
-              <span className="hidden sm:inline">Activity Feed</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setIsActivityFeedOpen(!isActivityFeedOpen)}
+            className={`flex items-center space-x-2 px-3 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+              isActivityFeedOpen 
+                ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' 
+                : 'bg-muted border-border text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Activity className="w-4 h-4" />
+            <span className="hidden sm:inline">Activity Feed</span>
+          </button>
         </div>
       </div>
 
@@ -606,22 +538,13 @@ export const TasksPage: React.FC = () => {
 
       {/* Filtering Row */}
       <TaskFilters
-        projects={projects}
-        sprints={allSprints}
-        phases={allPhases}
         assignees={users}
         search={search}
-        projectId={selectedProjectId}
-        sprintId={selectedSprintId}
         assigneeId={selectedAssigneeId}
-        phaseId={selectedPhaseId}
         status={selectedStatus}
         priority={selectedPriority}
         onSearchChange={setSearch}
-        onProjectChange={setSelectedProjectId}
-        onSprintChange={setSelectedSprintId}
         onAssigneeChange={setSelectedAssigneeId}
-        onPhaseChange={setSelectedPhaseId}
         onStatusChange={setSelectedStatus}
         onPriorityChange={setSelectedPriority}
         onClearFilters={clearFilters}
@@ -631,40 +554,20 @@ export const TasksPage: React.FC = () => {
       <div className="flex flex-col lg:flex-row gap-6 items-start">
         {/* Workspace views conditional render */}
         <div className="flex-1 w-full overflow-hidden">
-          {activeView === 'board' && (
-            <TaskBoard
-              tasks={filteredTasks}
-              projects={projects}
-              sprints={allSprints}
-              phases={allPhases}
-              assignees={users}
-              onTaskClick={setSelectedTask}
-              onMoveTask={handleMoveTask}
-            />
-          )}
-
-          {activeView === 'list' && (
-            <TaskTable
-              tasks={filteredTasks}
-              projects={projects}
-              sprints={allSprints}
-              phases={allPhases}
-              assignees={users}
-              onTaskClick={setSelectedTask}
-            />
-          )}
-
-          {activeView === 'analytics' && (
-            <TaskAnalytics
-              tasks={filteredTasks}
-              assignees={users}
-            />
-          )}
+          <TaskBoard
+            tasks={filteredTasks}
+            projects={projects}
+            sprints={allSprints}
+            phases={allPhases}
+            assignees={users}
+            onTaskClick={setSelectedTask}
+            onMoveTask={handleMoveTask}
+          />
         </div>
 
         {/* Collapsible Activity Sidebar */}
         <AnimatePresence>
-          {isActivityFeedOpen && activeView !== 'analytics' && (
+          {isActivityFeedOpen && (
             <motion.div
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: 340, opacity: 1 }}
@@ -762,28 +665,7 @@ export const TasksPage: React.FC = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Project */}
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Project</label>
-                    <select
-                      value={newTaskProjectId}
-                      onChange={(e) => {
-                        setNewTaskProjectId(e.target.value);
-                        setNewTaskSprintId('');
-                        setNewTaskPhaseId('');
-                      }}
-                      className="w-full px-3 py-2.5 glass-input text-foreground text-xs rounded-xl focus:outline-none [&>option]:bg-background [&>option]:text-foreground"
-                    >
-                      <option value="">Select Project (Optional)</option>
-                      {projects.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
+                <div className="space-y-4">
                   {/* Assignee */}
                   <div className="space-y-1.5">
                     <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Assignee</label>
@@ -801,65 +683,31 @@ export const TasksPage: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Sprint */}
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Sprint</label>
-                    <select
-                      value={newTaskSprintId}
-                      disabled={!newTaskProjectId}
-                      onChange={(e) => setNewTaskSprintId(e.target.value)}
-                      className="w-full px-3 py-2.5 glass-input text-foreground text-xs rounded-xl focus:outline-none disabled:opacity-50 [&>option]:bg-background [&>option]:text-foreground"
-                    >
-                      <option value="">No Sprint</option>
-                      {filteredSprintsForNewTask.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name} ({s.status})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Priority */}
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Priority</label>
+                      <select
+                        value={newTaskPriority}
+                        onChange={(e) => setNewTaskPriority(e.target.value)}
+                        className="w-full px-3 py-2.5 glass-input text-foreground text-xs rounded-xl focus:outline-none [&>option]:bg-background [&>option]:text-foreground"
+                      >
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                      </select>
+                    </div>
 
-                  {/* Phase */}
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Project Phase</label>
-                    <select
-                      value={newTaskPhaseId}
-                      disabled={!newTaskProjectId}
-                      onChange={(e) => setNewTaskPhaseId(e.target.value)}
-                      className="w-full px-3 py-2.5 glass-input text-foreground text-xs rounded-xl focus:outline-none disabled:opacity-50 [&>option]:bg-background [&>option]:text-foreground"
-                    >
-                      <option value="">No Phase</option>
-                      {filteredPhasesForNewTask.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} ({p.status})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Priority */}
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Priority</label>
-                    <select
-                      value={newTaskPriority}
-                      onChange={(e) => setNewTaskPriority(e.target.value)}
-                      className="w-full px-3 py-2.5 glass-input text-foreground text-xs rounded-xl focus:outline-none [&>option]:bg-background [&>option]:text-foreground"
-                    >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                      <option value="critical">Critical</option>
-                    </select>
-                  </div>
-
-                  {/* Due Date */}
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Due Date</label>
-                    <DatePickerInput
-                      value={newTaskDueDate}
-                      onChange={(val) => setNewTaskDueDate(val)}
-                      placeholder="Select due date"
-                    />
+                    {/* Due Date */}
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Due Date</label>
+                      <DatePickerInput
+                        value={newTaskDueDate}
+                        onChange={(val) => setNewTaskDueDate(val)}
+                        placeholder="Select due date"
+                      />
+                    </div>
                   </div>
                 </div>
 

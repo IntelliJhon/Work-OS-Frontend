@@ -122,9 +122,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       <div className="space-y-3">
         {/* Project Name and Priority Badge */}
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[10px] font-extrabold text-blue-600 dark:text-blue-400 uppercase tracking-widest truncate max-w-[140px]">
-            💼 {project?.name || 'Unassigned'}
-          </span>
+          {project?.name ? (
+            <span className="text-[10px] font-extrabold text-blue-600 dark:text-blue-400 uppercase tracking-widest truncate max-w-[140px]">
+              💼 {project.name}
+            </span>
+          ) : (
+            <div />
+          )}
           <span
             className={`text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded border ${
               priorityColors[priority as keyof typeof priorityColors] || priorityColors.medium

@@ -270,47 +270,51 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               </select>
             </div>
 
-            {/* Sprint */}
-            <div className="space-y-1.5">
-              <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Sprint</label>
-              <select
-                value={sprintId}
-                disabled={!canEditFull}
-                onChange={(e) => {
-                  setSprintId(e.target.value);
-                  handleSaveField('sprintId', e.target.value);
-                }}
-                className="w-full px-3 py-2 glass-input text-foreground text-xs rounded-xl focus:outline-none [&>option]:bg-background [&>option]:text-foreground"
-              >
-                <option value="">No Sprint</option>
-                {filteredSprints.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.status})
-                  </option>
-                ))}
-              </select>
-            </div>
+            {task.projectId && (
+              <>
+                {/* Sprint */}
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Sprint</label>
+                  <select
+                    value={sprintId}
+                    disabled={!canEditFull}
+                    onChange={(e) => {
+                      setSprintId(e.target.value);
+                      handleSaveField('sprintId', e.target.value);
+                    }}
+                    className="w-full px-3 py-2 glass-input text-foreground text-xs rounded-xl focus:outline-none [&>option]:bg-background [&>option]:text-foreground"
+                  >
+                    <option value="">No Sprint</option>
+                    {filteredSprints.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.status})
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* Phase */}
-            <div className="space-y-1.5">
-              <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Project Phase</label>
-              <select
-                value={phaseId}
-                disabled={!canEditFull}
-                onChange={(e) => {
-                  setPhaseId(e.target.value);
-                  handleSaveField('phaseId', e.target.value);
-                }}
-                className="w-full px-3 py-2 glass-input text-foreground text-xs rounded-xl focus:outline-none [&>option]:bg-background [&>option]:text-foreground"
-              >
-                <option value="">No Phase</option>
-                {filteredPhases.map((ph) => (
-                  <option key={ph.id} value={ph.id}>
-                    {ph.name} ({ph.status})
-                  </option>
-                ))}
-              </select>
-            </div>
+                {/* Phase */}
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Project Phase</label>
+                  <select
+                    value={phaseId}
+                    disabled={!canEditFull}
+                    onChange={(e) => {
+                      setPhaseId(e.target.value);
+                      handleSaveField('phaseId', e.target.value);
+                    }}
+                    className="w-full px-3 py-2 glass-input text-foreground text-xs rounded-xl focus:outline-none [&>option]:bg-background [&>option]:text-foreground"
+                  >
+                    <option value="">No Phase</option>
+                    {filteredPhases.map((ph) => (
+                      <option key={ph.id} value={ph.id}>
+                        {ph.name} ({ph.status})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
 
             {/* Priority */}
             <div className="space-y-1.5">
