@@ -114,11 +114,8 @@ export const TasksPage: React.FC = () => {
   });
 
   const filteredUsers = useMemo(() => {
-    if (currentUser?.role === 'Project Manager') {
-      return users.filter((u: any) => u.roleName === 'User');
-    }
     return users;
-  }, [users, currentUser]);
+  }, [users]);
 
 
   // Sprints and Phases Aggregation

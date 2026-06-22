@@ -4,7 +4,6 @@ import type { Task } from '../../services/api/tasks.api';
 import type { Project, Sprint, Phase } from '../../services/api/projects';
 import type { User } from '../../services/api/users';
 import { CommentsSystem } from '../collaboration/CommentsSystem';
-import { usePermissions } from '../../features/auth/usePermissions';
 import { useAuthStore } from '../../store/authStore';
 import { useConfirm } from '../ui/ConfirmDialog';
 
@@ -31,7 +30,6 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   onUpdateTask,
   onDeleteTask,
 }) => {
-  const { role } = usePermissions();
   const { user } = useAuthStore();
   const confirm = useConfirm();
   const project = projects.find((p) => p.id === task?.projectId);
@@ -61,11 +59,8 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
 
   const filteredAssignees = useMemo(() => {
-    if (role === 'Project Manager') {
-      return assignees.filter((u) => u.roleName === 'User' || u.id === assigneeId);
-    }
     return assignees;
-  }, [assignees, role, assigneeId]);
+  }, [assignees]);
 
 
   // Sync state when task changes
