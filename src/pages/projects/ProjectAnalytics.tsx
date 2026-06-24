@@ -143,7 +143,7 @@ export const ProjectAnalytics: React.FC = () => {
     };
   }, [projectTasks, activities, selectedAssignee, selectedStatus]);
 
-  // Derived activity start/end dates based on child tasks if parent has no dates
+  // Derived activity start/end dates based on child tasks (rolls up min start and max end from child tasks if any exist)
   const activityDatesMap = useMemo(() => {
     const map: Record<string, { startDate?: string; endDate?: string; isDerived: boolean }> = {};
     activities.forEach((act) => {
@@ -151,8 +151,9 @@ export const ProjectAnalytics: React.FC = () => {
       let end = act.endDate;
       let isDerived = false;
 
-      if (!start || !end) {
-        const childTasks = projectTasks.filter((t) => t.activityId === act.id);
+      const childTasks = projectTasks.filter((t) => t.activityId === act.id);
+      
+      if (childTasks.length > 0) {
         let minStart: Date | null = null;
         let maxEnd: Date | null = null;
 
@@ -174,17 +175,17 @@ export const ProjectAnalytics: React.FC = () => {
           }
         });
 
-        if (minStart && !start) {
+        if (minStart) {
           start = (minStart as Date).toISOString().split('T')[0];
           isDerived = true;
         }
-        if (maxEnd && !end) {
+        if (maxEnd) {
           end = (maxEnd as Date).toISOString().split('T')[0];
           isDerived = true;
         }
       }
 
-      // Fallback if one parent date is missing and could not be derived from child tasks
+      // Fallback if one parent date is missing
       if (start && !end) {
         end = start;
       }
@@ -192,7 +193,11 @@ export const ProjectAnalytics: React.FC = () => {
         start = end;
       }
 
-      map[act.id] = { startDate: start || undefined, endDate: end || undefined, isDerived };
+      // Format ISO string start date if it's from the database (e.g. "2026-04-08T18:30:00.000Z") to "YYYY-MM-DD"
+      const formattedStart = start ? (typeof start === 'string' ? start.substring(0, 10) : new Date(start).toISOString().split('T')[0]) : undefined;
+      const formattedEnd = end ? (typeof end === 'string' ? end.substring(0, 10) : new Date(end).toISOString().split('T')[0]) : undefined;
+
+      map[act.id] = { startDate: formattedStart, endDate: formattedEnd, isDerived };
     });
     return map;
   }, [activities, projectTasks]);
@@ -864,13 +869,16 @@ export const ProjectAnalytics: React.FC = () => {
                   const actDates = activityDatesMap[activity.id];
                   const activityPos = getPositionStyles(actDates?.startDate, actDates?.endDate);
                   const progressPercent = getActivityProgress(childTasks);
+                  const isActivityCompleted = childTasks.length > 0 && progressPercent === 100;
 
                   return (
                     <React.Fragment key={activity.id}>
                       {/* Parent Activity row */}
                       <div 
                         onClick={() => setActiveActivityId(activity.id)}
-                        className="flex hover:bg-slate-100/20 dark:hover:bg-white/2 transition-all group cursor-pointer bg-slate-50/50 dark:bg-zinc-900/25 border-l-4 border-blue-500/80"
+                        className={`flex hover:bg-slate-100/20 dark:hover:bg-white/2 transition-all group cursor-pointer bg-slate-50/50 dark:bg-zinc-900/25 border-l-4 ${
+                          isActivityCompleted ? 'border-emerald-500/80' : 'border-blue-500/80'
+                        }`}
                       >
                         
                         {/* Activity details left */}
@@ -938,9 +946,13 @@ export const ProjectAnalytics: React.FC = () => {
                             <>
                               <div 
                                 className={`h-5 rounded-md relative flex items-center justify-between px-2.5 z-10 select-none overflow-hidden ${
-                                  actDates.isDerived 
-                                    ? 'bg-blue-500/10 border border-dashed border-blue-500/30' 
-                                    : 'bg-blue-500/20 border border-blue-500/40'
+                                  isActivityCompleted
+                                    ? (actDates.isDerived 
+                                      ? 'bg-emerald-500/10 border border-dashed border-emerald-500/30' 
+                                      : 'bg-emerald-500/20 border border-emerald-500/40')
+                                    : (actDates.isDerived 
+                                      ? 'bg-blue-500/10 border border-dashed border-blue-500/30' 
+                                      : 'bg-blue-500/20 border border-blue-500/40')
                                 }`}
                                 style={{
                                   gridColumnStart: activityPos.gridColumnStart,
@@ -949,21 +961,27 @@ export const ProjectAnalytics: React.FC = () => {
                                 }}
                                 title={`${activity.title}${actDates.isDerived ? ' (Derived)' : ''}\nDates: ${new Date(actDates.startDate!).toLocaleDateString([], { year: 'numeric', month: 'long', day: 'numeric' })} to ${new Date(actDates.endDate!).toLocaleDateString([], { year: 'numeric', month: 'long', day: 'numeric' })}`}
                               >
-                                <div className="absolute inset-y-0 left-0 bg-blue-500/10 w-full" />
+                                <div className={`absolute inset-y-0 left-0 ${isActivityCompleted ? 'bg-emerald-500/10' : 'bg-blue-500/10'} w-full`} />
                                 {activityPos.duration * colWidth >= 120 && (
-                                  <span className="text-[8.5px] font-black uppercase text-blue-700 dark:text-blue-300 tracking-wider truncate z-10">
+                                  <span className={`text-[8.5px] font-black uppercase tracking-wider truncate z-10 ${
+                                    isActivityCompleted ? 'text-emerald-700 dark:text-emerald-300' : 'text-blue-700 dark:text-blue-300'
+                                  }`}>
                                     {activity.title} {actDates.isDerived && '(Derived)'}
                                   </span>
                                 )}
                                 {activityPos.duration * colWidth >= 220 && (
-                                  <span className="text-[8px] font-mono font-bold text-blue-600 dark:text-blue-400/70 z-10 shrink-0">
+                                  <span className={`text-[8px] font-mono font-bold z-10 shrink-0 ${
+                                    isActivityCompleted ? 'text-emerald-600 dark:text-emerald-400/70' : 'text-blue-600 dark:text-blue-400/70'
+                                  }`}>
                                     {new Date(actDates.startDate!).toLocaleDateString([], { month: 'short', day: 'numeric' })} - {new Date(actDates.endDate!).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                                   </span>
                                 )}
                               </div>
                               {activityPos.duration * colWidth < 120 && (
                                 <span 
-                                  className="text-[8.5px] font-black uppercase text-blue-700 dark:text-blue-300 tracking-wider z-10 self-center pl-2 whitespace-nowrap pointer-events-none"
+                                  className={`text-[8.5px] font-black uppercase tracking-wider z-10 self-center pl-2 whitespace-nowrap pointer-events-none ${
+                                    isActivityCompleted ? 'text-emerald-700 dark:text-emerald-300' : 'text-blue-700 dark:text-blue-300'
+                                  }`}
                                   style={{
                                     gridColumnStart: activityPos.gridColumnStart + activityPos.duration,
                                     gridColumnEnd: 'span 15',
