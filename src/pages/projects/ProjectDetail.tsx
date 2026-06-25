@@ -12,7 +12,9 @@ import {
   ChevronRight,
   Loader2,
   Users,
-  BarChart3
+  BarChart3,
+  Pencil,
+  X
 } from 'lucide-react';
 import { useSocket } from '../../services/socket/socket-context';
 import TeamPresence from '../../components/collaboration/TeamPresence';
@@ -23,6 +25,11 @@ export const ProjectDetail: React.FC = () => {
   const location = useLocation();
   const { isConnected } = useSocket();
   const [membersDrawerOpen, setMembersDrawerOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
 
   const getCurrentPageName = (): 'workflow' | 'activities' | 'gates' | 'analytics' => {
     if (location.pathname.endsWith('/sprints') || location.pathname.endsWith('/activities')) return 'activities';
@@ -36,6 +43,30 @@ export const ProjectDetail: React.FC = () => {
     queryFn: () => projectsApi.getById(id!),
     enabled: !!id,
   });
+
+  const handleSaveChanges = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!project) return;
+    if (!editName.trim()) {
+      setUpdateError('Project name cannot be empty');
+      return;
+    }
+    try {
+      setIsUpdating(true);
+      setUpdateError(null);
+      await projectsApi.update(project.id, {
+        name: editName.trim(),
+        description: editDesc.trim() || null,
+      });
+      await refetch();
+      setIsEditModalOpen(false);
+    } catch (err: any) {
+      console.error(err);
+      setUpdateError(err.response?.data?.message || 'Failed to update project details');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -96,10 +127,24 @@ export const ProjectDetail: React.FC = () => {
             <ChevronRight className="w-3.5 h-3.5" />
             <span className="text-slate-600 dark:text-zinc-400 select-none truncate max-w-[120px]">{project.name}</span>
           </div>
-          <div className="flex items-center space-x-2.5">
-            <h1 className="text-2xl font-extrabold text-zinc-900 dark:text-slate-900 dark:text-white tracking-tight">
+          <div className="flex items-center space-x-2">
+            <h1 className="text-2xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
               {project.name}
             </h1>
+            
+            <button
+              onClick={() => {
+                setEditName(project.name);
+                setEditDesc(project.description || '');
+                setIsEditModalOpen(true);
+                setUpdateError(null);
+              }}
+              className="p-1 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-500/5 transition cursor-pointer"
+              title="Edit project details"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+
             <span
               className={`text-[9px] uppercase font-extrabold tracking-widest px-2.5 py-0.5 rounded-full border ${
                 projectStatus === 'active'
@@ -110,9 +155,13 @@ export const ProjectDetail: React.FC = () => {
               {projectStatus}
             </span>
           </div>
-          {project.description && (
+          {project.description ? (
             <p className="text-xs text-muted-foreground font-light leading-relaxed max-w-2xl">
               {project.description}
+            </p>
+          ) : (
+            <p className="text-xs text-zinc-400/50 dark:text-zinc-500/50 italic font-light">
+              No description provided. Click the edit icon to add one.
             </p>
           )}
         </div>
@@ -258,6 +307,114 @@ export const ProjectDetail: React.FC = () => {
           isOpen={membersDrawerOpen}
           onClose={() => setMembersDrawerOpen(false)}
         />
+      )}
+
+      {/* Edit Project Modal */}
+      {isEditModalOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-[9998] bg-black/45 backdrop-blur-[2px] transition-opacity duration-200"
+            onClick={() => !isUpdating && setIsEditModalOpen(false)}
+          />
+
+          {/* Modal Container */}
+          <div className="fixed z-[9999] inset-0 flex items-center justify-center p-4">
+            <form
+              onSubmit={handleSaveChanges}
+              className="w-full max-w-md bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden transition-all duration-200 scale-100"
+            >
+              {/* Top Accent Line */}
+              <div className="h-1 w-full bg-gradient-to-r from-blue-500 to-indigo-500" />
+
+              <div className="p-6 space-y-4">
+                {/* Header */}
+                <div className="flex items-center justify-between pb-2 border-b border-border">
+                  <div className="flex items-center space-x-2.5">
+                    <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-500">
+                      <Pencil className="w-4 h-4" />
+                    </div>
+                    <h3 className="text-sm font-black uppercase tracking-wider text-slate-800 dark:text-zinc-200">
+                      Edit Deliverable
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isUpdating}
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 hover:text-slate-700 dark:hover:text-white transition cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Form fields */}
+                <div className="space-y-4">
+                  {updateError && (
+                    <div className="p-3 text-xs bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 font-medium">
+                      {updateError}
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+                      Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      disabled={isUpdating}
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="Enter deliverable name"
+                      className="w-full bg-slate-50 dark:bg-background border border-slate-200 dark:border-zinc-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white transition outline-none font-medium"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+                      Description
+                    </label>
+                    <textarea
+                      disabled={isUpdating}
+                      value={editDesc}
+                      onChange={(e) => setEditDesc(e.target.value)}
+                      placeholder="Describe the deliverable goal, scope or requirements..."
+                      rows={4}
+                      className="w-full bg-slate-50 dark:bg-background border border-slate-200 dark:border-zinc-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white transition outline-none font-medium resize-none leading-relaxed"
+                    />
+                  </div>
+                </div>
+
+                {/* Footer Action buttons */}
+                <div className="flex items-center justify-end space-x-2 pt-2 border-t border-border">
+                  <button
+                    type="button"
+                    disabled={isUpdating}
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs font-bold text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-white/5 transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isUpdating}
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 transition active:scale-95 flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {isUpdating ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <span>Save Changes</span>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </>
       )}
     </div>
   );
