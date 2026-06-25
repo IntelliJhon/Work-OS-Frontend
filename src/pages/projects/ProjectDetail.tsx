@@ -260,8 +260,8 @@ export const ProjectDetail: React.FC = () => {
               <span className="font-mono text-[10px] text-zinc-900 dark:text-slate-900 dark:text-white truncate max-w-[120px]">{project.id}</span>
             </div>
             <div className="flex justify-between">
-              <span>Acme Domain:</span>
-              <span className="text-emerald-400 font-semibold select-none">rls-secured-tx</span>
+              <span>Company ID:</span>
+              <span className="text-emerald-400 font-semibold select-none">{project.tenantSlug || 'rls-secured-tx'}</span>
             </div>
           </div>
           <div className="text-[9px] text-slate-500 dark:text-zinc-500 font-semibold uppercase tracking-wider mt-2 flex items-center space-x-1 justify-end">

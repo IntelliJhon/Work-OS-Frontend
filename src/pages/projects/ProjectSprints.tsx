@@ -27,8 +27,8 @@ import {
   Paperclip,
   Download
 } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { DatePickerInput } from '../../components/ui/DatePickerInput';
+import { useForm, Controller } from 'react-hook-form';
+import { DatePickerInput, formatDateDisplay } from '../../components/ui/DatePickerInput';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
@@ -95,6 +95,8 @@ interface SubTask {
   id: string;
   title: string;
   done: boolean;
+  startDate?: string;
+  endDate?: string;
   comments?: SubTaskComment[];
 }
 
@@ -1353,13 +1355,18 @@ export const ProjectSprints: React.FC = () => {
                                   </div>
                                   <span className="truncate max-w-[100px]">{task.assignee.split('@')[0]}</span>
                                 </div>
-
-                                {task.dueDate && (
-                                  <span className="flex items-center space-x-1 text-[10px] text-slate-500 dark:text-zinc-500 font-medium">
-                                    <Clock className="w-3.5 h-3.5" />
-                                    <span>{new Date(task.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
-                                  </span>
-                                )}
+                                {(task.startDate || task.dueDate) && (
+                                   <span className="flex items-center space-x-1.5 text-[10px] text-slate-500 dark:text-zinc-500 font-medium bg-slate-100/50 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 rounded-lg px-2 py-1">
+                                     <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                                     <span className="flex items-center space-x-1">
+                                       <span className="text-[9px] text-slate-400 dark:text-zinc-500 uppercase tracking-wider font-semibold">Start:</span>
+                                       <span className="text-slate-800 dark:text-zinc-300 font-semibold">{task.startDate ? formatDateDisplay(task.startDate.substring(0, 10)) : 'N/A'}</span>
+                                       <span className="text-slate-400 mx-1">|</span>
+                                       <span className="text-[9px] text-slate-400 dark:text-zinc-500 uppercase tracking-wider font-semibold">Due:</span>
+                                       <span className="text-slate-800 dark:text-zinc-300 font-semibold">{task.dueDate ? formatDateDisplay(task.dueDate.substring(0, 10)) : 'N/A'}</span>
+                                     </span>
+                                   </span>
+                                 )}
 
                                 <select
                                   value={task.status}
@@ -1650,7 +1657,7 @@ export const ProjectSprints: React.FC = () => {
                             { title: 'To Do', status: 'to_do' as const, tasksList: todoTasks, color: 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]' },
                             { title: 'In Progress', status: 'in_progress' as const, tasksList: inProgressTasks, color: 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]' },
                             { title: 'In Review', status: 'in_review' as const, tasksList: reviewTasks, color: 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]' },
-                            { title: 'Done', status: 'done' as const, tasksList: doneTasks, color: 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' },
+                            { title: 'Done', status: 'done' as const, tasksList: doneTasks, color: 'bg-emerald-500 shadow-[0_0_8px_rgba(10,185,129,0.6)]' },
                             { title: 'Blocked', status: 'blocked' as const, tasksList: blockedTasks, color: 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]' }
                           ].map((column) => (
                             <div
@@ -1737,12 +1744,14 @@ export const ProjectSprints: React.FC = () => {
                                               {task.priority}
                                             </span>
                                           )}
-                                          {task.dueDate && (
-                                            <span className="flex items-center space-x-0.5">
-                                              <Clock className="w-2.5 h-2.5 text-zinc-600" />
-                                              <span>{new Date(task.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
-                                            </span>
-                                          )}
+                                          {(task.startDate || task.dueDate) && (
+                                             <span className="flex items-center space-x-1 text-[9px] text-slate-500 dark:text-zinc-400">
+                                               <Calendar className="w-3.5 h-3.5 text-purple-400" />
+                                               <span>
+                                                 {task.startDate ? formatDateDisplay(task.startDate.substring(0, 10)) : 'N/A'} – {task.dueDate ? formatDateDisplay(task.dueDate.substring(0, 10)) : 'N/A'}
+                                               </span>
+                                             </span>
+                                           )}
                                         </div>
 
                                         <div
@@ -2169,10 +2178,17 @@ export const ProjectSprints: React.FC = () => {
 
                       <div className="space-y-1.5">
                         <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Start Date</label>
-                        <input
-                          type="date"
-                          {...activityForm.register('startDate')}
-                          className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+                        <Controller
+                          control={activityForm.control}
+                          name="startDate"
+                          render={({ field }) => (
+                            <DatePickerInput
+                              value={field.value || ''}
+                              onChange={field.onChange}
+                              onBlur={field.onBlur}
+                              placeholder="Select start date"
+                            />
+                          )}
                         />
                         {activityForm.formState.errors.startDate && (
                           <p className="text-[10px] text-red-400 font-bold">{activityForm.formState.errors.startDate.message}</p>
@@ -2185,11 +2201,18 @@ export const ProjectSprints: React.FC = () => {
                       <div className="space-y-1.5 animate-fade-in">
                         <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Calculated End Date</label>
                         <div className="flex items-center gap-2">
-                          <input
-                            type="date"
-                            {...activityForm.register('endDate')}
-                            readOnly
-                            className="w-full bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20 rounded-xl px-3 py-2 text-xs text-blue-700 dark:text-blue-300 focus:outline-none cursor-not-allowed font-mono"
+                          <Controller
+                            control={activityForm.control}
+                            name="endDate"
+                            render={({ field }) => (
+                              <DatePickerInput
+                                value={field.value || ''}
+                                onChange={field.onChange}
+                                onBlur={field.onBlur}
+                                disabled={true}
+                                placeholder="Auto-calculated date"
+                              />
+                            )}
                           />
                           <span className="text-[9px] uppercase font-black text-blue-400 whitespace-nowrap tracking-wider">Auto-calc</span>
                         </div>
@@ -2203,10 +2226,17 @@ export const ProjectSprints: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4 animate-fade-in">
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Start Date</label>
-                      <input
-                        type="date"
-                        {...activityForm.register('startDate')}
-                        className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+                      <Controller
+                        control={activityForm.control}
+                        name="startDate"
+                        render={({ field }) => (
+                          <DatePickerInput
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            placeholder="Select start date"
+                          />
+                        )}
                       />
                       {activityForm.formState.errors.startDate && (
                         <p className="text-[10px] text-red-400 font-bold">{activityForm.formState.errors.startDate.message}</p>
@@ -2215,10 +2245,17 @@ export const ProjectSprints: React.FC = () => {
 
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">End Date</label>
-                      <input
-                        type="date"
-                        {...activityForm.register('endDate')}
-                        className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+                      <Controller
+                        control={activityForm.control}
+                        name="endDate"
+                        render={({ field }) => (
+                          <DatePickerInput
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            placeholder="Select end date"
+                          />
+                        )}
                       />
                       {activityForm.formState.errors.endDate && (
                         <p className="text-[10px] text-red-400 font-bold">{activityForm.formState.errors.endDate.message}</p>
@@ -2294,11 +2331,18 @@ export const ProjectSprints: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Start Date</label>
-                    <input
-                      type="date"
-                      readOnly
-                      {...sprintForm.register('startDate')}
-                      className="w-full bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-850 rounded-xl px-3 py-2 text-xs text-slate-500 dark:text-zinc-450 focus:outline-none cursor-not-allowed font-mono"
+                    <Controller
+                      control={sprintForm.control}
+                      name="startDate"
+                      render={({ field }) => (
+                        <DatePickerInput
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          disabled={true}
+                          placeholder="No start date"
+                        />
+                      )}
                     />
                     {sprintForm.formState.errors.startDate && (
                       <p className="text-[10px] text-red-400 font-bold">{sprintForm.formState.errors.startDate.message}</p>
@@ -2307,11 +2351,18 @@ export const ProjectSprints: React.FC = () => {
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">End Date</label>
-                    <input
-                      type="date"
-                      readOnly
-                      {...sprintForm.register('endDate')}
-                      className="w-full bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-850 rounded-xl px-3 py-2 text-xs text-slate-500 dark:text-zinc-450 focus:outline-none cursor-not-allowed font-mono"
+                    <Controller
+                      control={sprintForm.control}
+                      name="endDate"
+                      render={({ field }) => (
+                        <DatePickerInput
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          disabled={true}
+                          placeholder="No end date"
+                        />
+                      )}
                     />
                     {sprintForm.formState.errors.endDate && (
                       <p className="text-[10px] text-red-400 font-bold">{sprintForm.formState.errors.endDate.message}</p>

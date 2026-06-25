@@ -8,7 +8,7 @@ import { ShieldAlert, ArrowRight, CheckCircle2, KeyRound } from 'lucide-react';
 import axios from 'axios';
 
 const forgotPasswordSchema = z.object({
-  workspace: z.string().min(3, 'Workspace slug must be at least 3 characters'),
+  workspace: z.string().min(3, 'Company ID must be at least 3 characters'),
   email: z.string().email('Invalid email address'),
 });
 
@@ -63,7 +63,7 @@ export const ForgotPassword: React.FC = () => {
       setStep(2);
     } catch (err) {
       console.error('[ForgotPassword] Error verification', err);
-      let errMsg = 'No user registered with this email in the specified workspace';
+      let errMsg = 'No user registered with this email in the specified company';
       if (axios.isAxiosError(err)) {
         errMsg = err.response?.data?.error || errMsg;
       }
@@ -110,7 +110,7 @@ export const ForgotPassword: React.FC = () => {
         </h2>
         <p className="text-xs text-muted-foreground font-light">
           {step === 1
-            ? 'Enter your workspace details and registered email address'
+            ? 'Enter your company ID and registered email address'
             : 'Enter and confirm your new secure password'}
         </p>
       </div>
@@ -131,10 +131,10 @@ export const ForgotPassword: React.FC = () => {
 
       {step === 1 ? (
         <form onSubmit={forgotForm.handleSubmit(onForgotSubmit)} className="space-y-4">
-          {/* Workspace Slug */}
+          {/* Company ID */}
           <div className="space-y-1.5">
             <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
-              Workspace Slug
+              Company ID
             </label>
             <input
               {...forgotForm.register('workspace')}
@@ -172,7 +172,7 @@ export const ForgotPassword: React.FC = () => {
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
             ) : (
               <>
-                <span>Verify Workspace & Email</span>
+                <span>Verify Company ID & Email</span>
                 <ArrowRight className="w-4.5 h-4.5" />
               </>
             )}

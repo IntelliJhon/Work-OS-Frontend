@@ -203,7 +203,7 @@ export const ProjectMembersDrawer: React.FC<ProjectMembersDrawerProps> = ({
               <form onSubmit={handleAddMember} className="space-y-3">
                 <div className="space-y-1">
                   <label className="text-[9px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-wider block">
-                    Workspace User
+                    Company User
                   </label>
                   <select
                     required
@@ -211,7 +211,7 @@ export const ProjectMembersDrawer: React.FC<ProjectMembersDrawerProps> = ({
                     onChange={(e) => setSelectedUserId(e.target.value)}
                     className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-border/80 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500/50 appearance-none cursor-pointer"
                   >
-                    <option value="" className="bg-white dark:bg-zinc-950 text-slate-900 dark:text-white">Select workspace team member</option>
+                    <option value="" className="bg-white dark:bg-zinc-950 text-slate-900 dark:text-white">Select company team member</option>
                     {workspaceUsers.map((u) => (
                       <option key={u.id} value={u.id} className="bg-white dark:bg-zinc-950 text-slate-900 dark:text-white">
                         {u.firstName} {u.lastName} ({u.email})
@@ -250,7 +250,7 @@ export const ProjectMembersDrawer: React.FC<ProjectMembersDrawerProps> = ({
             </div>
           ) : canManage && workspaceUsers.length === 0 ? (
             <p className="text-[10px] text-slate-500 dark:text-zinc-500 italic font-light bg-white/2 p-3 rounded-lg border border-slate-100 dark:border-white/5 text-center">
-              All workspace members are already assigned to this project.
+              All company members are already assigned to this project.
             </p>
           ) : null}
 
@@ -328,7 +328,7 @@ export const ProjectMembersDrawer: React.FC<ProjectMembersDrawerProps> = ({
         {/* Drawer Footer info */}
         <div className="p-4 border-t border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-zinc-950 text-center text-[9px] text-slate-500 dark:text-zinc-500 font-light flex items-center justify-center space-x-1 select-none">
           <HelpCircle className="w-3 h-3" />
-          <span>Project memberships override general workspace roles within this stage.</span>
+          <span>Project memberships override general company roles within this stage.</span>
         </div>
       </div>
     </div>

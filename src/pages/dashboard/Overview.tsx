@@ -195,7 +195,7 @@ export const Overview: React.FC = () => {
   const stats = [
     { name: 'Active Projects', value: `${activeProjectsCount} Active`, icon: FolderKanban, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
     { name: 'Blocked Timelines', value: `${blockedProjects} Blocked`, icon: AlertTriangle, color: blockedProjects > 0 ? 'text-red-400' : 'text-slate-500 dark:text-zinc-500', bg: blockedProjects > 0 ? 'bg-red-500/10 border-red-500/20' : 'bg-zinc-500/5 border-zinc-500/10' },
-    { name: 'Workspace Health', value: `${healthScore}% - ${healthText}`, icon: HeartPulse, color: healthColor, bg: 'bg-emerald-500/10 border-emerald-500/20' },
+    { name: 'Board Health', value: `${healthScore}% - ${healthText}`, icon: HeartPulse, color: healthColor, bg: 'bg-emerald-500/10 border-emerald-500/20' },
     { name: 'Unread Alerts', value: `${unreadCount} Alerts`, icon: Bell, color: unreadCount > 0 ? 'text-amber-400' : 'text-slate-500 dark:text-zinc-500', bg: unreadCount > 0 ? 'bg-amber-500/10 border-amber-500/20 animate-pulse' : 'bg-zinc-500/5 border-zinc-500/10' },
   ];
 
@@ -206,7 +206,7 @@ export const Overview: React.FC = () => {
         <div>
           <div className="flex items-center space-x-2">
             <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-              Workspace Overview
+              Board Overview
             </h1>
             <span className="flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-semibold text-blue-400">
               <Building className="w-3.5 h-3.5" />

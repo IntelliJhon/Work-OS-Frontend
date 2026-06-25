@@ -19,7 +19,7 @@ const MONTHS = [
  * Formats an ISO date string (YYYY-MM-DD) into "DD-Month-YYYY"
  * e.g. "2026-04-04" → "04-April-2026"
  */
-function formatDateDisplay(isoDate: string): string {
+export function formatDateDisplay(isoDate: string): string {
   if (!isoDate) return '';
   const [year, month, day] = isoDate.split('-');
   if (!year || !month || !day) return isoDate;

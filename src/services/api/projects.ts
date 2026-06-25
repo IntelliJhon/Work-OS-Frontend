@@ -3,6 +3,7 @@ import { apiClient } from './client';
 export interface Project {
   id: string;
   tenantId: string;
+  tenantSlug?: string;
   pmId: string | null;
   name: string;
   description: string | null;

@@ -10,7 +10,7 @@ import { ShieldAlert, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 
 const loginSchema = z.object({
-  workspace: z.string().min(3, 'Workspace slug must be at least 3 characters'),
+  workspace: z.string().min(3, 'Company ID must be at least 3 characters'),
   email: z.string().email('Invalid email address'),
   password: z.string().min(1, 'Password is required'),
 });
@@ -59,10 +59,10 @@ export const Login: React.FC = () => {
       setTransitionProgress(0);
 
       const steps = [
-        "Connecting to workspace...",
+        "Connecting to company portal...",
         "Authenticating credentials...",
         "Setting up secure session...",
-        "Syncing project workspace streams...",
+        "Syncing project streams...",
         "Welcome to WorkOS!"
       ];
 
@@ -86,7 +86,7 @@ export const Login: React.FC = () => {
 
     } catch (err) {
       console.error('[Login] Error during authentication', err);
-      let errMsg = 'Invalid workspace or credentials';
+      let errMsg = 'Invalid company ID or credentials';
       if (axios.isAxiosError(err)) {
         errMsg = err.response?.data?.error || errMsg;
       }
@@ -141,7 +141,7 @@ export const Login: React.FC = () => {
       <div className="space-y-1">
         <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide">Welcome Back</h2>
         <p className="text-xs text-muted-foreground font-light">
-          Enter your workspace details and email credentials
+          Enter your company ID and email credentials
         </p>
       </div>
 
@@ -153,10 +153,10 @@ export const Login: React.FC = () => {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Workspace Input */}
+        {/* Company ID Input */}
         <div className="space-y-1.5">
           <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
-            Workspace Slug
+            Company ID
           </label>
           <input
             {...register('workspace')}
@@ -215,7 +215,7 @@ export const Login: React.FC = () => {
             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
           ) : (
             <>
-              <span>Sign In to Workspace</span>
+              <span>Sign In to Company</span>
               <ArrowRight className="w-4.5 h-4.5" />
             </>
           )}
@@ -224,9 +224,9 @@ export const Login: React.FC = () => {
 
       <div className="text-center pt-2">
         <p className="text-xs text-muted-foreground font-light">
-          Don't have a workspace?{' '}
+          Don't have a company?{' '}
           <Link to="/register" className="text-blue-400 hover:underline font-normal">
-            Create new tenant
+            Register Company
           </Link>
         </p>
       </div>

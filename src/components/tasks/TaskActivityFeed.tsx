@@ -54,7 +54,7 @@ export const TaskActivityFeed: React.FC<TaskActivityFeedProps> = ({ activities, 
         {activities.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-2 border border-dashed border-border rounded-xl">
             <span className="text-[11px] text-muted-foreground font-light">
-              No recent workspace activities.
+              No recent board activities.
             </span>
           </div>
         ) : (

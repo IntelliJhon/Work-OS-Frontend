@@ -144,9 +144,9 @@ export const AcceptInvite: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide">Join Workspace</h2>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide">Join Company</h2>
         <p className="text-xs text-muted-foreground font-light">
-          Set up your workspace profile for <span className="text-blue-400 font-semibold">{inviteDetails.tenantName}</span>
+          Set up your company profile for <span className="text-blue-400 font-semibold">{inviteDetails.tenantName}</span>
         </p>
       </div>
 

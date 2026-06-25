@@ -31,6 +31,8 @@ interface SubTask {
   id: string;
   title: string;
   done: boolean;
+  startDate?: string;
+  endDate?: string;
 }
 
 export const ProjectAnalytics: React.FC = () => {
@@ -298,7 +300,7 @@ export const ProjectAnalytics: React.FC = () => {
       if (day.getDay() === 0 || index === timelineDays.length - 1) {
         weeks.push({
           start: new Date(currentWeekStart),
-          label: `Wk of ${currentWeekStart.toLocaleDateString([], { month: 'short', day: 'numeric' })}`,
+          label: currentWeekStart.toLocaleDateString([], { month: 'short', day: 'numeric' }),
           daysCount: currentWeekDays,
         });
         currentWeekStart = new Date(day);

@@ -13,10 +13,10 @@ const registerSchema = z
     companyName: z.string().min(2, 'Company name must be at least 2 characters'),
     slug: z
       .string()
-      .min(3, 'Workspace slug must be at least 3 characters')
-      .max(63, 'Workspace slug must be at most 63 characters')
-      .regex(/^[a-z0-9-]+$/, 'Workspace slug can only contain lowercase letters, numbers, and hyphens')
-      .refine((val) => !val.startsWith('-') && !val.endsWith('-'), 'Workspace slug cannot start or end with a hyphen'),
+      .min(3, 'Company ID must be at least 3 characters')
+      .max(63, 'Company ID must be at most 63 characters')
+      .regex(/^[a-z0-9-]+$/, 'Company ID can only contain lowercase letters, numbers, and hyphens')
+      .refine((val) => !val.startsWith('-') && !val.endsWith('-'), 'Company ID cannot start or end with a hyphen'),
     ownerName: z.string().min(2, 'Owner name must be at least 2 characters'),
     email: z.string().email('Invalid email address'),
     password: z
@@ -81,7 +81,7 @@ export const Register: React.FC = () => {
       navigate('/dashboard');
     } catch (err) {
       console.error('[Register] Onboarding failed', err);
-      let errMsg = 'Workspace onboarding failed. Please try again.';
+      let errMsg = 'Company registration failed. Please try again.';
       if (axios.isAxiosError(err)) {
         errMsg = err.response?.data?.error || errMsg;
       }
@@ -94,9 +94,9 @@ export const Register: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide">Create Workspace</h2>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide">Register Company</h2>
         <p className="text-xs text-muted-foreground font-light">
-          Onboard your tenant organization and administrator account
+          Register your company and administrator account
         </p>
       </div>
 
@@ -123,10 +123,10 @@ export const Register: React.FC = () => {
           )}
         </div>
 
-        {/* Workspace Slug */}
+        {/* Company ID */}
         <div className="space-y-1.5">
           <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
-            Workspace Slug (Subdomain)
+            Company ID
           </label>
           <input
             {...register('slug')}
@@ -220,7 +220,7 @@ export const Register: React.FC = () => {
 
       <div className="text-center pt-2">
         <p className="text-xs text-muted-foreground font-light">
-          Already have a workspace?{' '}
+          Already have a company?{' '}
           <Link to="/login" className="text-blue-400 hover:underline font-normal">
             Sign in
           </Link>

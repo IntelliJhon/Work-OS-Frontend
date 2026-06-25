@@ -20,6 +20,8 @@ export interface Task {
       id: string;
       title: string;
       done: boolean;
+      startDate?: string;
+      endDate?: string;
       comments?: {
         id: string;
         userName: string;

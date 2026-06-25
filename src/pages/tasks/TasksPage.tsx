@@ -24,8 +24,6 @@ import { DatePickerInput } from '../../components/ui/DatePickerInput';
 // APIs & Stores
 import { tasksApi } from '../../services/api/tasks.api';
 import { projectsApi } from '../../services/api/projects';
-import { epicsApi } from '../../services/api/epics.api';
-import { storiesApi } from '../../services/api/stories.api';
 import { usersApi } from '../../services/api/users';
 import { useAuthStore } from '../../store/authStore';
 import { useCollaborationStore } from '../../store/collaborationStore';
@@ -65,16 +63,7 @@ export const TasksPage: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
 
-  // Add Task Form State
-  const [newTaskName, setNewTaskName] = useState('');
-  const [newTaskDescription, setNewTaskDescription] = useState('');
-  const [newTaskProjectId, setNewTaskProjectId] = useState('');
-  const [newTaskSprintId, setNewTaskSprintId] = useState('');
-  const [newTaskPhaseId, setNewTaskPhaseId] = useState('');
-  const [newTaskAssigneeId, setNewTaskAssigneeId] = useState('');
-  const [newTaskPriority, setNewTaskPriority] = useState('medium');
-  const [newTaskDueDate, setNewTaskDueDate] = useState('');
-  const [isCreatingTask, setIsCreatingTask] = useState(false);
+
 
   // Queries
   const { data: tasks = [], isLoading: loadingTasks, refetch: refetchTasks } = useQuery({
@@ -318,60 +307,28 @@ export const TasksPage: React.FC = () => {
     }
   };
 
-  const handleCreateTask = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTaskName.trim() || isCreatingTask) return;
-
-    setIsCreatingTask(true);
+  const handleCreateTask = async (taskData: {
+    name: string;
+    description: string;
+    assigneeId: string;
+    priority: string;
+    dueDate: string;
+  }) => {
     try {
-      let targetStoryId: string | null = null;
-
-      if (newTaskProjectId) {
-        // 1. Fetch stories for selected project to satisfy backend storyId constraint
-        const projectStories = await storiesApi.list(newTaskProjectId);
-
-        if (projectStories.length > 0) {
-          targetStoryId = projectStories[0].id;
-        } else {
-          // Fallback: Provision Epic and Story dynamically
-          const projectEpics = await epicsApi.list(newTaskProjectId);
-          let targetEpicId = '';
-
-          if (projectEpics.length > 0) {
-            targetEpicId = projectEpics[0].id;
-          } else {
-            const newEpic = await epicsApi.create({
-              projectId: newTaskProjectId,
-              name: 'General Epic',
-              description: 'Default Epic provisioned automatically for tasks.',
-            });
-            targetEpicId = newEpic.id;
-          }
-
-          const newStory = await storiesApi.create({
-            projectId: newTaskProjectId,
-            epicId: targetEpicId,
-            name: 'General Story',
-            description: 'Default Story provisioned automatically for tasks.',
-          });
-          targetStoryId = newStory.id;
-        }
-      }
-
-      // 2. Submit Create Task payload
+      // Submit Create Task payload
       const payload = {
-        projectId: newTaskProjectId || null,
-        storyId: targetStoryId || null,
-        sprintId: newTaskSprintId || null,
-        assigneeId: newTaskAssigneeId || null,
-        name: newTaskName.trim(),
-        description: newTaskDescription.trim() || undefined,
+        projectId: null,
+        storyId: null,
+        sprintId: null,
+        assigneeId: taskData.assigneeId || null,
+        name: taskData.name,
+        description: taskData.description || undefined,
         status: 'to_do',
         customFields: {
-          priority: newTaskPriority as any,
-          dueDate: newTaskDueDate || undefined,
+          priority: taskData.priority as any,
+          dueDate: taskData.dueDate || undefined,
           storyPoints: 0,
-          phaseId: newTaskPhaseId || undefined,
+          phaseId: undefined,
           subtasks: [],
           createdFrom: 'sidebar',
         },
@@ -383,14 +340,14 @@ export const TasksPage: React.FC = () => {
       // Emit created event
       if (socket && currentUser) {
         socket.emit('kanban_task_created', {
-          projectId: newTaskProjectId || null,
-          sprintId: newTaskSprintId || null,
+          projectId: null,
+          sprintId: null,
           task: newTask,
           actorName: `${currentUser.firstName} ${currentUser.lastName}`
         });
 
-        addActivity(currentUser.tenantId, newTaskProjectId || 'global', {
-          projectId: newTaskProjectId || 'global',
+        addActivity(currentUser.tenantId, 'global', {
+          projectId: 'global',
           type: 'task_created',
           title: 'Task created',
           message: `${currentUser.firstName} created task "${newTask.name}".`,
@@ -398,22 +355,10 @@ export const TasksPage: React.FC = () => {
           actor: `${currentUser.firstName} ${currentUser.lastName}`,
         });
       }
-
-      // Reset form & close modal
-      setNewTaskName('');
-      setNewTaskDescription('');
-      setNewTaskProjectId('');
-      setNewTaskSprintId('');
-      setNewTaskPhaseId('');
-      setNewTaskAssigneeId('');
-      setNewTaskPriority('medium');
-      setNewTaskDueDate('');
-      setShowAddModal(false);
     } catch (err) {
       console.error('Failed to create task', err);
       alert('Failed to create task.');
-    } finally {
-      setIsCreatingTask(false);
+      throw err;
     }
   };
 
@@ -602,144 +547,207 @@ export const TasksPage: React.FC = () => {
       />
 
       {/* Create Task Modal Overlay */}
-      <AnimatePresence>
-        {showAddModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowAddModal(false)}
-              className="absolute inset-0 bg-background/60 backdrop-blur-sm"
-            />
+      <CreateTaskModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        users={filteredUsers}
+        onCreate={handleCreateTask}
+      />
+    </div>
+  );
+};
 
-            {/* Modal Body */}
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-xl glass-panel-heavy border border-border rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]"
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between p-5 border-b border-border">
-                <div className="flex items-center space-x-2">
-                  <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                    <Sparkles className="w-4 h-4" />
-                  </span>
-                  <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Create New Workspace Task</h3>
-                </div>
-                <button
-                  onClick={() => setShowAddModal(false)}
-                  className="p-1.5 rounded-lg bg-muted hover:bg-accent text-muted-foreground hover:text-foreground transition-all cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+interface CreateTaskModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  users: any[];
+  onCreate: (taskData: {
+    name: string;
+    description: string;
+    assigneeId: string;
+    priority: string;
+    dueDate: string;
+  }) => Promise<void>;
+}
+
+export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
+  isOpen,
+  onClose,
+  users,
+  onCreate,
+}) => {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [assigneeId, setAssigneeId] = useState('');
+  const [priority, setPriority] = useState('medium');
+  const [dueDate, setDueDate] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      await onCreate({
+        name: name.trim(),
+        description: description.trim(),
+        assigneeId,
+        priority,
+        dueDate,
+      });
+      // Reset form
+      setName('');
+      setDescription('');
+      setAssigneeId('');
+      setPriority('medium');
+      setDueDate('');
+      onClose();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-background/60 backdrop-blur-sm"
+          />
+
+          {/* Modal Body */}
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            className="relative w-full max-w-xl glass-panel-heavy border border-border rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-border">
+              <div className="flex items-center space-x-2">
+                <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  <Sparkles className="w-4 h-4" />
+                </span>
+                <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Create New Workspace Task</h3>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1.5 rounded-lg bg-muted hover:bg-accent text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+              {/* Title */}
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Task Title *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Provide a short name for the sprint deliverable..."
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-2.5 glass-input rounded-xl text-xs text-foreground placeholder-muted-foreground focus:outline-none"
+                />
               </div>
 
-              {/* Form */}
-              <form onSubmit={handleCreateTask} className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-                
-                {/* Title */}
+              {/* Description */}
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Description</label>
+                <textarea
+                  rows={3}
+                  placeholder="Provide specific notes, requirements, and testing criteria..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full px-4 py-2.5 glass-input rounded-xl text-xs text-foreground placeholder-muted-foreground focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="space-y-4">
+                {/* Assignee */}
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Task Title *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Provide a short name for the sprint deliverable..."
-                    value={newTaskName}
-                    onChange={(e) => setNewTaskName(e.target.value)}
-                    className="w-full px-4 py-2.5 glass-input rounded-xl text-xs text-foreground placeholder-muted-foreground focus:outline-none"
-                  />
+                  <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Assignee</label>
+                  <select
+                    value={assigneeId}
+                    onChange={(e) => setAssigneeId(e.target.value)}
+                    className="w-full px-3 py-2.5 glass-input text-foreground text-xs rounded-xl focus:outline-none [&>option]:bg-background [&>option]:text-foreground"
+                  >
+                    <option value="">Unassigned</option>
+                    {users.map((u: any) => (
+                      <option key={u.id} value={u.id}>
+                        {u.firstName} {u.lastName}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-                {/* Description */}
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Description</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Provide specific notes, requirements, and testing criteria..."
-                    value={newTaskDescription}
-                    onChange={(e) => setNewTaskDescription(e.target.value)}
-                    className="w-full px-4 py-2.5 glass-input rounded-xl text-xs text-foreground placeholder-muted-foreground focus:outline-none resize-none"
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  {/* Assignee */}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Priority */}
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Assignee</label>
+                    <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Priority</label>
                     <select
-                      value={newTaskAssigneeId}
-                      onChange={(e) => setNewTaskAssigneeId(e.target.value)}
+                      value={priority}
+                      onChange={(e) => setPriority(e.target.value)}
                       className="w-full px-3 py-2.5 glass-input text-foreground text-xs rounded-xl focus:outline-none [&>option]:bg-background [&>option]:text-foreground"
                     >
-                      <option value="">Unassigned</option>
-                      {filteredUsers.map((u: any) => (
-                        <option key={u.id} value={u.id}>
-                          {u.firstName} {u.lastName}
-                        </option>
-                      ))}
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="critical">Critical</option>
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Priority */}
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Priority</label>
-                      <select
-                        value={newTaskPriority}
-                        onChange={(e) => setNewTaskPriority(e.target.value)}
-                        className="w-full px-3 py-2.5 glass-input text-foreground text-xs rounded-xl focus:outline-none [&>option]:bg-background [&>option]:text-foreground"
-                      >
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                        <option value="critical">Critical</option>
-                      </select>
-                    </div>
-
-                    {/* Due Date */}
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Due Date</label>
-                      <DatePickerInput
-                        value={newTaskDueDate}
-                        onChange={(val) => setNewTaskDueDate(val)}
-                        placeholder="Select due date"
-                      />
-                    </div>
+                  {/* Due Date */}
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Due Date</label>
+                    <DatePickerInput
+                      value={dueDate}
+                      onChange={(val) => setDueDate(val)}
+                      placeholder="Select due date"
+                    />
                   </div>
                 </div>
+              </div>
 
-                {/* Submit buttons */}
-                <div className="flex items-center justify-end space-x-3 pt-4 border-t border-border">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddModal(false)}
-                    className="px-4 py-2 rounded-xl bg-muted hover:bg-accent text-muted-foreground hover:text-foreground text-xs font-bold transition-all cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isCreatingTask}
-                    className="flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
-                  >
-                    {isCreatingTask ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Creating...</span>
-                      </>
-                    ) : (
-                      <span>Enter</span>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
+              {/* Submit buttons */}
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-border">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 rounded-xl bg-muted hover:bg-accent text-muted-foreground hover:text-foreground text-xs font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Creating...</span>
+                    </>
+                  ) : (
+                    <span>Enter</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 };
