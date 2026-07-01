@@ -130,7 +130,7 @@ export const NotificationCenter: React.FC = () => {
   const resolveDeepLinkPath = (alert: NotificationPayloadEnriched): string | null => {
     if (!alert.entityType || !alert.entityId) {
       if (projects.length > 0) {
-        return `/projects/${projects[0].id}/analytics`;
+        return `/projects/${projects[0].id}/scopes`;
       }
       return null;
     }
@@ -142,7 +142,7 @@ export const NotificationCenter: React.FC = () => {
     if (type === 'phase') {
       const proj = projects.find((p) => p.phases?.some((ph) => ph.id === id)) || 
                    (parsed?.projectId ? projects.find(p => p.id === parsed.projectId) : null);
-      if (proj) return `/projects/${proj.id}/analytics`;
+      if (proj) return `/projects/${proj.id}/scopes`;
     }
     if (type === 'sprint') {
       const proj = projects.find((p) => p.sprints?.some((sp) => sp.id === id)) || 
@@ -174,7 +174,7 @@ export const NotificationCenter: React.FC = () => {
     // Default project fallback
     if (projects.length > 0) {
       const pId = parsed?.projectId || projects[0].id;
-      return `/projects/${pId}/${type === 'gate' ? 'gates' : (type === 'sprint' || type === 'activity') ? 'activities' : 'analytics'}`;
+      return `/projects/${pId}/${type === 'gate' ? 'gates' : (type === 'sprint' || type === 'activity') ? 'activities' : 'scopes'}`;
     }
 
     return null;

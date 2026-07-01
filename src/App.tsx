@@ -7,6 +7,7 @@ import { AppRouter } from './app/router';
 import { queryClient } from './services/api/queryClient';
 import { ConfirmProvider } from './components/ui/ConfirmDialog';
 
+
 export const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
@@ -14,6 +15,7 @@ export const App: React.FC = () => {
         <AuthProvider>
           <SocketProvider>
             <ConfirmProvider>
+
               <AppRouter />
             </ConfirmProvider>
           </SocketProvider>

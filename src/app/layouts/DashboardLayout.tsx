@@ -203,7 +203,7 @@ export const DashboardLayout: React.FC = () => {
   const resolveDeepLinkPath = (alert: NotificationPayload): string | null => {
     if (!alert.entityType || !alert.entityId) {
       if (projectsList.length > 0) {
-        return `/projects/${projectsList[0].id}/analytics`;
+        return `/projects/${projectsList[0].id}/scopes`;
       }
       return null;
     }
@@ -215,7 +215,7 @@ export const DashboardLayout: React.FC = () => {
     if (type === 'phase') {
       const proj = projectsList.find((p) => p.phases?.some((ph) => ph.id === id)) || 
                    (parsed?.projectId ? projectsList.find(p => p.id === parsed.projectId) : null);
-      if (proj) return `/projects/${proj.id}/analytics`;
+      if (proj) return `/projects/${proj.id}/scopes`;
     }
     if (type === 'sprint' || type === 'activity') {
       const proj = projectsList.find((p) => p.sprints?.some((sp) => sp.id === id)) || 
@@ -247,7 +247,7 @@ export const DashboardLayout: React.FC = () => {
     // Default project fallback
     if (projectsList.length > 0) {
       const pId = parsed?.projectId || projectsList[0].id;
-      return `/projects/${pId}/${type === 'gate' ? 'gates' : (type === 'sprint' || type === 'activity') ? 'activities' : 'analytics'}`;
+      return `/projects/${pId}/${type === 'gate' ? 'gates' : (type === 'sprint' || type === 'activity') ? 'activities' : 'scopes'}`;
     }
 
     return null;

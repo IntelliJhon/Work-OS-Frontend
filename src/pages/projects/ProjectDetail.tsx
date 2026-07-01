@@ -14,7 +14,8 @@ import {
   Users,
   BarChart3,
   Pencil,
-  X
+  X,
+  ClipboardList
 } from 'lucide-react';
 import { useSocket } from '../../services/socket/socket-context';
 import TeamPresence from '../../components/collaboration/TeamPresence';
@@ -31,7 +32,8 @@ export const ProjectDetail: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
-  const getCurrentPageName = (): 'workflow' | 'activities' | 'gates' | 'analytics' => {
+  const getCurrentPageName = (): 'scopes' | 'workflow' | 'activities' | 'gates' | 'analytics' => {
+    if (location.pathname.endsWith('/scopes')) return 'scopes';
     if (location.pathname.endsWith('/sprints') || location.pathname.endsWith('/activities')) return 'activities';
     if (location.pathname.endsWith('/gates')) return 'gates';
     if (location.pathname.endsWith('/analytics')) return 'analytics';
@@ -109,6 +111,7 @@ export const ProjectDetail: React.FC = () => {
   const projectStatus = isFullyComplete ? 'completed' : (project.status === 'completed' ? 'active' : project.status);
 
   const tabs = [
+    { name: 'Scopes & Objectives', path: `/projects/${id}/scopes`, icon: ClipboardList },
     { name: 'Analytics', path: `/projects/${id}/analytics`, icon: BarChart3 },
     { name: 'Workflow Timeline', path: `/projects/${id}/workflow`, icon: GitBranch },
     { name: 'Task Planner', path: `/projects/${id}/activities`, icon: Activity },
@@ -275,7 +278,7 @@ export const ProjectDetail: React.FC = () => {
         {tabs.map((tab) => {
           const TabIcon = tab.icon;
           const isActive = location.pathname.startsWith(tab.path) || 
-            (tab.path.endsWith('/analytics') && (location.pathname === `/projects/${id}` || location.pathname === `/projects/${id}/`));
+            (tab.path.endsWith('/scopes') && (location.pathname === `/projects/${id}` || location.pathname === `/projects/${id}/`));
           
           return (
             <Link

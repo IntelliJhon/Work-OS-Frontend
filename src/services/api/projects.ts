@@ -7,6 +7,8 @@ export interface Project {
   pmId: string | null;
   name: string;
   description: string | null;
+  overview: string | null;
+  scopes: string | null;
   status: 'active' | 'archived' | string;
   createdAt: string;
   updatedAt: string;

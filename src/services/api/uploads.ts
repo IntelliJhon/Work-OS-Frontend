@@ -51,6 +51,11 @@ export const uploadsApi = {
     return data;
   },
 
+  listAllProjectUploads: async (projectId: string): Promise<UploadRow[]> => {
+    const { data } = await apiClient.get<UploadRow[]>(`/uploads/project/${projectId}/all`);
+    return data;
+  },
+
   getDownloadUrl: async (id: string): Promise<{ downloadUrl: string }> => {
     const { data } = await apiClient.get<{ downloadUrl: string }>(`/uploads/${id}/download-url`);
     return data;
