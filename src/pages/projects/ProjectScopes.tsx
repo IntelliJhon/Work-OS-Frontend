@@ -17,9 +17,11 @@ import {
   X,
   Loader2,
   Download,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from 'lucide-react';
 import axios from 'axios';
+import { RichTextEditor } from '../../components/ui/RichTextEditor';
 
 export const ProjectScopes: React.FC = () => {
   const { project, refetch: refetchProject } = useOutletContext<{ project: Project; refetch: () => void }>();
@@ -55,6 +57,23 @@ export const ProjectScopes: React.FC = () => {
     },
     onError: (err: any) => {
       setUpdateError(err.response?.data?.message || 'Failed to save project details');
+    }
+  });
+
+  const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
+
+  const deleteDocumentMutation = useMutation({
+    mutationFn: async (fileId: string) => {
+      setDeletingFileId(fileId);
+      return uploadsApi.delete(fileId);
+    },
+    onSuccess: () => {
+      refetchDocs();
+      setDeletingFileId(null);
+    },
+    onError: (err: any) => {
+      setDeletingFileId(null);
+      alert(err.response?.data?.message || 'Failed to delete file');
     }
   });
 
@@ -220,11 +239,11 @@ export const ProjectScopes: React.FC = () => {
                 <label className="text-xs font-bold text-slate-800 dark:text-zinc-300">
                   Project Overview
                 </label>
-                <textarea
-                  className="w-full bg-slate-50 dark:bg-background border border-border/80 rounded-xl px-4 py-3 text-xs text-slate-900 dark:text-zinc-150 focus:outline-none focus:border-blue-500 min-h-[120px] resize-y font-light leading-relaxed"
+                <RichTextEditor
                   value={overviewText}
-                  onChange={(e) => setOverviewText(e.target.value)}
+                  onChange={setOverviewText}
                   placeholder="Summarize the project's background context, core objectives, and mission..."
+                  minHeight="120px"
                 />
               </div>
 
@@ -232,11 +251,11 @@ export const ProjectScopes: React.FC = () => {
                 <label className="text-xs font-bold text-slate-800 dark:text-zinc-300">
                   Detailed Scopes & Inclusions
                 </label>
-                <textarea
-                  className="w-full bg-slate-50 dark:bg-background border border-border/80 rounded-xl px-4 py-3 text-xs text-slate-900 dark:text-zinc-150 focus:outline-none focus:border-blue-500 min-h-[160px] resize-y font-light leading-relaxed"
+                <RichTextEditor
                   value={scopesText}
-                  onChange={(e) => setScopesText(e.target.value)}
+                  onChange={setScopesText}
                   placeholder="Define strict scope boundaries, key deliverables, inclusions, and objectives..."
+                  minHeight="180px"
                 />
               </div>
 
@@ -272,9 +291,10 @@ export const ProjectScopes: React.FC = () => {
                   Overview
                 </h3>
                 {project.overview ? (
-                  <p className="text-xs font-light text-slate-600 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">
-                    {project.overview}
-                  </p>
+                  <div
+                    className="text-xs font-light text-slate-600 dark:text-zinc-300 leading-relaxed rich-text-content"
+                    dangerouslySetInnerHTML={{ __html: project.overview }}
+                  />
                 ) : (
                   <p className="text-xs font-light text-zinc-400 italic">
                     No overview description specified. Click Edit Scope to define this statement.
@@ -287,9 +307,10 @@ export const ProjectScopes: React.FC = () => {
                   Scope boundaries & Objectives
                 </h3>
                 {project.scopes ? (
-                  <p className="text-xs font-light text-slate-600 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">
-                    {project.scopes}
-                  </p>
+                  <div
+                    className="text-xs font-light text-slate-600 dark:text-zinc-300 leading-relaxed rich-text-content"
+                    dangerouslySetInnerHTML={{ __html: project.scopes }}
+                  />
                 ) : (
                   <p className="text-xs font-light text-zinc-400 italic">
                     Scope inclusions have not been defined yet. Detail scope lists, exclusions, and deliverables to ensure alignment.
@@ -298,6 +319,34 @@ export const ProjectScopes: React.FC = () => {
               </div>
             </div>
           )}
+          <style>{`
+            .rich-text-content ul {
+              list-style-type: disc;
+              padding-left: 1.25rem;
+              margin-top: 0.35rem;
+              margin-bottom: 0.35rem;
+            }
+            .rich-text-content ol {
+              list-style-type: decimal;
+              padding-left: 1.25rem;
+              margin-top: 0.35rem;
+              margin-bottom: 0.35rem;
+            }
+            .rich-text-content p {
+              margin-bottom: 0.5rem;
+            }
+            .rich-text-content strong,
+            .rich-text-content b {
+              font-weight: 700 !important;
+            }
+            .rich-text-content em,
+            .rich-text-content i {
+              font-style: italic !important;
+            }
+            .rich-text-content u {
+              text-decoration: underline !important;
+            }
+          `}</style>
         </div>
       </div>
 
@@ -421,17 +470,33 @@ export const ProjectScopes: React.FC = () => {
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => handleDownload(doc.id)}
-                    disabled={downloadingFileId === doc.id}
-                    className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 text-slate-500 hover:text-white transition cursor-pointer shrink-0 ml-2"
-                  >
-                    {downloadingFileId === doc.id ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Download className="w-3.5 h-3.5" />
-                    )}
-                  </button>
+                  <div className="flex items-center space-x-1 shrink-0 ml-2">
+                    <button
+                      onClick={() => handleDownload(doc.id)}
+                      disabled={downloadingFileId === doc.id}
+                      className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 text-slate-500 hover:text-blue-500 transition cursor-pointer"
+                      title="Download document"
+                    >
+                      {downloadingFileId === doc.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
+                      ) : (
+                        <Download className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => deleteDocumentMutation.mutate(doc.id)}
+                      disabled={deleteDocumentMutation.isPending}
+                      className="p-1.5 rounded-lg hover:bg-red-500/10 text-slate-500 hover:text-red-500 transition cursor-pointer"
+                      title="Delete document"
+                    >
+                      {deleteDocumentMutation.isPending && deletingFileId === doc.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-red-500" />
+                      ) : (
+                        <Trash2 className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

@@ -60,4 +60,9 @@ export const uploadsApi = {
     const { data } = await apiClient.get<{ downloadUrl: string }>(`/uploads/${id}/download-url`);
     return data;
   },
+
+  delete: async (id: string): Promise<{ message: string }> => {
+    const { data } = await apiClient.delete<{ message: string }>(`/uploads/${id}`);
+    return data;
+  },
 };

@@ -31,6 +31,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { DatePickerInput, formatDateDisplay } from '../../components/ui/DatePickerInput';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { DragDropUpload } from './DragDropUpload';
 
 // Real-time Collaboration & Auth Imports
 import { useSocket } from '../../services/socket/socket-context';
@@ -1828,6 +1829,19 @@ export const ProjectSprints: React.FC = () => {
                   rows={3}
                   className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 disabled:opacity-75 resize-none leading-relaxed"
                   placeholder="Task details and deliverables notes..."
+                />
+              </div>
+
+              {/* Document Upload Area */}
+              <div className="space-y-1.5 border-t border-slate-200 dark:border-white/5 pt-4">
+                <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Attached Documents</label>
+                <DragDropUpload
+                  entityType="TASK"
+                  entityId={activeTask.id}
+                  onUploadSuccess={() => {
+                    // Refetch all project uploads so scopes tab stays in sync
+                    queryClient.invalidateQueries({ queryKey: ['project-all-uploads', project.id] });
+                  }}
                 />
               </div>
 

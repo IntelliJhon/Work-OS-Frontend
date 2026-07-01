@@ -9,7 +9,8 @@ import {
   FileText,
   AlertCircle,
   Loader2,
-  Download
+  Download,
+  Trash2
 } from 'lucide-react';
 
 interface DragDropUploadProps {
@@ -82,6 +83,29 @@ export const DragDropUpload: React.FC<DragDropUploadProps> = ({
       setUploading(false);
       setProgress(0);
       let message = 'File upload failed. Please try again.';
+      if (axios.isAxiosError(error)) {
+        message = error.response?.data?.message || error.message || message;
+      }
+      setErrorMsg(message);
+    }
+  });
+
+  const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
+
+  const deleteMutation = useMutation({
+    mutationFn: async (fileId: string) => {
+      setDeletingFileId(fileId);
+      return uploadsApi.delete(fileId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['uploads', entityType, entityId] });
+      refetch();
+      if (onUploadSuccess) onUploadSuccess();
+      setDeletingFileId(null);
+    },
+    onError: (error: unknown) => {
+      setDeletingFileId(null);
+      let message = 'File deletion failed. Please try again.';
       if (axios.isAxiosError(error)) {
         message = error.response?.data?.message || error.message || message;
       }
@@ -282,6 +306,20 @@ export const DragDropUpload: React.FC<DragDropUploadProps> = ({
                       <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
                     ) : (
                       <Download className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => deleteMutation.mutate(file.id)}
+                    disabled={deleteMutation.isPending}
+                    className="p-1.5 rounded hover:bg-red-500/10 text-slate-600 dark:text-zinc-400 hover:text-red-500 transition-all disabled:opacity-50 cursor-pointer"
+                    title="Delete File"
+                  >
+                    {deleteMutation.isPending && deletingFileId === file.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-red-500" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
                     )}
                   </button>
                 </div>
