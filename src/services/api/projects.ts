@@ -9,6 +9,7 @@ export interface Project {
   description: string | null;
   overview: string | null;
   scopes: string | null;
+  clientName: string | null;
   status: 'active' | 'archived' | string;
   createdAt: string;
   updatedAt: string;
@@ -56,6 +57,7 @@ export interface Activity {
   endDate: string | null;
   assigneeId?: string | null;
   priority?: 'low' | 'medium' | 'high' | 'critical' | null;
+  timeEstimate?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -88,7 +90,7 @@ export const projectsApi = {
     return data;
   },
 
-  create: async (payload: { name: string; description?: string }): Promise<{ project: Project; phases: Phase[] }> => {
+  create: async (payload: { name: string; description?: string; clientName?: string }): Promise<{ project: Project; phases: Phase[] }> => {
     const { data } = await apiClient.post<{ project: Project; phases: Phase[] }>('/projects', payload);
     return data;
   },

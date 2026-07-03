@@ -11,6 +11,7 @@ export interface CreateActivityPayload {
   endDate?: string | null;
   assigneeId?: string | null;
   priority?: 'low' | 'medium' | 'high' | 'critical' | null;
+  timeEstimate?: number | null;
 }
 
 export interface CreateSprintPayload {

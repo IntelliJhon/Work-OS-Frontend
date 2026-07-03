@@ -29,7 +29,14 @@ export const ProjectScopes: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [overviewText, setOverviewText] = useState(project.overview || '');
   const [scopesText, setScopesText] = useState(project.scopes || '');
+  const [clientNameText, setClientNameText] = useState(project.clientName || '');
   const [updateError, setUpdateError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    setOverviewText(project.overview || '');
+    setScopesText(project.scopes || '');
+    setClientNameText(project.clientName || '');
+  }, [project]);
 
   // Upload state
   const [dragActive, setDragActive] = useState(false);
@@ -46,9 +53,9 @@ export const ProjectScopes: React.FC = () => {
     enabled: !!project.id,
   });
 
-  // Mutation for updating overview & scopes
+  // Mutation for updating overview & scopes & client name
   const updateProjectMutation = useMutation({
-    mutationFn: (payload: { overview: string; scopes: string }) =>
+    mutationFn: (payload: { overview: string; scopes: string; clientName: string }) =>
       projectsApi.update(project.id, payload),
     onSuccess: () => {
       refetchProject();
@@ -80,13 +87,15 @@ export const ProjectScopes: React.FC = () => {
   const handleSave = () => {
     updateProjectMutation.mutate({
       overview: overviewText.trim(),
-      scopes: scopesText.trim()
+      scopes: scopesText.trim(),
+      clientName: clientNameText.trim()
     });
   };
 
   const handleCancel = () => {
     setOverviewText(project.overview || '');
     setScopesText(project.scopes || '');
+    setClientNameText(project.clientName || '');
     setIsEditing(false);
     setUpdateError(null);
   };
@@ -237,6 +246,19 @@ export const ProjectScopes: React.FC = () => {
             <div className="space-y-5">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-800 dark:text-zinc-300">
+                  Client Name
+                </label>
+                <input
+                  type="text"
+                  className="w-full bg-slate-50 dark:bg-background border border-border/80 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-zinc-150 focus:outline-none focus:border-blue-500"
+                  value={clientNameText}
+                  onChange={(e) => setClientNameText(e.target.value)}
+                  placeholder="e.g. ACME Corporation"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-800 dark:text-zinc-300">
                   Project Overview
                 </label>
                 <RichTextEditor
@@ -286,7 +308,18 @@ export const ProjectScopes: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="space-y-2">
+              {project.clientName && (
+                <div className="space-y-1">
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-zinc-400 uppercase tracking-widest">
+                    Client Name
+                  </h3>
+                  <p className="text-xs font-semibold text-slate-700 dark:text-zinc-200">
+                    {project.clientName}
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-2 pt-4 border-t border-border/40">
                 <h3 className="text-xs font-bold text-slate-800 dark:text-zinc-400 uppercase tracking-widest">
                   Overview
                 </h3>

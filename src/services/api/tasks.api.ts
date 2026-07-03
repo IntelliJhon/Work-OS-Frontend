@@ -11,6 +11,8 @@ export interface Task {
   name: string;
   description: string | null;
   status: 'to_do' | 'in_progress' | 'in_review' | 'done' | 'blocked' | string;
+  timeEstimate: number | null;
+  completedAt: string | null;
   customFields?: {
     priority?: 'low' | 'medium' | 'high' | 'critical';
     startDate?: string;
@@ -22,6 +24,9 @@ export interface Task {
       done: boolean;
       startDate?: string;
       endDate?: string;
+      timeEstimate?: number | null;
+      completedAt?: string | null;
+      createdAt?: string;
       comments?: {
         id: string;
         userName: string;
@@ -51,6 +56,7 @@ export interface CreateTaskPayload {
   name: string;
   description?: string;
   status?: string;
+  timeEstimate?: number | null;
   customFields?: Task['customFields'];
 }
 

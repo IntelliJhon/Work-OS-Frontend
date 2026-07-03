@@ -29,6 +29,7 @@ import {
 const createProjectSchema = z.object({
   name: z.string().min(3, 'Project name must be at least 3 characters'),
   description: z.string().optional(),
+  clientName: z.string().max(255).optional(),
 });
 
 type CreateProjectFormValues = z.infer<typeof createProjectSchema>;
@@ -469,6 +470,19 @@ export const Overview: React.FC = () => {
                   />
                   {errors.name && (
                     <p className="text-[10px] text-red-400 font-bold">{errors.name.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Client Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. ACME Corporation"
+                    {...register('clientName')}
+                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500"
+                  />
+                  {errors.clientName && (
+                    <p className="text-[10px] text-red-400 font-bold">{errors.clientName.message}</p>
                   )}
                 </div>
 

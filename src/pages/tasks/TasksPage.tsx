@@ -313,6 +313,7 @@ export const TasksPage: React.FC = () => {
     assigneeId: string;
     priority: string;
     dueDate: string;
+    timeEstimate?: number | null;
   }) => {
     try {
       // Submit Create Task payload
@@ -324,6 +325,7 @@ export const TasksPage: React.FC = () => {
         name: taskData.name,
         description: taskData.description || undefined,
         status: 'to_do',
+        timeEstimate: taskData.timeEstimate,
         customFields: {
           priority: taskData.priority as any,
           dueDate: taskData.dueDate || undefined,
@@ -567,6 +569,7 @@ interface CreateTaskModalProps {
     assigneeId: string;
     priority: string;
     dueDate: string;
+    timeEstimate?: number | null;
   }) => Promise<void>;
 }
 
@@ -581,6 +584,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   const [assigneeId, setAssigneeId] = useState('');
   const [priority, setPriority] = useState('medium');
   const [dueDate, setDueDate] = useState('');
+  const [timeEstimate, setTimeEstimate] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -595,6 +599,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         assigneeId,
         priority,
         dueDate,
+        timeEstimate: timeEstimate === '' ? null : Math.floor(Number(timeEstimate)),
       });
       // Reset form
       setName('');
@@ -602,6 +607,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       setAssigneeId('');
       setPriority('medium');
       setDueDate('');
+      setTimeEstimate('');
       onClose();
     } catch (err) {
       console.error(err);
@@ -717,6 +723,19 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                       placeholder="Select due date"
                     />
                   </div>
+                </div>
+
+                {/* Time Estimate */}
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Time Estimate (hrs)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 6"
+                    value={timeEstimate}
+                    onChange={(e) => setTimeEstimate(e.target.value)}
+                    className="w-full px-4 py-2.5 glass-input rounded-xl text-xs text-foreground placeholder-muted-foreground focus:outline-none"
+                  />
                 </div>
               </div>
 

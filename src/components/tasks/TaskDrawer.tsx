@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Trash2, Plus, MessageSquare } from 'lucide-react';
+import { X, Trash2, Plus, MessageSquare, Clock, CheckSquare } from 'lucide-react';
 import { DatePickerInput } from '../ui/DatePickerInput';
 import type { Task } from '../../services/api/tasks.api';
 import type { Project, Sprint, Phase } from '../../services/api/projects';
@@ -19,6 +19,26 @@ interface TaskDrawerProps {
   onUpdateTask: (id: string, updates: Partial<Task>) => Promise<void>;
   onDeleteTask: (id: string) => Promise<void>;
 }
+
+const formatDuration = (startISO?: string, endISO?: string | null) => {
+  if (!startISO || !endISO) return '';
+  const start = new Date(startISO);
+  const end = new Date(endISO);
+  const diffMs = end.getTime() - start.getTime();
+  if (diffMs <= 0) return '0m';
+
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHrs = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHrs / 24);
+
+  if (diffDays > 0) {
+    return `${diffDays}d ${diffHrs % 24}h`;
+  }
+  if (diffHrs > 0) {
+    return `${diffHrs}h ${diffMins % 60}m`;
+  }
+  return `${diffMins}m`;
+};
 
 export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   task,
@@ -55,8 +75,9 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   const [phaseId, setPhaseId] = useState('');
   
   // Subtasks state
-  const [subtasks, setSubtasks] = useState<{ id: string; title: string; done: boolean }[]>([]);
+  const [subtasks, setSubtasks] = useState<any[]>([]);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+  const [localTimeEstimate, setLocalTimeEstimate] = useState<string>('');
 
   const filteredAssignees = useMemo(() => {
     return assignees;
@@ -76,6 +97,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
       setDueDate(task.customFields?.dueDate || '');
       setPhaseId(task.customFields?.phaseId || '');
       setSubtasks(task.customFields?.subtasks || []);
+      setLocalTimeEstimate(task.timeEstimate === null || task.timeEstimate === undefined ? '' : String(task.timeEstimate));
     }
   }, [task]);
 
@@ -112,11 +134,34 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   // Subtasks update
   const handleToggleSubtask = async (subtaskId: string) => {
     if (!canUpdate) return;
-    const updatedSubtasks = subtasks.map((s) =>
-      s.id === subtaskId ? { ...s, done: !s.done } : s
-    );
+    const updatedSubtasks = subtasks.map((s) => {
+      if (s.id === subtaskId) {
+        const nextDone = !s.done;
+        return {
+          ...s,
+          done: nextDone,
+          completedAt: nextDone ? new Date().toISOString() : null
+        };
+      }
+      return s;
+    });
     setSubtasks(updatedSubtasks);
     
+    await onUpdateTask(task.id, {
+      customFields: {
+        ...task.customFields,
+        subtasks: updatedSubtasks,
+      },
+    });
+  };
+
+  const handleUpdateSubtaskTime = async (subtaskId: string, timeEstimate: number | null) => {
+    if (!canUpdate) return;
+    const updatedSubtasks = subtasks.map((s) =>
+      s.id === subtaskId ? { ...s, timeEstimate } : s
+    );
+    setSubtasks(updatedSubtasks);
+
     await onUpdateTask(task.id, {
       customFields: {
         ...task.customFields,
@@ -133,6 +178,9 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
       id: `sub_${Date.now()}`,
       title: newSubtaskTitle.trim(),
       done: false,
+      createdAt: new Date().toISOString(),
+      completedAt: null,
+      timeEstimate: null
     };
     
     const updatedSubtasks = [...subtasks, newSub];
@@ -337,8 +385,28 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
 
 
 
+            {/* Time Estimate */}
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Time Estimate (hrs)</label>
+              <input
+                type="number"
+                min="0"
+                disabled={!canUpdate}
+                value={localTimeEstimate}
+                onChange={(e) => setLocalTimeEstimate(e.target.value)}
+                onBlur={() => {
+                  const parsed = localTimeEstimate === '' ? null : Math.floor(Number(localTimeEstimate));
+                  if (!isNaN(parsed as any) && parsed !== task.timeEstimate) {
+                    onUpdateTask(task.id, { timeEstimate: parsed });
+                  }
+                }}
+                className="w-full px-3 py-2 glass-input text-foreground text-xs rounded-xl focus:outline-none"
+                placeholder="No estimate specified"
+              />
+            </div>
+
             {/* Due Date */}
-            <div className="space-y-1.5 col-span-2">
+            <div className="space-y-1.5">
               <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Due Date</label>
               <DatePickerInput
                 value={dueDate}
@@ -351,6 +419,30 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               />
             </div>
           </div>
+
+          {/* Completion stats banner */}
+          {status === 'done' && task.completedAt && (
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 space-y-2 text-xs">
+              <div className="flex items-center space-x-1.5 text-emerald-400 font-bold uppercase tracking-wider text-[10px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Task Completed</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-slate-600 dark:text-zinc-300">
+                <div>
+                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">Completed On</p>
+                  <p className="font-semibold text-foreground">
+                    {new Date(task.completedAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">Exact Developer Working Time</p>
+                  <p className="font-semibold text-foreground">
+                    {formatDuration(task.createdAt, task.completedAt) || 'N/A'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Description Section */}
           <div className="space-y-2">
@@ -376,27 +468,64 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                 {subtasks.map((sub) => (
                   <div
                     key={sub.id}
-                    className="flex items-center justify-between p-2 rounded-xl bg-muted/30 border border-border text-xs text-foreground"
+                    className="border border-border rounded-xl p-2.5 space-y-2 bg-muted/20 text-xs text-foreground"
                   >
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        checked={sub.done}
-                        disabled={!canUpdate}
-                        onChange={() => handleToggleSubtask(sub.id)}
-                        className="rounded border-border bg-background text-blue-600 focus:ring-blue-500 cursor-pointer"
-                      />
-                      <span className={sub.done ? 'line-through text-muted-foreground' : 'text-foreground'}>
-                        {sub.title}
-                      </span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          checked={sub.done}
+                          disabled={!canUpdate}
+                          onChange={() => handleToggleSubtask(sub.id)}
+                          className="rounded border-border bg-background text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                        <span className={sub.done ? 'line-through text-muted-foreground' : 'text-foreground'}>
+                          {sub.title}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        {/* Subtask Time Estimate Input */}
+                        <div className="flex items-center space-x-1 border border-border rounded-lg px-1.5 py-0.5 bg-background">
+                          <Clock className="w-3 h-3 text-muted-foreground" />
+                          <input
+                            type="number"
+                            min="0"
+                            disabled={!canUpdate}
+                            value={sub.timeEstimate === null || sub.timeEstimate === undefined ? '' : sub.timeEstimate}
+                            onChange={(e) => {
+                              const val = e.target.value === '' ? null : Math.floor(Number(e.target.value));
+                              handleUpdateSubtaskTime(sub.id, val);
+                            }}
+                            className="w-8 bg-transparent text-[10px] text-foreground focus:outline-none text-center font-bold"
+                            placeholder="hrs"
+                            title="Subtask time estimate (hours)"
+                          />
+                        </div>
+
+                        {canUpdate && (
+                          <button
+                            onClick={() => handleDeleteSubtask(sub.id)}
+                            className="text-muted-foreground hover:text-red-400 p-1 rounded-lg hover:bg-muted transition-all cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    {canUpdate && (
-                      <button
-                        onClick={() => handleDeleteSubtask(sub.id)}
-                        className="text-muted-foreground hover:text-red-400 p-1 rounded-lg hover:bg-muted transition-all cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+
+                    {/* Subtask completion timestamp details */}
+                    {sub.done && sub.completedAt && (
+                      <div className="text-[10px] text-muted-foreground pl-6 flex items-center space-x-1.5 flex-wrap font-medium">
+                        <CheckSquare className="w-3 h-3 text-emerald-500" />
+                        <span>Completed On {new Date(sub.completedAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                        {sub.createdAt && (
+                          <>
+                            <span className="text-muted-foreground/50">•</span>
+                            <span className="text-purple-400 font-bold">Duration: {formatDuration(sub.createdAt, sub.completedAt) || 'N/A'}</span>
+                          </>
+                        )}
+                      </div>
                     )}
                   </div>
                 ))}

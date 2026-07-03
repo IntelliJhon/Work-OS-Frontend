@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Project, Phase, Activity, Sprint } from '../../services/api/projects';
@@ -53,6 +54,7 @@ const createActivitySchema = z.object({
   endDate: z.string().optional().nullable(),
   assigneeId: z.string().optional().nullable(),
   priority: z.enum(['low', 'medium', 'high', 'critical']).or(z.literal('')).optional().nullable(),
+  timeEstimate: z.union([z.number(), z.string(), z.literal('')]).optional().nullable(),
 });
 
 const createSprintSchema = z.object({
@@ -99,6 +101,9 @@ interface SubTask {
   startDate?: string;
   endDate?: string;
   comments?: SubTaskComment[];
+  timeEstimate?: number | null;
+  completedAt?: string | null;
+  createdAt?: string;
 }
 
 interface InteractiveTask {
@@ -112,7 +117,30 @@ interface InteractiveTask {
   priority?: 'low' | 'medium' | 'high' | 'critical';
   description?: string;
   subtasks?: SubTask[];
+  timeEstimate?: number | null;
+  completedAt?: string | null;
+  createdAt?: string;
 }
+
+const formatDuration = (startISO?: string, endISO?: string | null) => {
+  if (!startISO || !endISO) return '';
+  const start = new Date(startISO);
+  const end = new Date(endISO);
+  const diffMs = end.getTime() - start.getTime();
+  if (diffMs <= 0) return '0m';
+
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHrs = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHrs / 24);
+
+  if (diffDays > 0) {
+    return `${diffDays}d ${diffHrs % 24}h`;
+  }
+  if (diffHrs > 0) {
+    return `${diffHrs}h ${diffMins % 60}m`;
+  }
+  return `${diffMins}m`;
+};
 
 export const ProjectSprints: React.FC = () => {
   const { project, refetch: refetchProject } = useOutletContext<{ project: Project; refetch: () => void }>();
@@ -141,9 +169,11 @@ export const ProjectSprints: React.FC = () => {
   const [addTaskStartDate, setAddTaskStartDate] = useState('');
   const [addTaskDueDate, setAddTaskDueDate] = useState('');
   const [addTaskDesc, setAddTaskDesc] = useState('');
+  const [addTaskTimeEstimate, setAddTaskTimeEstimate] = useState('');
 
   // Form states for subtasks in details side panel
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+  const [localTimeEstimate, setLocalTimeEstimate] = useState<string>('');
 
   // Subtask Comments & Media states
   const [expandedSubtaskIds, setExpandedSubtaskIds] = useState<string[]>([]);
@@ -252,7 +282,7 @@ export const ProjectSprints: React.FC = () => {
       const startDate = customFields.startDate || undefined;
       const priority = customFields.priority || 'medium';
       const storyPoints = customFields.storyPoints || 0;
-      const subtasks = Array.isArray(customFields.subtasks) ? customFields.subtasks : [];
+      const subtasks = (Array.isArray(customFields.subtasks) ? customFields.subtasks : []) as SubTask[];
 
       let mappedStatus: 'to_do' | 'in_progress' | 'in_review' | 'done' | 'blocked' = 'to_do';
       if (task.status === 'in_progress') {
@@ -276,6 +306,9 @@ export const ProjectSprints: React.FC = () => {
         priority: priority as any,
         description: task.description || undefined,
         subtasks,
+        timeEstimate: task.timeEstimate,
+        completedAt: task.completedAt,
+        createdAt: task.createdAt,
       };
     });
   }, [dbTasks, selectedActivity, activeNestedSprint, project.id, members]);
@@ -330,6 +363,7 @@ export const ProjectSprints: React.FC = () => {
             name: newActivity.title.trim(),
             description: '',
             status: 'to_do',
+            timeEstimate: newActivity.timeEstimate,
             customFields: {
               priority: (variables.priority || 'medium') as any,
               startDate: newActivity.startDate ? newActivity.startDate.split('T')[0] : undefined,
@@ -520,6 +554,9 @@ export const ProjectSprints: React.FC = () => {
   const onActivitySubmit = (values: CreateActivityValues) => {
     const startISO = values.startDate ? new Date(values.startDate).toISOString() : null;
     const endISO = values.endDate ? new Date(values.endDate).toISOString() : null;
+    const parsedEstimate = (values.timeEstimate === '' || values.timeEstimate === undefined || values.timeEstimate === null)
+      ? null
+      : Math.floor(Number(values.timeEstimate));
 
     createActivityMutation.mutate({
       projectId: project.id,
@@ -531,6 +568,7 @@ export const ProjectSprints: React.FC = () => {
       endDate: endISO,
       assigneeId: values.assigneeId || null,
       priority: values.priority || 'medium',
+      timeEstimate: parsedEstimate,
     });
   };
 
@@ -696,6 +734,7 @@ export const ProjectSprints: React.FC = () => {
         name: addTaskName.trim(),
         description: addTaskDesc.trim() || undefined,
         status: 'to_do',
+        timeEstimate: addTaskTimeEstimate === '' ? null : Math.floor(Number(addTaskTimeEstimate)),
         customFields: {
           priority: addTaskPriority,
           startDate: addTaskStartDate || undefined,
@@ -734,7 +773,8 @@ export const ProjectSprints: React.FC = () => {
             assignee: addTaskAssignee,
             dueDate: addTaskDueDate || undefined,
             description: addTaskDesc.trim() || undefined,
-            subtasks: []
+            subtasks: [],
+            timeEstimate: createdTask.timeEstimate,
           },
           actorName
         });
@@ -747,6 +787,7 @@ export const ProjectSprints: React.FC = () => {
       setAddTaskStartDate('');
       setAddTaskDueDate('');
       setAddTaskDesc('');
+      setAddTaskTimeEstimate('');
       setShowAddTaskModal(false);
     } catch (err) {
       console.error('Failed to create task deliverable', err);
@@ -856,8 +897,27 @@ export const ProjectSprints: React.FC = () => {
     const task = activeSprintTasks.find((t) => t.id === taskId);
     if (!task) return;
 
+    const updatedSubtasks = (task.subtasks || []).map((sub) => {
+      if (sub.id === subtaskId) {
+        const nextDone = !sub.done;
+        return {
+          ...sub,
+          done: nextDone,
+          completedAt: nextDone ? new Date().toISOString() : null
+        };
+      }
+      return sub;
+    });
+
+    handleUpdateTaskDetail(taskId, { subtasks: updatedSubtasks });
+  };
+
+  const handleUpdateSubtaskTime = (taskId: string, subtaskId: string, timeEstimate: number | null) => {
+    const task = activeSprintTasks.find((t) => t.id === taskId);
+    if (!task) return;
+
     const updatedSubtasks = (task.subtasks || []).map((sub) =>
-      sub.id === subtaskId ? { ...sub, done: !sub.done } : sub
+      sub.id === subtaskId ? { ...sub, timeEstimate } : sub
     );
 
     handleUpdateTaskDetail(taskId, { subtasks: updatedSubtasks });
@@ -872,7 +932,10 @@ export const ProjectSprints: React.FC = () => {
     const newSub: SubTask = {
       id: `sub_${Date.now()}`,
       title: newSubtaskTitle.trim(),
-      done: false
+      done: false,
+      createdAt: new Date().toISOString(),
+      completedAt: null,
+      timeEstimate: null
     };
 
     const updatedSubtasks = [...(task.subtasks || []), newSub];
@@ -1036,6 +1099,14 @@ export const ProjectSprints: React.FC = () => {
   const isActiveAssignee = dbTaskForActive?.assigneeId === user?.id;
   const canEditFull = isActiveFullAccess;
   const canUpdate = isActiveFullAccess || isActiveAssignee;
+
+  useEffect(() => {
+    if (activeTask) {
+      setLocalTimeEstimate(activeTask.timeEstimate === null || activeTask.timeEstimate === undefined ? '' : String(activeTask.timeEstimate));
+    } else {
+      setLocalTimeEstimate('');
+    }
+  }, [activeTask?.id, activeTask?.timeEstimate]);
 
   const getAvatarBg = (userName: string) => {
     let charCodeSum = 0;
@@ -1792,7 +1863,7 @@ export const ProjectSprints: React.FC = () => {
       </div>
 
       {/* Task detail sliding drawer */}
-      {activeTask && (
+      {activeTask && createPortal(
         <>
           <div className="fixed inset-0 bg-black/20 backdrop-blur-[1px] z-40 animate-fade-in-backdrop" onClick={() => setActiveTaskId(null)} />
           <div className="fixed top-0 right-0 h-screen w-[320px] md:w-[480px] bg-slate-50 dark:bg-zinc-950 border-l border-slate-200 dark:border-border z-50 shadow-2xl flex flex-col p-6 animate-slide-in-right overflow-y-auto">
@@ -1901,6 +1972,26 @@ export const ProjectSprints: React.FC = () => {
                 </div>
               </div>
 
+              {/* Time Estimate input */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Time Estimate (hrs)</label>
+                <input
+                  type="number"
+                  min="0"
+                  disabled={!canUpdate}
+                  value={localTimeEstimate}
+                  onChange={(e) => setLocalTimeEstimate(e.target.value)}
+                  onBlur={() => {
+                    const parsed = localTimeEstimate === '' ? null : Math.floor(Number(localTimeEstimate));
+                    if (!isNaN(parsed as any) && parsed !== activeTask.timeEstimate) {
+                      handleUpdateTaskDetail(activeTask.id, { timeEstimate: parsed });
+                    }
+                  }}
+                  className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 disabled:opacity-75"
+                  placeholder="No estimate specified"
+                />
+              </div>
+
               {/* Status field */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Status</label>
@@ -1917,6 +2008,30 @@ export const ProjectSprints: React.FC = () => {
                   <option value="blocked">Blocked</option>
                 </select>
               </div>
+
+              {/* Completion stats banner */}
+              {activeTask.status === 'done' && activeTask.completedAt && (
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3.5 space-y-2 text-xs">
+                  <div className="flex items-center space-x-1.5 text-emerald-400 font-bold uppercase tracking-wider text-[10px]">
+                    <CheckSquare className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Deliverable Completed</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-slate-600 dark:text-zinc-300">
+                    <div>
+                      <p className="text-[9px] uppercase tracking-wider text-slate-450 font-medium">Completed On</p>
+                      <p className="font-semibold text-slate-800 dark:text-zinc-200">
+                        {new Date(activeTask.completedAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] uppercase tracking-wider text-slate-450 font-medium">Developer Working Time</p>
+                      <p className="font-semibold text-slate-800 dark:text-zinc-200">
+                        {formatDuration(activeTask.createdAt, activeTask.completedAt) || 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Subtasks checklists */}
               <div className="space-y-4 border-t border-slate-200 dark:border-white/5 pt-4">
@@ -1972,6 +2087,24 @@ export const ProjectSprints: React.FC = () => {
                             </div>
                             
                             <div className="flex items-center space-x-2">
+                              {/* Subtask Time Estimate Input */}
+                              <div className="flex items-center space-x-1 border border-slate-200 dark:border-zinc-800 rounded-lg px-1.5 py-0.5 bg-slate-50 dark:bg-background">
+                                <Clock className="w-3 h-3 text-slate-450" />
+                                <input
+                                  type="number"
+                                  min="0"
+                                  disabled={!canUpdate}
+                                  value={sub.timeEstimate === null || sub.timeEstimate === undefined ? '' : sub.timeEstimate}
+                                  onChange={(e) => {
+                                    const val = e.target.value === '' ? null : Math.floor(Number(e.target.value));
+                                    handleUpdateSubtaskTime(activeTask.id, sub.id, val);
+                                  }}
+                                  className="w-10 bg-transparent text-[10px] text-slate-700 dark:text-zinc-350 focus:outline-none text-center font-bold"
+                                  placeholder="hrs"
+                                  title="Subtask time estimate (hours)"
+                                />
+                              </div>
+
                               {/* Toggle Thread Button */}
                               <button
                                 onClick={() => toggleSubtaskExpanded(sub.id)}
@@ -1996,6 +2129,20 @@ export const ProjectSprints: React.FC = () => {
                               )}
                             </div>
                           </div>
+
+                          {/* Subtask completion timestamp details */}
+                          {sub.done && sub.completedAt && (
+                            <div className="text-[10px] text-slate-500 pl-6 flex items-center space-x-1.5 flex-wrap font-medium">
+                              <CheckSquare className="w-3 h-3 text-emerald-500" />
+                              <span>Completed On {new Date(sub.completedAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                              {sub.createdAt && (
+                                <>
+                                  <span className="text-slate-450">•</span>
+                                  <span className="text-purple-550 dark:text-purple-400 font-bold">Duration: {formatDuration(sub.createdAt, sub.completedAt) || 'N/A'}</span>
+                                </>
+                              )}
+                            </div>
+                          )}
                           
                           {/* Expanded Thread Section */}
                           {isExpanded && (
@@ -2086,11 +2233,12 @@ export const ProjectSprints: React.FC = () => {
               </div>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
 
       {/* SIDEBAR DRAWER: Create Activity */}
-      {showCreateActivityModal && (
+      {showCreateActivityModal && createPortal(
         <>
           <div className="fixed inset-0 bg-black/20 backdrop-blur-[1px] z-45 animate-fade-in-backdrop" onClick={() => setShowCreateActivityModal(false)} />
           <div className="fixed top-0 left-0 h-screen w-[320px] md:w-[440px] bg-slate-50 dark:bg-zinc-950 border-r border-slate-200 dark:border-border z-50 shadow-2xl flex flex-col p-6 animate-slide-in-left overflow-y-auto">
@@ -2278,6 +2426,20 @@ export const ProjectSprints: React.FC = () => {
                   </div>
                 )}
 
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Time Estimate (hrs)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 12"
+                    {...activityForm.register('timeEstimate')}
+                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500"
+                  />
+                  {activityForm.formState.errors.timeEstimate && (
+                    <p className="text-[10px] text-red-400 font-bold">{activityForm.formState.errors.timeEstimate.message}</p>
+                  )}
+                </div>
+
                 <div className="flex items-center space-x-2 bg-slate-100/30 dark:bg-white/5 border border-slate-100 dark:border-white/5 p-3.5 rounded-xl">
                   <input
                     type="checkbox"
@@ -2309,11 +2471,12 @@ export const ProjectSprints: React.FC = () => {
               </div>
             </form>
           </div>
-        </>
+        </>,
+        document.body
       )}
 
       {/* SIDEBAR DRAWER: Create Sprint Cycle (Slides in from the right) */}
-      {showCreateSprintModal && selectedActivity && (
+      {showCreateSprintModal && selectedActivity && createPortal(
         <>
           <div className="fixed inset-0 bg-black/20 backdrop-blur-[1px] z-45 animate-fade-in-backdrop" onClick={() => setShowCreateSprintModal(false)} />
           <div className="fixed top-0 right-0 h-screen w-[320px] md:w-[440px] bg-slate-50 dark:bg-zinc-950 border-l border-slate-200 dark:border-border z-50 shadow-2xl flex flex-col p-6 animate-slide-in-right overflow-y-auto">
@@ -2413,11 +2576,12 @@ export const ProjectSprints: React.FC = () => {
               </div>
             </form>
           </div>
-        </>
+        </>,
+        document.body
       )}
 
       {/* MODAL: Blocker Alert for Close Sprint */}
-      {showBlockerModal && (
+      {showBlockerModal && createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="glass-panel-heavy rounded-2xl w-full max-w-md p-6 border border-rose-500/30 text-foreground space-y-4 bg-zinc-950">
             <div className="flex items-center space-x-2 border-b border-rose-500/20 pb-3">
@@ -2437,11 +2601,12 @@ export const ProjectSprints: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
        {/* SIDEBAR DRAWER: Add Task Deliverable */}
-      {showAddTaskModal && selectedActivity && (
+      {showAddTaskModal && selectedActivity && createPortal(
         <>
           <div className="fixed inset-0 bg-black/20 backdrop-blur-[1px] z-45 animate-fade-in-backdrop" onClick={() => setShowAddTaskModal(false)} />
           <div className="fixed top-0 right-0 h-screen w-[320px] md:w-[440px] bg-slate-50 dark:bg-zinc-950 border-l border-slate-200 dark:border-border z-50 shadow-2xl flex flex-col p-6 animate-slide-in-right overflow-y-auto">
@@ -2528,6 +2693,18 @@ export const ProjectSprints: React.FC = () => {
                     />
                   </div>
                 </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Time Estimate (hrs)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 8"
+                    value={addTaskTimeEstimate}
+                    onChange={(e) => setAddTaskTimeEstimate(e.target.value)}
+                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end space-x-2 pt-4 border-t border-slate-200 dark:border-white/5">
@@ -2548,7 +2725,8 @@ export const ProjectSprints: React.FC = () => {
               </div>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
