@@ -15,7 +15,8 @@ import {
   BarChart3,
   Pencil,
   X,
-  ClipboardList
+  ClipboardList,
+  Bug
 } from 'lucide-react';
 import { useSocket } from '../../services/socket/socket-context';
 import TeamPresence from '../../components/collaboration/TeamPresence';
@@ -32,9 +33,10 @@ export const ProjectDetail: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
-  const getCurrentPageName = (): 'scopes' | 'workflow' | 'activities' | 'gates' | 'analytics' => {
+  const getCurrentPageName = (): 'scopes' | 'workflow' | 'activities' | 'gates' | 'analytics' | 'error-logs' => {
     if (location.pathname.endsWith('/scopes')) return 'scopes';
     if (location.pathname.endsWith('/sprints') || location.pathname.endsWith('/activities')) return 'activities';
+    if (location.pathname.endsWith('/error-logs')) return 'error-logs';
     if (location.pathname.endsWith('/gates')) return 'gates';
     if (location.pathname.endsWith('/analytics')) return 'analytics';
     return 'workflow';
@@ -115,6 +117,7 @@ export const ProjectDetail: React.FC = () => {
     { name: 'Analytics', path: `/projects/${id}/analytics`, icon: BarChart3 },
     { name: 'Workflow Timeline', path: `/projects/${id}/workflow`, icon: GitBranch },
     { name: 'Task Planner', path: `/projects/${id}/activities`, icon: Activity },
+    { name: 'Error Logs', path: `/projects/${id}/error-logs`, icon: Bug },
     { name: 'Quality Gates Checklist', path: `/projects/${id}/gates`, icon: ShieldCheck },
   ];
 

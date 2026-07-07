@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Trash2, Plus, MessageSquare, Clock, CheckSquare } from 'lucide-react';
+import { X, Trash2, Plus, MessageSquare, Clock, CheckSquare, Save, Loader2 } from 'lucide-react';
 import { DatePickerInput } from '../ui/DatePickerInput';
 import type { Task } from '../../services/api/tasks.api';
 import type { Project, Sprint, Phase } from '../../services/api/projects';
@@ -31,12 +31,8 @@ const formatDuration = (startISO?: string, endISO?: string | null) => {
   const diffHrs = Math.floor(diffMins / 60);
   const diffDays = Math.floor(diffHrs / 24);
 
-  if (diffDays > 0) {
-    return `${diffDays}d ${diffHrs % 24}h`;
-  }
-  if (diffHrs > 0) {
-    return `${diffHrs}h ${diffMins % 60}m`;
-  }
+  if (diffDays > 0) return `${diffDays}d ${diffHrs % 24}h`;
+  if (diffHrs > 0) return `${diffHrs}h ${diffMins % 60}m`;
   return `${diffMins}m`;
 };
 
@@ -62,29 +58,29 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   const canEditFull = isFullAccess;
   const canDelete = isFullAccess;
 
-  // Local state for editing fields
+  // Local editing state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('');
   const [assigneeId, setAssigneeId] = useState('');
   const [sprintId, setSprintId] = useState('');
-  
-  // Custom fields
   const [priority, setPriority] = useState('medium');
   const [dueDate, setDueDate] = useState('');
   const [phaseId, setPhaseId] = useState('');
-  
-  // Subtasks state
+  const [localTimeEstimate, setLocalTimeEstimate] = useState('');
+
+  // Subtasks state (these remain instant — they're discrete actions)
   const [subtasks, setSubtasks] = useState<any[]>([]);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
-  const [localTimeEstimate, setLocalTimeEstimate] = useState<string>('');
 
-  const filteredAssignees = useMemo(() => {
-    return assignees;
-  }, [assignees]);
+  // Dirty / saving state
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
+  const filteredAssignees = useMemo(() => assignees, [assignees]);
 
-  // Sync state when task changes
+  // Sync local state when task changes (reset dirty)
   useEffect(() => {
     if (task) {
       setName(task.name);
@@ -92,12 +88,15 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
       setStatus(task.status || 'to_do');
       setAssigneeId(task.assigneeId || '');
       setSprintId(task.sprintId || '');
-      
       setPriority(task.customFields?.priority || 'medium');
       setDueDate(task.customFields?.dueDate || '');
       setPhaseId(task.customFields?.phaseId || '');
       setSubtasks(task.customFields?.subtasks || []);
-      setLocalTimeEstimate(task.timeEstimate === null || task.timeEstimate === undefined ? '' : String(task.timeEstimate));
+      setLocalTimeEstimate(
+        task.timeEstimate === null || task.timeEstimate === undefined ? '' : String(task.timeEstimate)
+      );
+      setIsDirty(false);
+      setSaveSuccess(false);
     }
   }, [task]);
 
@@ -106,106 +105,86 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   const filteredSprints = sprints.filter((s) => s.projectId === task.projectId);
   const filteredPhases = phases.filter((ph) => ph.projectId === task.projectId);
 
-  // Field change savers
-  const handleSaveField = async (fieldName: string, value: any) => {
-    const isRestrictedField = ['name', 'description', 'assigneeId', 'sprintId', 'priority', 'dueDate', 'phaseId'].includes(fieldName);
-    const hasPermission = isRestrictedField ? canEditFull : canUpdate;
-    if (!hasPermission) return;
-    try {
-      const updates: Partial<Task> = {};
-      
-      if (['name', 'description', 'status', 'assigneeId', 'sprintId'].includes(fieldName)) {
-        // Direct root fields
-        (updates as any)[fieldName] = value === '' ? null : value;
-      } else {
-        // Custom fields nesting
-        updates.customFields = {
-          ...task.customFields,
-          [fieldName]: value === '' ? undefined : value,
-        };
-      }
+  // Mark dirty helper
+  const markDirty = () => {
+    setIsDirty(true);
+    setSaveSuccess(false);
+  };
 
-      await onUpdateTask(task.id, updates);
+  // Batch save all main fields at once
+  const handleSaveAll = async () => {
+    if (!canUpdate || isSaving) return;
+    setIsSaving(true);
+    try {
+      const timeEstimateParsed = localTimeEstimate === '' ? null : Math.floor(Number(localTimeEstimate));
+      await onUpdateTask(task.id, {
+        name: name.trim() || task.name,
+        description: description.trim() || null,
+        status,
+        assigneeId: assigneeId || null,
+        sprintId: sprintId || null,
+        timeEstimate: isNaN(timeEstimateParsed as any) ? task.timeEstimate : timeEstimateParsed,
+        customFields: {
+          ...task.customFields,
+          priority: priority as any,
+          dueDate: dueDate || undefined,
+          phaseId: phaseId || undefined,
+          subtasks,
+        },
+      });
+      setIsDirty(false);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2500);
     } catch (err) {
-      console.error('Failed to update task field', err);
+      console.error('Failed to save task', err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  // Subtasks update
+  // ── Subtask helpers (instant saves — not batched) ─────────────────────────
   const handleToggleSubtask = async (subtaskId: string) => {
     if (!canUpdate) return;
-    const updatedSubtasks = subtasks.map((s) => {
+    const updated = subtasks.map((s) => {
       if (s.id === subtaskId) {
         const nextDone = !s.done;
-        return {
-          ...s,
-          done: nextDone,
-          completedAt: nextDone ? new Date().toISOString() : null
-        };
+        return { ...s, done: nextDone, completedAt: nextDone ? new Date().toISOString() : null };
       }
       return s;
     });
-    setSubtasks(updatedSubtasks);
-    
-    await onUpdateTask(task.id, {
-      customFields: {
-        ...task.customFields,
-        subtasks: updatedSubtasks,
-      },
-    });
+    setSubtasks(updated);
+    await onUpdateTask(task.id, { customFields: { ...task.customFields, subtasks: updated } });
   };
 
   const handleUpdateSubtaskTime = async (subtaskId: string, timeEstimate: number | null) => {
     if (!canUpdate) return;
-    const updatedSubtasks = subtasks.map((s) =>
-      s.id === subtaskId ? { ...s, timeEstimate } : s
-    );
-    setSubtasks(updatedSubtasks);
-
-    await onUpdateTask(task.id, {
-      customFields: {
-        ...task.customFields,
-        subtasks: updatedSubtasks,
-      },
-    });
+    const updated = subtasks.map((s) => (s.id === subtaskId ? { ...s, timeEstimate } : s));
+    setSubtasks(updated);
+    await onUpdateTask(task.id, { customFields: { ...task.customFields, subtasks: updated } });
   };
 
   const handleAddSubtask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSubtaskTitle.trim() || !canUpdate) return;
-
     const newSub = {
       id: `sub_${Date.now()}`,
       title: newSubtaskTitle.trim(),
       done: false,
       createdAt: new Date().toISOString(),
       completedAt: null,
-      timeEstimate: null
+      timeEstimate: null,
     };
-    
-    const updatedSubtasks = [...subtasks, newSub];
-    setSubtasks(updatedSubtasks);
+    const updated = [...subtasks, newSub];
+    setSubtasks(updated);
     setNewSubtaskTitle('');
-
-    await onUpdateTask(task.id, {
-      customFields: {
-        ...task.customFields,
-        subtasks: updatedSubtasks,
-      },
-    });
+    await onUpdateTask(task.id, { customFields: { ...task.customFields, subtasks: updated } });
   };
 
   const handleDeleteSubtask = async (subtaskId: string) => {
     if (!canUpdate) return;
-    const updatedSubtasks = subtasks.filter((s) => s.id !== subtaskId);
-    setSubtasks(updatedSubtasks);
-
-    await onUpdateTask(task.id, {
-      customFields: {
-        ...task.customFields,
-        subtasks: updatedSubtasks,
-      },
-    });
+    const updated = subtasks.filter((s) => s.id !== subtaskId);
+    setSubtasks(updated);
+    await onUpdateTask(task.id, { customFields: { ...task.customFields, subtasks: updated } });
   };
 
   const handleDeleteClick = async () => {
@@ -229,7 +208,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
 
       {/* Drawer Body */}
       <div className="relative w-full max-w-2xl h-full glass-panel-heavy border-l border-border shadow-2xl flex flex-col z-10 animate-slide-in">
-        
+
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border">
           <div className="flex items-center space-x-2">
@@ -260,33 +239,30 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
           </div>
         </div>
 
-        {/* Scrollable Container */}
+        {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-          
-          {/* Task Name Input */}
+
+          {/* Task Name */}
           <div className="space-y-1">
             <input
               type="text"
               value={name}
               disabled={!canEditFull}
-              onChange={(e) => setName(e.target.value)}
-              onBlur={() => handleSaveField('name', name)}
+              onChange={(e) => { setName(e.target.value); markDirty(); }}
               className="w-full bg-transparent border-0 border-b border-transparent hover:border-slate-200/50 dark:border-border/50 focus:border-blue-500/50 text-xl font-bold text-foreground focus:outline-none py-1 transition-all"
             />
           </div>
 
           {/* Configuration Grid */}
           <div className="grid grid-cols-2 gap-4 bg-muted/40 p-4 rounded-2xl border border-border">
+
             {/* Assignee */}
             <div className="space-y-1.5">
               <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Assignee</label>
               <select
                 value={assigneeId}
                 disabled={!canEditFull}
-                onChange={(e) => {
-                  setAssigneeId(e.target.value);
-                  handleSaveField('assigneeId', e.target.value);
-                }}
+                onChange={(e) => { setAssigneeId(e.target.value); markDirty(); }}
                 className="w-full px-3 py-2 glass-input text-foreground text-xs rounded-xl focus:outline-none [&>option]:bg-background [&>option]:text-foreground"
               >
                 <option value="">Unassigned</option>
@@ -304,10 +280,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               <select
                 value={status}
                 disabled={!canUpdate}
-                onChange={(e) => {
-                  setStatus(e.target.value);
-                  handleSaveField('status', e.target.value);
-                }}
+                onChange={(e) => { setStatus(e.target.value); markDirty(); }}
                 className="w-full px-3 py-2 glass-input text-foreground text-xs rounded-xl focus:outline-none [&>option]:bg-background [&>option]:text-foreground"
               >
                 <option value="to_do">To Do</option>
@@ -326,10 +299,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                   <select
                     value={sprintId}
                     disabled={!canEditFull}
-                    onChange={(e) => {
-                      setSprintId(e.target.value);
-                      handleSaveField('sprintId', e.target.value);
-                    }}
+                    onChange={(e) => { setSprintId(e.target.value); markDirty(); }}
                     className="w-full px-3 py-2 glass-input text-foreground text-xs rounded-xl focus:outline-none [&>option]:bg-background [&>option]:text-foreground"
                   >
                     <option value="">No Sprint</option>
@@ -347,10 +317,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                   <select
                     value={phaseId}
                     disabled={!canEditFull}
-                    onChange={(e) => {
-                      setPhaseId(e.target.value);
-                      handleSaveField('phaseId', e.target.value);
-                    }}
+                    onChange={(e) => { setPhaseId(e.target.value); markDirty(); }}
                     className="w-full px-3 py-2 glass-input text-foreground text-xs rounded-xl focus:outline-none [&>option]:bg-background [&>option]:text-foreground"
                   >
                     <option value="">No Phase</option>
@@ -370,10 +337,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               <select
                 value={priority}
                 disabled={!canEditFull}
-                onChange={(e) => {
-                  setPriority(e.target.value);
-                  handleSaveField('priority', e.target.value);
-                }}
+                onChange={(e) => { setPriority(e.target.value); markDirty(); }}
                 className="w-full px-3 py-2 glass-input text-foreground text-xs rounded-xl focus:outline-none [&>option]:bg-background [&>option]:text-foreground"
               >
                 <option value="low">Low</option>
@@ -383,8 +347,6 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               </select>
             </div>
 
-
-
             {/* Time Estimate */}
             <div className="space-y-1.5">
               <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Time Estimate (hrs)</label>
@@ -393,13 +355,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                 min="0"
                 disabled={!canUpdate}
                 value={localTimeEstimate}
-                onChange={(e) => setLocalTimeEstimate(e.target.value)}
-                onBlur={() => {
-                  const parsed = localTimeEstimate === '' ? null : Math.floor(Number(localTimeEstimate));
-                  if (!isNaN(parsed as any) && parsed !== task.timeEstimate) {
-                    onUpdateTask(task.id, { timeEstimate: parsed });
-                  }
-                }}
+                onChange={(e) => { setLocalTimeEstimate(e.target.value); markDirty(); }}
                 className="w-full px-3 py-2 glass-input text-foreground text-xs rounded-xl focus:outline-none"
                 placeholder="No estimate specified"
               />
@@ -411,10 +367,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               <DatePickerInput
                 value={dueDate}
                 disabled={!canEditFull}
-                onChange={(val) => {
-                  setDueDate(val);
-                  handleSaveField('dueDate', val);
-                }}
+                onChange={(val) => { setDueDate(val); markDirty(); }}
                 placeholder="No due date set"
               />
             </div>
@@ -444,14 +397,13 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
             </div>
           )}
 
-          {/* Description Section */}
+          {/* Description */}
           <div className="space-y-2">
             <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Description</label>
             <textarea
               value={description}
               disabled={!canEditFull}
-              onChange={(e) => setDescription(e.target.value)}
-              onBlur={() => handleSaveField('description', description)}
+              onChange={(e) => { setDescription(e.target.value); markDirty(); }}
               rows={4}
               placeholder="Provide a detailed overview of the requirements and outcomes..."
               className="w-full px-4 py-3 rounded-2xl glass-input text-foreground text-xs focus:outline-none resize-none font-light leading-relaxed"
@@ -461,8 +413,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
           {/* Subtasks Section */}
           <div className="space-y-3">
             <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block">Subtasks Checklist</label>
-            
-            {/* List */}
+
             {subtasks.length > 0 && (
               <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
                 {subtasks.map((sub) => (
@@ -483,9 +434,9 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                           {sub.title}
                         </span>
                       </div>
-                      
+
                       <div className="flex items-center space-x-2">
-                        {/* Subtask Time Estimate Input */}
+                        {/* Subtask Time Estimate */}
                         <div className="flex items-center space-x-1 border border-border rounded-lg px-1.5 py-0.5 bg-background">
                           <Clock className="w-3 h-3 text-muted-foreground" />
                           <input
@@ -514,7 +465,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                       </div>
                     </div>
 
-                    {/* Subtask completion timestamp details */}
+                    {/* Subtask completion details */}
                     {sub.done && sub.completedAt && (
                       <div className="text-[10px] text-muted-foreground pl-6 flex items-center space-x-1.5 flex-wrap font-medium">
                         <CheckSquare className="w-3 h-3 text-emerald-500" />
@@ -532,7 +483,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               </div>
             )}
 
-            {/* Input Form */}
+            {/* Add Subtask */}
             {canUpdate && (
               <form onSubmit={handleAddSubtask} className="flex gap-2">
                 <input
@@ -553,21 +504,50 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
             )}
           </div>
 
-          {/* Comments System Integration */}
+          {/* Comments */}
           <div className="border-t border-border pt-5 space-y-3">
             <div className="flex items-center space-x-2 text-muted-foreground">
               <MessageSquare className="w-4 h-4 text-blue-400" />
               <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Realtime Comments Feed</label>
             </div>
-            
             <CommentsSystem
               projectId={task.projectId || 'global'}
               entityId={task.id}
               entityType="TASK"
             />
           </div>
-
         </div>
+
+        {/* ── Sticky Save Footer ── */}
+        {canUpdate && (
+          <div className={`border-t border-border px-6 py-4 flex items-center justify-between transition-all duration-300 ${isDirty ? 'bg-blue-500/5' : 'bg-transparent'}`}>
+            <span className={`text-[10px] font-medium transition-all duration-200 ${isDirty ? 'text-amber-400' : saveSuccess ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+              {isDirty ? '● Unsaved changes' : saveSuccess ? '✓ Saved successfully' : 'No pending changes'}
+            </span>
+
+            <button
+              onClick={handleSaveAll}
+              disabled={!isDirty || isSaving}
+              className={`flex items-center space-x-2 px-5 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer
+                ${isDirty
+                  ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 active:scale-95'
+                  : 'bg-muted text-muted-foreground cursor-not-allowed opacity-50'
+                }`}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Saving…</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save Changes</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

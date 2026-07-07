@@ -128,12 +128,29 @@ export const DragDropUpload: React.FC<DragDropUploadProps> = ({
     const maxSizeBytes = 10 * 1024 * 1024; // 10MB
     const allowedMimeTypes = [
       'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain',
       'image/png',
       'image/jpeg',
-      'image/jpg'
+      'image/jpg',
+      'image/gif',
+      'image/webp',
+      'image/svg+xml',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain',
+      'text/csv',
+      'application/json',
+      'application/zip',
+      'application/x-zip-compressed'
+    ];
+
+    const allowedExtensions = [
+      '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+      '.txt', '.csv', '.json', '.zip',
+      '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'
     ];
 
     for (let i = 0; i < files.length; i++) {
@@ -142,15 +159,9 @@ export const DragDropUpload: React.FC<DragDropUploadProps> = ({
         setErrorMsg(`File "${file.name}" exceeds the 10MB limit.`);
         return;
       }
-      if (!allowedMimeTypes.includes(file.type) && 
-          !file.name.endsWith('.pdf') && 
-          !file.name.endsWith('.doc') && 
-          !file.name.endsWith('.docx') && 
-          !file.name.endsWith('.txt') && 
-          !file.name.endsWith('.png') && 
-          !file.name.endsWith('.jpg') && 
-          !file.name.endsWith('.jpeg')) {
-        setErrorMsg(`File "${file.name}" has an unsupported format. (Allowed: PDF, Word, TXT, PNG, JPEG)`);
+      const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
+      if (!allowedMimeTypes.includes(file.type) && !allowedExtensions.includes(fileExt)) {
+        setErrorMsg(`File "${file.name}" has an unsupported format. (Allowed: PDF, Word, Excel, PowerPoint, Text, CSV, JSON, ZIP, PNG, JPEG, GIF, WebP, SVG)`);
         return;
       }
       fileList.push(file);

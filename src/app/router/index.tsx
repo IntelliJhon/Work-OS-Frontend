@@ -15,6 +15,7 @@ const ProjectDetail = lazy(() => import('../../pages/projects/ProjectDetail'));
 const ProjectWorkflow = lazy(() => import('../../pages/projects/ProjectWorkflow'));
 const ProjectSprints = lazy(() => import('../../pages/projects/ProjectSprints'));
 const ProjectGates = lazy(() => import('../../pages/projects/ProjectGates'));
+const ProjectErrorLogs = lazy(() => import('../../pages/projects/ProjectErrorLogs'));
 const NotificationCenter = lazy(() => import('../../pages/notifications/NotificationCenter'));
 const AccessDenied = lazy(() => import('../../pages/error/AccessDenied'));
 const ProjectAnalytics = lazy(() => import('../../pages/projects/ProjectAnalytics'));
@@ -78,6 +79,7 @@ export const AppRouter: React.FC = () => {
                 <Route path="workflow" element={<ProjectWorkflow />} />
                 <Route path="sprints" element={<ProjectSprintsRedirect />} />
                 <Route path="activities" element={<ProjectSprints />} />
+                <Route path="error-logs" element={<ProjectErrorLogs />} />
                 <Route path="gates" element={<ProjectGates />} />
               </Route>
 
