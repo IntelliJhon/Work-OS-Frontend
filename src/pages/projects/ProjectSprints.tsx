@@ -862,8 +862,9 @@ export const ProjectSprints: React.FC = () => {
       alert(`RBAC Security: You do not have permissions to update this task. Only the assigned user or project managers can modify it.`);
       return;
     }
-    e.dataTransfer.setData('text/plain', taskId);
-    e.dataTransfer.setData('fromStatus', fromStatus);
+    // Encode both values as JSON in text/plain — custom MIME keys like 'fromStatus' are not reliably supported cross-browser
+    e.dataTransfer.setData('text/plain', JSON.stringify({ taskId, fromStatus }));
+    e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -874,10 +875,18 @@ export const ProjectSprints: React.FC = () => {
     e.preventDefault();
     if (!activeNestedSprint || activeNestedSprint.status === 'closed') return;
 
-    const taskId = e.dataTransfer.getData('text/plain');
-    const fromStatus = e.dataTransfer.getData('fromStatus') as 'to_do' | 'in_progress' | 'in_review' | 'done' | 'blocked';
+    let taskId: string;
+    let fromStatus: 'to_do' | 'in_progress' | 'in_review' | 'done' | 'blocked';
+    try {
+      const raw = e.dataTransfer.getData('text/plain');
+      const parsed = JSON.parse(raw);
+      taskId = parsed.taskId;
+      fromStatus = parsed.fromStatus;
+    } catch {
+      return; // malformed payload
+    }
 
-    if (fromStatus === toStatus) return;
+    if (!taskId || fromStatus === toStatus) return;
 
     const movedTask = activeSprintTasks.find((t) => t.id === taskId);
     const taskName = movedTask?.name || 'Deliverable Task';
