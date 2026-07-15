@@ -27,6 +27,15 @@ export interface Task {
       timeEstimate?: number | null;
       completedAt?: string | null;
       createdAt?: string;
+      priority?: 'low' | 'medium' | 'high' | 'critical';
+      assignee?: string;
+      assigneeId?: string;
+      remarks?: string;
+      files?: {
+        id: string;
+        name: string;
+        publicUrl: string;
+      }[];
       comments?: {
         id: string;
         userName: string;

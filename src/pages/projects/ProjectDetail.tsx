@@ -16,7 +16,7 @@ import {
   Pencil,
   X,
   ClipboardList,
-  Bug
+  ListTodo
 } from 'lucide-react';
 import { useSocket } from '../../services/socket/socket-context';
 import TeamPresence from '../../components/collaboration/TeamPresence';
@@ -117,7 +117,7 @@ export const ProjectDetail: React.FC = () => {
     { name: 'Analytics', path: `/projects/${id}/analytics`, icon: BarChart3 },
     { name: 'Workflow Timeline', path: `/projects/${id}/workflow`, icon: GitBranch },
     { name: 'Task Planner', path: `/projects/${id}/activities`, icon: Activity },
-    { name: 'Error Logs', path: `/projects/${id}/error-logs`, icon: Bug },
+    { name: 'OPL', path: `/projects/${id}/opl`, icon: ListTodo },
     { name: 'Quality Gates Checklist', path: `/projects/${id}/gates`, icon: ShieldCheck },
   ];
 
