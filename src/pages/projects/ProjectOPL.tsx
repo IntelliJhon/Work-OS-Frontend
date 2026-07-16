@@ -7,18 +7,16 @@ import { tasksApi } from '../../services/api/tasks.api';
 import { uploadsApi } from '../../services/api/uploads';
 import { usersApi } from '../../services/api/users';
 import type { User } from '../../services/api/users';
+import { activitiesApi } from '../../services/api/sprints';
 import { PermissionGate } from '../../features/auth/PermissionGate';
 import { PERMISSIONS } from '../../features/auth/permission.constants';
 import {
   ListTodo,
-  CheckSquare,
-  Square,
   Paperclip,
   Download,
   Trash,
   Plus,
   X,
-  Clock,
   User as UserIcon,
   Search,
   AlertTriangle,
@@ -43,6 +41,7 @@ interface SubTask {
   timeEstimate?: number | null;
   completedAt?: string | null;
   createdAt?: string;
+  status?: 'to_do' | 'in_progress' | 'done';
   priority?: 'low' | 'medium' | 'high' | 'critical';
   assignee?: string;
   assigneeId?: string;
@@ -53,6 +52,7 @@ interface SubTask {
 interface OPLItem extends SubTask {
   parentTaskId: string;
   parentTaskName: string;
+  parentTaskContext?: string;
 }
 
 const PRIORITY_CONFIG = {
@@ -75,6 +75,12 @@ export const ProjectOPL: React.FC = () => {
     queryFn: tasksApi.list,
   });
 
+  const { data: activities = [] } = useQuery({
+    queryKey: ['activities', project.id],
+    queryFn: () => activitiesApi.listByProject(project.id),
+    enabled: !!project.id,
+  });
+
   const [members, setMembers] = useState<User[]>([]);
   useEffect(() => {
     usersApi.list({ limit: 1000 })
@@ -86,12 +92,46 @@ export const ProjectOPL: React.FC = () => {
 
   // Collect all subtasks of the project into a single Open Points List (OPL)
   const allOPLItems: OPLItem[] = projectTasks.flatMap((task: any) => {
-    const subtasks: SubTask[] = task.customFields?.subtasks || [];
-    return subtasks.map(sub => ({
-      ...sub,
-      parentTaskId: task.id,
-      parentTaskName: task.name
-    }));
+    const subtasks: any[] = task.customFields?.subtasks || [];
+    const activity = activities.find(a => a.id === task.activityId);
+    const phase = project.phases?.find(p => p.id === activity?.phaseId || p.id === task.customFields?.phaseId);
+    const contextStr = [phase?.name, activity?.title].filter(Boolean).join(' → ');
+
+    return subtasks.map(sub => {
+      // 1. Gather all files (both sub.files and sub.comments[].files)
+      const directFiles = Array.isArray(sub.files) ? sub.files : [];
+      const commentFiles = Array.isArray(sub.comments)
+        ? sub.comments.flatMap((c: any) => Array.isArray(c.files) ? c.files : [])
+        : [];
+
+      // Deduplicate files by id
+      const allFilesMap = new Map();
+      [...directFiles, ...commentFiles].forEach(f => {
+        if (f && f.id) allFilesMap.set(f.id, f);
+      });
+      const aggregatedFiles = Array.from(allFilesMap.values());
+
+      // 2. Determine remarks (sub.remarks or last comment text if remarks is empty)
+      let resolvedRemarks = sub.remarks || '';
+      if (!resolvedRemarks && Array.isArray(sub.comments) && sub.comments.length > 0) {
+        // Exclude system upload comments from remarks fallback
+        const textComments = sub.comments.filter((c: any) => c.text && c.text !== 'Uploaded attachments');
+        if (textComments.length > 0) {
+          resolvedRemarks = textComments[textComments.length - 1].text; // latest text comment
+        } else {
+          resolvedRemarks = sub.comments[sub.comments.length - 1].text || '';
+        }
+      }
+
+      return {
+        ...sub,
+        parentTaskId: task.id,
+        parentTaskName: task.name,
+        parentTaskContext: contextStr || undefined,
+        files: aggregatedFiles,
+        remarks: resolvedRemarks
+      };
+    });
   }).sort((a, b) => {
     // Sort by status (undone first), then by priority, then by date
     if (a.done !== b.done) return a.done ? 1 : -1;
@@ -196,17 +236,17 @@ export const ProjectOPL: React.FC = () => {
     }
   };
 
-  const handleToggleStatus = async (item: OPLItem) => {
+  const handleUpdateStatus = async (item: OPLItem, status: 'to_do' | 'in_progress' | 'done') => {
     const parentTask = projectTasks.find((t: any) => t.id === item.parentTaskId);
     if (!parentTask) return;
 
     const updatedSubtasks = (parentTask.customFields?.subtasks || []).map((sub: any) => {
       if (sub.id === item.id) {
-        const nextDone = !sub.done;
         return {
           ...sub,
-          done: nextDone,
-          completedAt: nextDone ? new Date().toISOString() : null
+          status,
+          done: status === 'done',
+          completedAt: status === 'done' ? new Date().toISOString() : null
         };
       }
       return sub;
@@ -346,9 +386,16 @@ export const ProjectOPL: React.FC = () => {
                 className="w-full mt-1.5 bg-white dark:bg-background border border-slate-200 dark:border-zinc-850 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 font-bold"
               >
                 <option value="">Select Parent Task...</option>
-                {projectTasks.map(t => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
+                {projectTasks.map(t => {
+                  const activity = activities.find(a => a.id === t.activityId);
+                  const phase = project.phases?.find(p => p.id === activity?.phaseId || p.id === t.customFields?.phaseId);
+                  const contextStr = [phase?.name, activity?.title].filter(Boolean).join(' → ');
+                  return (
+                    <option key={t.id} value={t.id}>
+                      {t.name} {contextStr ? `(${contextStr})` : ''}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
@@ -544,73 +591,93 @@ export const ProjectOPL: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {filteredOPLItems.map(item => {
-            const cfg = PRIORITY_CONFIG[item.priority || 'medium'];
-            return (
-              <div
-                key={item.id}
-                className={`glass-panel border rounded-2xl p-4.5 transition-all duration-200 hover:border-slate-300 dark:hover:border-zinc-700 ${
-                  item.done ? 'border-slate-200 dark:border-zinc-800/80 opacity-60' : 'border-slate-200/90 dark:border-zinc-800'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start space-x-3.5 min-w-0 flex-1">
-                    {/* Action Checkbox */}
-                    <button
-                      onClick={() => handleToggleStatus(item)}
-                      className={`pt-1 shrink-0 transition text-slate-400 hover:text-purple-500 cursor-pointer`}
-                      title={item.done ? 'Reopen Point' : 'Complete Point'}
-                    >
-                      {item.done ? (
-                        <CheckSquare className="w-4.5 h-4.5 text-purple-500" />
-                      ) : (
-                        <Square className="w-4.5 h-4.5 text-slate-400" />
-                      )}
-                    </button>
-
-                    <div className="flex-1 min-w-0 space-y-1">
-                      {/* Subtask Title & Priority Badge */}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-sm font-extrabold leading-tight ${item.done ? 'line-through text-slate-450 dark:text-zinc-550' : 'text-slate-900 dark:text-zinc-100'}`}>
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-background/25">
+          <table className="w-full text-left border-collapse min-w-[700px]">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-zinc-850 bg-slate-50/70 dark:bg-zinc-900/50">
+                <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">Sub Task Title</th>
+                <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider w-32">Status</th>
+                <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider w-24 text-center">Priority</th>
+                <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider w-36">Assigned To</th>
+                <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider w-44">Uploads</th>
+                <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider max-w-xs">Remarks</th>
+                <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider w-16 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-150 dark:divide-zinc-850">
+              {filteredOPLItems.map((item) => {
+                const cfg = PRIORITY_CONFIG[item.priority || 'medium'];
+                const subStatus = item.status || (item.done ? 'done' : 'to_do');
+                return (
+                  <tr
+                    key={item.id}
+                    className={`hover:bg-slate-50/40 dark:hover:bg-zinc-900/10 transition-colors duration-150 ${
+                      item.done ? 'opacity-60 bg-slate-50/20 dark:bg-zinc-900/5' : ''
+                    }`}
+                  >
+                    {/* Title */}
+                    <td className="px-4 py-3.5 align-top">
+                      <div className="min-w-0 pl-1">
+                        <p className={`text-xs font-bold leading-tight ${item.done ? 'line-through text-slate-450 dark:text-zinc-550' : 'text-slate-900 dark:text-zinc-200'}`}>
                           {item.title}
-                        </span>
-                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.border} ${cfg.color}`}>
-                          {cfg.label}
-                        </span>
+                        </p>
+                        <p className="text-[9px] text-slate-450 mt-0.5">
+                          Task: <span className="font-semibold text-slate-650 dark:text-zinc-400">{item.parentTaskName}</span>
+                          {item.parentTaskContext && (
+                            <span className="text-slate-400 dark:text-zinc-550 font-light italic"> ({item.parentTaskContext})</span>
+                          )}
+                        </p>
                       </div>
+                    </td>
 
-                      {/* Parent Task reference */}
-                      <p className="text-[10px] text-slate-500 font-medium">
-                        Linked Task: <span className="font-bold text-slate-700 dark:text-zinc-300">{item.parentTaskName}</span>
-                      </p>
+                    {/* Status Select */}
+                    <td className="px-4 py-3.5 align-top">
+                      <select
+                        value={subStatus}
+                        onChange={(e) => handleUpdateStatus(item, e.target.value as any)}
+                        className={`text-[10px] font-black uppercase px-2 py-1 rounded-lg border transition focus:outline-none cursor-pointer ${
+                          subStatus === 'done' ? 'bg-emerald-50 text-emerald-600 border-emerald-250 dark:bg-emerald-950/20 dark:text-emerald-450 dark:border-emerald-900/50' :
+                          subStatus === 'in_progress' ? 'bg-blue-50 text-blue-600 border-blue-250 dark:bg-blue-950/20 dark:text-blue-450 dark:border-blue-900/50' :
+                          'bg-slate-550/10 text-slate-600 border-slate-200 dark:bg-zinc-900 dark:text-zinc-450 dark:border-zinc-800'
+                        }`}
+                      >
+                        <option value="to_do">To Do</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="done">Done</option>
+                      </select>
+                    </td>
 
-                      {/* Assignee */}
-                      {item.assignee && (
-                        <p className="text-[10px] text-slate-500 font-medium flex items-center space-x-1">
-                          <UserIcon className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span>Assigned to <span className="font-semibold text-slate-700 dark:text-zinc-300">{item.assignee}</span></span>
-                        </p>
+                    {/* Priority */}
+                    <td className="px-4 py-3.5 align-top text-center">
+                      <span className={`inline-block text-[8px] font-black uppercase px-2 py-0.5 rounded-full border leading-none ${cfg.bg} ${cfg.border} ${cfg.color}`}>
+                        {cfg.label}
+                      </span>
+                    </td>
+
+                    {/* Assigned To */}
+                    <td className="px-4 py-3.5 align-top">
+                      {item.assignee ? (
+                        <div className="flex items-center space-x-1.5 text-xs text-slate-700 dark:text-zinc-300 font-medium">
+                          <UserIcon className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span className="truncate max-w-[120px]">{item.assignee}</span>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 italic">Unassigned</span>
                       )}
+                    </td>
 
-                      {/* Remarks */}
-                      {item.remarks && (
-                        <p className="text-xs text-slate-700 dark:text-zinc-350 italic pl-3 border-l-2 border-slate-200 dark:border-zinc-800 py-0.5 mt-2 bg-slate-50/50 dark:bg-zinc-900/10 pr-2 rounded-r-lg max-w-2xl leading-relaxed">
-                          “{item.remarks}”
-                        </p>
-                      )}
-
-                      {/* Files attachment list */}
-                      {item.files && item.files.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 pt-2">
-                          {item.files.map(file => (
-                            <div key={file.id} className="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-[10px]">
-                              <FileText className="w-3 h-3 text-slate-450 shrink-0" />
+                    {/* Uploads */}
+                    <td className="px-4 py-3.5 align-top">
+                      {item.files && item.files.length > 0 ? (
+                        <div className="flex flex-col gap-1">
+                          {item.files.map((file) => (
+                            <div key={file.id} className="flex items-center space-x-1 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-[9px] max-w-[160px]">
+                              <FileText className="w-2.5 h-2.5 text-slate-450 shrink-0" />
                               <a
                                 href={file.publicUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="truncate max-w-[120px] hover:text-purple-500 hover:underline text-slate-650 dark:text-zinc-400 font-bold"
+                                className="truncate hover:text-purple-500 hover:underline text-slate-650 dark:text-zinc-400 font-bold flex-1"
                                 title={file.name}
                               >
                                 {file.name}
@@ -620,34 +687,44 @@ export const ProjectOPL: React.FC = () => {
                                 className="text-purple-500 hover:text-purple-400 shrink-0"
                                 title="Download"
                               >
-                                <Download className="w-3 h-3 ml-1" />
+                                <Download className="w-2.5 h-2.5 ml-0.5" />
                               </button>
                             </div>
                           ))}
                         </div>
+                      ) : (
+                        <span className="text-[10px] text-slate-400">-</span>
                       )}
-                    </div>
-                  </div>
+                    </td>
 
-                  {/* Right side actions */}
-                  <div className="flex items-center space-x-2 shrink-0">
-                    <span className="hidden md:flex items-center space-x-1 text-[10px] text-slate-450 font-medium">
-                      <Clock className="w-3 h-3" />
-                      <span>{new Date(item.createdAt || 0).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
-                    </span>
-                    
-                    <button
-                      onClick={() => handleDeleteItem(item)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition cursor-pointer"
-                      title="Delete Open Point"
-                    >
-                      <Trash className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                    {/* Remarks */}
+                    <td className="px-4 py-3.5 align-top">
+                      {item.remarks ? (
+                        <p className="text-xs text-slate-600 dark:text-zinc-450 italic leading-relaxed line-clamp-3 max-w-[280px]" title={item.remarks}>
+                          “{item.remarks}”
+                        </p>
+                      ) : (
+                        <span className="text-[10px] text-slate-400">-</span>
+                      )}
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-4 py-3.5 align-top text-center">
+                      <div className="flex items-center justify-center space-x-1.5">
+                        <button
+                          onClick={() => handleDeleteItem(item)}
+                          className="p-1 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition cursor-pointer"
+                          title="Delete Open Point"
+                        >
+                          <Trash className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

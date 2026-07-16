@@ -20,7 +20,6 @@ import {
   ShieldAlert,
   Clock,
   CheckSquare,
-  Square,
   MessageSquare,
   ClipboardList,
   Layers,
@@ -104,6 +103,7 @@ interface SubTask {
   timeEstimate?: number | null;
   completedAt?: string | null;
   createdAt?: string;
+  status?: 'to_do' | 'in_progress' | 'done';
   priority?: 'low' | 'medium' | 'high' | 'critical';
   assignee?: string;
   assigneeId?: string;
@@ -927,17 +927,17 @@ export const ProjectSprints: React.FC = () => {
     }
   };
 
-  const handleToggleSubtask = (taskId: string, subtaskId: string) => {
+  const handleUpdateSubtaskStatus = (taskId: string, subtaskId: string, status: 'to_do' | 'in_progress' | 'done') => {
     const task = activeSprintTasks.find((t) => t.id === taskId);
     if (!task) return;
 
     const updatedSubtasks = (task.subtasks || []).map((sub) => {
       if (sub.id === subtaskId) {
-        const nextDone = !sub.done;
         return {
           ...sub,
-          done: nextDone,
-          completedAt: nextDone ? new Date().toISOString() : null
+          status,
+          done: status === 'done',
+          completedAt: status === 'done' ? new Date().toISOString() : null
         };
       }
       return sub;
@@ -1991,7 +1991,7 @@ export const ProjectSprints: React.FC = () => {
       {activeTask && createPortal(
         <>
           <div className="fixed inset-0 bg-black/20 backdrop-blur-[1px] z-40 animate-fade-in-backdrop" onClick={() => setActiveTaskId(null)} />
-          <div className="fixed top-0 right-0 h-screen w-[320px] md:w-[480px] bg-slate-50 dark:bg-zinc-950 border-l border-slate-200 dark:border-border z-50 shadow-2xl flex flex-col animate-slide-in-right">
+          <div className="fixed top-0 right-0 h-screen w-[380px] sm:w-[560px] md:w-[720px] bg-slate-50 dark:bg-zinc-950 border-l border-slate-200 dark:border-border z-50 shadow-2xl flex flex-col animate-slide-in-right">
             <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 px-6 pt-6 pb-4">
               <h5 className="text-sm font-extrabold uppercase tracking-wider text-slate-900 dark:text-white flex items-center space-x-2">
                 <ClipboardList className="w-4 h-4 text-purple-400" />
@@ -2298,13 +2298,22 @@ export const ProjectSprints: React.FC = () => {
                       return (
                         <div key={sub.id} className="border border-slate-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-background/25 p-3 space-y-2">
                           <div className="flex items-start justify-between gap-4">
-                            <div className="flex items-start space-x-2.5 cursor-pointer flex-1 min-w-0" onClick={() => { if (canUpdate) handleToggleSubtask(activeTask.id, sub.id); }}>
-                              <div className="pt-0.5 shrink-0">
-                                {sub.done ? (
-                                  <CheckSquare className="w-4 h-4 text-purple-500" />
-                                ) : (
-                                  <Square className="w-4 h-4 text-slate-500" />
-                                )}
+                            <div className="flex items-start space-x-3 flex-1 min-w-0">
+                              <div className="shrink-0 mt-0.5">
+                                <select
+                                  value={sub.status || (sub.done ? 'done' : 'to_do')}
+                                  disabled={!canUpdate}
+                                  onChange={(e) => handleUpdateSubtaskStatus(activeTask.id, sub.id, e.target.value as any)}
+                                  className={`text-[10px] font-black uppercase px-2 py-1 rounded-lg border transition focus:outline-none cursor-pointer ${
+                                    (sub.status || (sub.done ? 'done' : 'to_do')) === 'done' ? 'bg-emerald-50 text-emerald-600 border-emerald-250 dark:bg-emerald-950/20 dark:text-emerald-450 dark:border-emerald-900/50' :
+                                    (sub.status || (sub.done ? 'done' : 'to_do')) === 'in_progress' ? 'bg-blue-50 text-blue-600 border-blue-250 dark:bg-blue-950/20 dark:text-blue-450 dark:border-blue-900/50' :
+                                    'bg-slate-550/10 text-slate-600 border-slate-200 dark:bg-zinc-900 dark:text-zinc-450 dark:border-zinc-800'
+                                  }`}
+                                >
+                                  <option value="to_do">To Do</option>
+                                  <option value="in_progress">In Progress</option>
+                                  <option value="done">Done</option>
+                                </select>
                               </div>
                               <div className="flex flex-col flex-1 min-w-0">
                                 <div className="flex items-center space-x-2 flex-wrap gap-y-1">

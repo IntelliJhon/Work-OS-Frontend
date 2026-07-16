@@ -27,6 +27,7 @@ export interface Task {
       timeEstimate?: number | null;
       completedAt?: string | null;
       createdAt?: string;
+      status?: 'to_do' | 'in_progress' | 'done';
       priority?: 'low' | 'medium' | 'high' | 'critical';
       assignee?: string;
       assigneeId?: string;
