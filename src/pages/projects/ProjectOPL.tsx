@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Project } from '../../services/api/projects';
@@ -22,7 +23,8 @@ import {
   AlertTriangle,
   CheckCircle,
   HelpCircle,
-  FileText
+  FileText,
+  Pencil
 } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -160,6 +162,20 @@ export const ProjectOPL: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Edit subtask state
+  const [editingItem, setEditingItem] = useState<OPLItem | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editStatus, setEditStatus] = useState<'to_do' | 'in_progress' | 'done'>('to_do');
+  const [editPriority, setEditPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('medium');
+  const [editAssignee, setEditAssignee] = useState('');
+  const [editRemarks, setEditRemarks] = useState('');
+  const [editFiles, setEditFiles] = useState<SubTaskFile[]>([]);
+  const [isEditSaving, setIsEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [isEditUploading, setIsEditUploading] = useState(false);
+
+  const editFileInputRef = useRef<HTMLInputElement>(null);
+
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleUploadFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -260,6 +276,85 @@ export const ProjectOPL: React.FC = () => {
     });
 
     queryClient.invalidateQueries({ queryKey: ['tasks'] });
+  };
+
+  const handleOpenEditModal = (item: OPLItem) => {
+    setEditingItem(item);
+    setEditTitle(item.title);
+    setEditStatus(item.status || (item.done ? 'done' : 'to_do'));
+    setEditPriority(item.priority || 'medium');
+    setEditAssignee(item.assignee || '');
+    setEditRemarks(item.remarks || '');
+    setEditFiles(item.files || []);
+    setEditError(null);
+  };
+
+  const handleUploadEditFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !editingItem) return;
+    setEditError(null);
+    setIsEditUploading(true);
+    try {
+      const res = await uploadsApi.upload('TASK', editingItem.parentTaskId, Array.from(files));
+      const uploaded: SubTaskFile[] = res.uploads.map((u: any) => ({
+        id: u.id,
+        name: u.originalName,
+        publicUrl: u.publicUrl,
+      }));
+      setEditFiles(prev => [...prev, ...uploaded]);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || err?.message || 'Unknown upload error';
+      setEditError(`⚠️ Upload failed: ${msg}`);
+    } finally {
+      setIsEditUploading(false);
+      if (editFileInputRef.current) editFileInputRef.current.value = '';
+    }
+  };
+
+  const handleSaveEditChanges = async () => {
+    if (!editingItem || !editTitle.trim()) return;
+    setIsEditSaving(true);
+    setEditError(null);
+    try {
+      const parentTask = projectTasks.find((t: any) => t.id === editingItem.parentTaskId);
+      if (!parentTask) throw new Error('Parent task not found');
+
+      const originalSub = (parentTask.customFields?.subtasks || []).find((sub: any) => sub.id === editingItem.id);
+      const existingComments = originalSub?.comments || [];
+
+      const updatedSubtasks = (parentTask.customFields?.subtasks || []).map((sub: any) => {
+        if (sub.id === editingItem.id) {
+          return {
+            ...sub,
+            title: editTitle.trim(),
+            status: editStatus,
+            done: editStatus === 'done',
+            completedAt: editStatus === 'done' ? (sub.completedAt || new Date().toISOString()) : null,
+            priority: editPriority,
+            assignee: editAssignee.trim() || undefined,
+            assigneeId: members.find(m => `${m.firstName || ''} ${m.lastName || ''}`.trim() === editAssignee.trim())?.id,
+            remarks: editRemarks.trim() || undefined,
+            files: editFiles.length > 0 ? editFiles : undefined,
+            comments: existingComments
+          };
+        }
+        return sub;
+      });
+
+      await tasksApi.update(editingItem.parentTaskId, {
+        customFields: {
+          ...(parentTask.customFields || {}),
+          subtasks: updatedSubtasks
+        } as any
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      setEditingItem(null);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || err?.message || 'Unknown error';
+      setEditError(`Failed to update open point: ${msg}`);
+    } finally {
+      setIsEditSaving(false);
+    }
   };
 
   const handleDeleteItem = async (item: OPLItem) => {
@@ -710,7 +805,14 @@ export const ProjectOPL: React.FC = () => {
 
                     {/* Actions */}
                     <td className="px-4 py-3.5 align-top text-center">
-                      <div className="flex items-center justify-center space-x-1.5">
+                      <div className="flex items-center justify-center space-x-2">
+                        <button
+                          onClick={() => handleOpenEditModal(item)}
+                          className="p-1 rounded-lg text-slate-400 hover:text-purple-500 hover:bg-purple-500/10 transition cursor-pointer"
+                          title="Edit Action Point"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
                         <button
                           onClick={() => handleDeleteItem(item)}
                           className="p-1 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition cursor-pointer"
@@ -726,6 +828,182 @@ export const ProjectOPL: React.FC = () => {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* ── Edit Action Point Sidebar ── */}
+      {editingItem && createPortal(
+        <>
+          <div 
+            className="fixed inset-0 bg-black/20 backdrop-blur-[1px] z-[9999] animate-fade-in-backdrop" 
+            onClick={() => setEditingItem(null)} 
+          />
+          <div className="fixed top-0 right-0 h-screen w-[380px] sm:w-[560px] md:w-[720px] bg-slate-50 dark:bg-zinc-950 border-l border-slate-200 dark:border-zinc-800 z-[10000] shadow-2xl flex flex-col animate-slide-in-right">
+            <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 px-6 pt-6 pb-4">
+              <h5 className="text-sm font-extrabold uppercase tracking-wider text-slate-900 dark:text-white flex items-center space-x-2">
+                <ListTodo className="w-4 h-4 text-purple-400" />
+                <span>Update Action Point</span>
+              </h5>
+              <button 
+                onClick={() => setEditingItem(null)} 
+                className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-white/5 text-slate-500 hover:text-white transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+              {/* Title Input */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Action Point / Subtask Title</label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 font-bold"
+                />
+              </div>
+
+              {/* Status & Priority Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Status</label>
+                  <select
+                    value={editStatus}
+                    onChange={(e: any) => setEditStatus(e.target.value)}
+                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 font-bold cursor-pointer"
+                  >
+                    <option value="to_do">To Do</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="done">Done</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Priority</label>
+                  <select
+                    value={editPriority}
+                    onChange={(e: any) => setEditPriority(e.target.value)}
+                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 font-bold cursor-pointer"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Assignee Selection */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Assigned to</label>
+                <select
+                  value={editAssignee}
+                  onChange={(e) => setEditAssignee(e.target.value)}
+                  className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 cursor-pointer"
+                >
+                  <option value="">Select Assignee...</option>
+                  {members.map(m => (
+                    <option key={m.id} value={`${m.firstName || ''} ${m.lastName || ''}`.trim() || m.email}>
+                      {m.firstName ? `${m.firstName} ${m.lastName} (${m.email.split('@')[0]})` : m.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Remarks Textarea */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Remarks / Details</label>
+                <textarea
+                  value={editRemarks}
+                  onChange={(e) => setEditRemarks(e.target.value)}
+                  rows={4}
+                  className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 resize-none font-medium leading-relaxed"
+                />
+              </div>
+
+              {/* File Attachment Section */}
+              <div className="space-y-1.5 border-t border-slate-200 dark:border-white/5 pt-4">
+                <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider block mb-1">Attached Media / Documentation</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    ref={editFileInputRef}
+                    type="file"
+                    className="hidden"
+                    multiple
+                    onChange={(e) => handleUploadEditFiles(e.target.files)}
+                  />
+                  <button
+                    type="button"
+                    disabled={isEditUploading}
+                    onClick={() => editFileInputRef.current?.click()}
+                    className="flex items-center space-x-1.5 px-4.5 py-2.5 rounded-xl border border-dashed border-purple-300 dark:border-purple-800 bg-white dark:bg-background text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition text-xs cursor-pointer font-bold disabled:opacity-40"
+                  >
+                    {isEditUploading ? (
+                      <><svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg><span>Uploading…</span></>
+                    ) : (
+                      <><Paperclip className="w-3.5 h-3.5" /><span>Attach Files</span></>
+                    )}
+                  </button>
+                </div>
+
+                {editFiles.length > 0 && (
+                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[160px] overflow-y-auto pr-1">
+                    {editFiles.map((file, i) => (
+                      <div key={file.id} className="flex items-center justify-between px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs">
+                        <div className="flex items-center space-x-1.5 truncate">
+                          <Paperclip className="w-3 h-3 text-purple-500 shrink-0" />
+                          <a 
+                            href={file.publicUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="truncate text-slate-700 dark:text-zinc-300 hover:text-purple-500 hover:underline font-bold"
+                            title={file.name}
+                          >
+                            {file.name}
+                          </a>
+                        </div>
+                        <button 
+                          type="button" 
+                          onClick={() => setEditFiles(prev => prev.filter((_, idx) => idx !== i))} 
+                          className="text-slate-400 hover:text-red-400 p-0.5 ml-2 shrink-0 transition"
+                          title="Remove File"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {editError && (
+                <div className="flex items-start space-x-2 px-3.5 py-2.5 rounded-xl bg-red-100 dark:bg-red-900/30 border border-red-350 text-red-750 dark:text-red-300 text-xs">
+                  <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>{editError}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-3 p-6 border-t border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-zinc-900/10">
+              <button
+                type="button"
+                onClick={() => setEditingItem(null)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-650 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-800 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEditChanges}
+                disabled={!editTitle.trim() || isEditSaving || isEditUploading}
+                className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition shadow-lg shadow-purple-500/20 active:scale-95 disabled:opacity-50 cursor-pointer"
+              >
+                {isEditSaving ? 'Saving…' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </>,
+        document.body
       )}
     </div>
   );
