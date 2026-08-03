@@ -67,36 +67,54 @@ const PRIORITY_CONFIG = {
 const PRIORITY_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
 
 export const ProjectOPL: React.FC = () => {
-  const { project } = useOutletContext<{ project: Project; refetch: () => void }>();
+  const outletContext = useOutletContext<{ project?: Project; refetch?: () => void }>();
+  const project = outletContext?.project;
   const queryClient = useQueryClient();
   const confirm = useConfirm();
 
+  const projectId = project?.id;
+
   // ── Remote Data ────────────────────────────────────────────────────────────
-  const { data: dbTasks = [], isLoading } = useQuery({
+  const { data: rawDbTasks = [], isLoading } = useQuery({
     queryKey: ['tasks'],
     queryFn: tasksApi.list,
   });
 
-  const { data: activities = [] } = useQuery({
-    queryKey: ['activities', project.id],
-    queryFn: () => activitiesApi.listByProject(project.id),
-    enabled: !!project.id,
+  const { data: rawActivities = [] } = useQuery({
+    queryKey: ['activities', projectId],
+    queryFn: () => (projectId ? activitiesApi.listByProject(projectId) : Promise.resolve([])),
+    enabled: !!projectId,
   });
 
   const [members, setMembers] = useState<User[]>([]);
   useEffect(() => {
     usersApi.list({ limit: 1000 })
-      .then(res => setMembers(res))
+      .then(res => {
+        const list = Array.isArray(res) ? res : (res?.users || []);
+        setMembers(list);
+      })
       .catch(err => console.error('[ProjectOPL] Failed to load members', err));
   }, []);
 
-  const projectTasks = dbTasks.filter((t: any) => t.projectId === project.id);
+  const safeDbTasks = Array.isArray(rawDbTasks) ? rawDbTasks : (rawDbTasks as any)?.tasks || [];
+  const safeActivities = Array.isArray(rawActivities) ? rawActivities : (rawActivities as any)?.activities || [];
+  const safeMembers = Array.isArray(members) ? members : (members as any)?.users || [];
+
+  if (!project || !project.id) {
+    return (
+      <div className="w-full h-48 flex items-center justify-center text-xs font-light text-muted-foreground animate-pulse">
+        Retrieving deliverable context...
+      </div>
+    );
+  }
+
+  const projectTasks = safeDbTasks.filter((t: any) => t && t.projectId === project.id);
 
   // Collect all subtasks of the project into a single Open Points List (OPL)
   const allOPLItems: OPLItem[] = projectTasks.flatMap((task: any) => {
-    const subtasks: any[] = task.customFields?.subtasks || [];
-    const activity = activities.find(a => a.id === task.activityId);
-    const phase = project.phases?.find(p => p.id === activity?.phaseId || p.id === task.customFields?.phaseId);
+    const subtasks: any[] = Array.isArray(task.customFields?.subtasks) ? task.customFields.subtasks : [];
+    const activity = safeActivities.find((a: any) => a.id === task.activityId);
+    const phase = (project.phases || []).find((p: any) => p.id === activity?.phaseId || p.id === task.customFields?.phaseId);
     const contextStr = [phase?.name, activity?.title].filter(Boolean).join(' → ');
 
     return subtasks.map(sub => {
@@ -134,7 +152,7 @@ export const ProjectOPL: React.FC = () => {
         remarks: resolvedRemarks
       };
     });
-  }).sort((a, b) => {
+  }).sort((a: any, b: any) => {
     // Sort by status (undone first), then by priority, then by date
     if (a.done !== b.done) return a.done ? 1 : -1;
     const prioA = PRIORITY_ORDER[a.priority || 'medium'] ?? 99;
@@ -219,7 +237,7 @@ export const ProjectOPL: React.FC = () => {
         timeEstimate: null,
         priority: newPriority,
         assignee: newAssignee.trim() || undefined,
-        assigneeId: members.find(m => `${m.firstName || ''} ${m.lastName || ''}`.trim() === newAssignee.trim())?.id,
+        assigneeId: safeMembers.find((m: any) => `${m.firstName || ''} ${m.lastName || ''}`.trim() === newAssignee.trim())?.id,
         remarks: newRemarks.trim() || undefined,
         files: uploadedFiles.length > 0 ? uploadedFiles : undefined,
       };
@@ -481,9 +499,9 @@ export const ProjectOPL: React.FC = () => {
                 className="w-full mt-1.5 bg-white dark:bg-background border border-slate-200 dark:border-zinc-850 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 font-bold"
               >
                 <option value="">Select Parent Task...</option>
-                {projectTasks.map(t => {
-                  const activity = activities.find(a => a.id === t.activityId);
-                  const phase = project.phases?.find(p => p.id === activity?.phaseId || p.id === t.customFields?.phaseId);
+                {projectTasks.map((t: any) => {
+                  const activity = safeActivities.find((a: any) => a.id === t.activityId);
+                  const phase = project.phases?.find((p: any) => p.id === activity?.phaseId || p.id === t.customFields?.phaseId);
                   const contextStr = [phase?.name, activity?.title].filter(Boolean).join(' → ');
                   return (
                     <option key={t.id} value={t.id}>
@@ -529,7 +547,7 @@ export const ProjectOPL: React.FC = () => {
                 className="w-full mt-1.5 bg-white dark:bg-background border border-slate-200 dark:border-zinc-850 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500"
               >
                 <option value="">Select Assignee...</option>
-                {members.map(m => (
+                {safeMembers.map((m: any) => (
                   <option key={m.id} value={`${m.firstName || ''} ${m.lastName || ''}`.trim() || m.email}>
                     {m.firstName ? `${m.firstName} ${m.lastName} (${m.email.split('@')[0]})` : m.email}
                   </option>
@@ -910,7 +928,7 @@ export const ProjectOPL: React.FC = () => {
                   className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-purple-500 cursor-pointer"
                 >
                   <option value="">Select Assignee...</option>
-                  {members.map(m => (
+                  {safeMembers.map((m: any) => (
                     <option key={m.id} value={`${m.firstName || ''} ${m.lastName || ''}`.trim() || m.email}>
                       {m.firstName ? `${m.firstName} ${m.lastName} (${m.email.split('@')[0]})` : m.email}
                     </option>
