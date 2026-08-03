@@ -713,9 +713,17 @@ export const ProjectOPL: React.FC = () => {
                     {/* Title */}
                     <td className="px-4 py-3.5 align-top">
                       <div className="min-w-0 pl-1">
-                        <p className={`text-xs font-bold leading-tight ${item.done ? 'line-through text-slate-450 dark:text-zinc-550' : 'text-slate-900 dark:text-zinc-200'}`}>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditModal(item)}
+                          className={`text-left text-xs font-extrabold leading-tight transition cursor-pointer hover:underline ${
+                            item.done
+                              ? 'line-through text-slate-450 dark:text-zinc-550 hover:text-purple-500'
+                              : 'text-slate-900 dark:text-zinc-100 hover:text-purple-600 dark:hover:text-purple-400'
+                          }`}
+                        >
                           {item.title}
-                        </p>
+                        </button>
                         <p className="text-[9px] text-slate-450 mt-0.5">
                           Task: <span className="font-semibold text-slate-650 dark:text-zinc-400">{item.parentTaskName}</span>
                           {item.parentTaskContext && (
