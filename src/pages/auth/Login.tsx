@@ -84,11 +84,18 @@ export const Login: React.FC = () => {
         }
       }, 25);
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('[Login] Error during authentication', err);
       let errMsg = 'Invalid company ID or credentials';
       if (axios.isAxiosError(err)) {
-        errMsg = err.response?.data?.error || errMsg;
+        if (!err.response) {
+          errMsg = 'Unable to connect to server. Please check your internet connection and try again.';
+        } else {
+          errMsg = err.response?.data?.error || err.response?.data?.message || errMsg;
+        }
+      }
+      if (errMsg.includes('Failed query:') || errMsg.includes('select "') || errMsg.includes('postgres')) {
+        errMsg = 'Unable to connect to database/server. Please check your internet connection and try again.';
       }
       setErrorMsg(errMsg);
       setLoading(false);

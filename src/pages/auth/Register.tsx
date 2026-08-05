@@ -79,11 +79,18 @@ export const Register: React.FC = () => {
 
       loginStore(userProfile, accessToken, refreshToken);
       navigate('/dashboard');
-    } catch (err) {
+    } catch (err: any) {
       console.error('[Register] Onboarding failed', err);
       let errMsg = 'Company registration failed. Please try again.';
       if (axios.isAxiosError(err)) {
-        errMsg = err.response?.data?.error || errMsg;
+        if (!err.response) {
+          errMsg = 'Unable to connect to server. Please check your internet connection and try again.';
+        } else {
+          errMsg = err.response?.data?.error || err.response?.data?.message || errMsg;
+        }
+      }
+      if (errMsg.includes('Failed query:') || errMsg.includes('select "') || errMsg.includes('postgres')) {
+        errMsg = 'Unable to connect to database/server. Please check your internet connection and try again.';
       }
       setErrorMsg(errMsg);
     } finally {

@@ -16,7 +16,7 @@ const ProjectWorkflow = lazy(() => import('../../pages/projects/ProjectWorkflow'
 const ProjectSprints = lazy(() => import('../../pages/projects/ProjectSprints'));
 const ProjectGates = lazy(() => import('../../pages/projects/ProjectGates'));
 const ProjectOPL = lazy(() => import('../../pages/projects/ProjectOPL'));
-const ProjectTaskList = lazy(() => import('../../pages/projects/ProjectTaskList'));
+const ProjectActivitiesView = lazy(() => import('../../pages/projects/ProjectActivitiesView'));
 const NotificationCenter = lazy(() => import('../../pages/notifications/NotificationCenter'));
 const AccessDenied = lazy(() => import('../../pages/error/AccessDenied'));
 const ProjectAnalytics = lazy(() => import('../../pages/projects/ProjectAnalytics'));
@@ -81,7 +81,8 @@ export const AppRouter: React.FC = () => {
                 <Route path="sprints" element={<ProjectSprintsRedirect />} />
                 <Route path="activities" element={<ProjectSprints />} />
                 <Route path="opl" element={<ProjectOPL />} />
-                <Route path="task-list" element={<ProjectTaskList />} />
+                <Route path="activities-view" element={<ProjectActivitiesView />} />
+                <Route path="task-list" element={<Navigate to="activities-view" replace />} />
                 <Route path="gates" element={<ProjectGates />} />
               </Route>
 
