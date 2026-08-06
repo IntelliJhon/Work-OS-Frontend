@@ -4,6 +4,7 @@ export interface ProjectActivity {
   id: string;
   tenantId: string;
   projectId: string;
+  parentId?: string | null;
   title: string;
   workHrs: string | number;
   createdAt: string;
@@ -12,6 +13,7 @@ export interface ProjectActivity {
 
 export interface CreateProjectActivityPayload {
   projectId: string;
+  parentId?: string | null;
   title: string;
   workHrs: number;
 }
@@ -24,6 +26,11 @@ export const projectActivitiesApi = {
 
   create: async (payload: CreateProjectActivityPayload): Promise<ProjectActivity> => {
     const { data } = await apiClient.post<ProjectActivity>('/project-activities', payload);
+    return data;
+  },
+
+  update: async (id: string, payload: { title?: string; workHrs?: number }): Promise<ProjectActivity> => {
+    const { data } = await apiClient.put<ProjectActivity>(`/project-activities/${id}`, payload);
     return data;
   },
 

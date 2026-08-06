@@ -15,8 +15,20 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
-  FileDown
+  FileDown,
+  ChevronDown,
+  ChevronRight,
+  CornerDownRight,
+  FolderKanban,
+  Pencil
 } from 'lucide-react';
+
+interface HierarchicalActivity extends ProjectActivity {
+  subActivities: ProjectActivity[];
+  ownHrs: number;
+  totalSubHrs: number;
+  totalHrs: number;
+}
 
 export const ProjectActivitiesView: React.FC = () => {
   const { id: routeProjectId } = useParams<{ id: string }>();
@@ -30,8 +42,13 @@ export const ProjectActivitiesView: React.FC = () => {
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Expand / Collapse State for Parent Activities (default expanded)
+  const [expandedParents, setExpandedParents] = useState<Record<string, boolean>>({});
+
   // Sidebar Drawer state
   const [isAddDrawerOpen, setIsAddDrawerOpen] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<ProjectActivity | null>(null);
+  const [targetParentId, setTargetParentId] = useState<string | null>(null);
   const [formTitle, setFormTitle] = useState('');
   const [formWorkHrs, setFormWorkHrs] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
@@ -48,15 +65,82 @@ export const ProjectActivitiesView: React.FC = () => {
     return Array.isArray(rawActivities) ? rawActivities : (rawActivities as any)?.activities || [];
   }, [rawActivities]);
 
-  // Open sidebar adder
-  const handleOpenAddDrawer = () => {
+  // Build Parent-Child Activity Hierarchy
+  const activityHierarchy = useMemo(() => {
+    const mainList: ProjectActivity[] = [];
+    const subMap: Record<string, ProjectActivity[]> = {};
+
+    safeActivities.forEach((act: ProjectActivity) => {
+      const parentId = act.parentId;
+      if (!parentId) {
+        mainList.push(act);
+      } else {
+        if (!subMap[parentId]) {
+          subMap[parentId] = [];
+        }
+        subMap[parentId].push(act);
+      }
+    });
+
+    const result: HierarchicalActivity[] = mainList.map((main) => {
+      const subs = subMap[main.id] || [];
+      const ownHrs = typeof main.workHrs === 'string' ? parseFloat(main.workHrs) || 0 : main.workHrs || 0;
+      const totalSubHrs = subs.reduce((sum, s) => {
+        const h = typeof s.workHrs === 'string' ? parseFloat(s.workHrs) || 0 : s.workHrs || 0;
+        return sum + h;
+      }, 0);
+
+      return {
+        ...main,
+        subActivities: subs,
+        ownHrs,
+        totalSubHrs,
+        totalHrs: ownHrs + totalSubHrs,
+      };
+    });
+
+    return result;
+  }, [safeActivities]);
+
+  // Toggle Row Expansion
+  const toggleExpand = (parentId: string) => {
+    setExpandedParents((prev) => ({
+      ...prev,
+      [parentId]: prev[parentId] === undefined ? false : !prev[parentId],
+    }));
+  };
+
+  const isExpanded = (parentId: string) => {
+    return expandedParents[parentId] !== false; // Default true (expanded)
+  };
+
+  // Open Add Drawer (Main or Sub Activity)
+  const handleOpenAddDrawer = (parentId: string | null = null) => {
+    setEditingActivity(null);
+    setTargetParentId(parentId);
     setFormTitle('');
     setFormWorkHrs('');
     setSaveError(null);
     setIsAddDrawerOpen(true);
   };
 
-  // Submit new activity to database
+  // Open Edit Drawer
+  const handleOpenEditDrawer = (act: ProjectActivity) => {
+    setEditingActivity(act);
+    setTargetParentId(act.parentId || null);
+    setFormTitle(act.title);
+    setFormWorkHrs(String(act.workHrs));
+    setSaveError(null);
+    setIsAddDrawerOpen(true);
+  };
+
+  // Target Parent Activity Object
+  const targetParentActivity = useMemo(() => {
+    if (!targetParentId) return null;
+    return safeActivities.find((a: ProjectActivity) => a.id === targetParentId) || null;
+  }, [targetParentId, safeActivities]);
+
+  // Save Activity to Database
   const handleSaveActivity = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formTitle.trim()) {
@@ -79,11 +163,24 @@ export const ProjectActivitiesView: React.FC = () => {
     setSaveError(null);
 
     try {
-      await projectActivitiesApi.create({
-        projectId,
-        title: formTitle.trim(),
-        workHrs: hrsNum,
-      });
+      if (editingActivity) {
+        await projectActivitiesApi.update(editingActivity.id, {
+          title: formTitle.trim(),
+          workHrs: hrsNum,
+        });
+      } else {
+        await projectActivitiesApi.create({
+          projectId,
+          parentId: targetParentId || null,
+          title: formTitle.trim(),
+          workHrs: hrsNum,
+        });
+      }
+
+      // Expand parent automatically if sub-activity was added/edited
+      if (targetParentId) {
+        setExpandedParents((prev) => ({ ...prev, [targetParentId]: true }));
+      }
 
       queryClient.invalidateQueries({ queryKey: ['project-activities', projectId] });
       setIsAddDrawerOpen(false);
@@ -95,11 +192,13 @@ export const ProjectActivitiesView: React.FC = () => {
     }
   };
 
-  // Handle deleting an activity
-  const handleDeleteActivity = async (act: ProjectActivity) => {
+  // Delete Activity (Main or Sub)
+  const handleDeleteActivity = async (act: ProjectActivity, isParent: boolean = false) => {
     const isConfirmed = await confirm({
-      title: 'Delete Activity',
-      message: `Are you sure you want to delete "${act.title}"?`,
+      title: isParent ? 'Delete Main Activity' : 'Delete Sub-Activity',
+      message: isParent
+        ? `Are you sure you want to delete "${act.title}" and all of its sub-activities?`
+        : `Are you sure you want to delete sub-activity "${act.title}"?`,
       confirmLabel: 'Delete',
       cancelLabel: 'Cancel',
       variant: 'danger',
@@ -115,24 +214,29 @@ export const ProjectActivitiesView: React.FC = () => {
     }
   };
 
-  // Filter activities by search query
-  const filteredActivities = useMemo(() => {
-    return safeActivities.filter((act: ProjectActivity) => {
-      return !searchQuery.trim() || act.title.toLowerCase().includes(searchQuery.toLowerCase());
-    });
-  }, [safeActivities, searchQuery]);
+  // Filter Hierarchy by Search
+  const filteredHierarchy = useMemo(() => {
+    if (!searchQuery.trim()) return activityHierarchy;
 
-  // Calculate total work hours
-  const totalWorkHrs = useMemo(() => {
+    const q = searchQuery.toLowerCase();
+    return activityHierarchy.filter((parent) => {
+      const parentMatches = parent.title.toLowerCase().includes(q);
+      const subMatches = parent.subActivities.some((s) => s.title.toLowerCase().includes(q));
+      return parentMatches || subMatches;
+    });
+  }, [activityHierarchy, searchQuery]);
+
+  // Total Work Hours across entire project
+  const grandTotalWorkHrs = useMemo(() => {
     return safeActivities.reduce((sum: number, act: ProjectActivity) => {
       const hrs = typeof act.workHrs === 'string' ? parseFloat(act.workHrs) : act.workHrs;
       return sum + (isNaN(hrs) ? 0 : hrs);
     }, 0);
   }, [safeActivities]);
 
-  // Export Activities report as PDF
+  // Export PDF Report
   const handleExportPDF = () => {
-    if (!safeActivities.length) return;
+    if (!activityHierarchy.length) return;
 
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -144,22 +248,41 @@ export const ProjectActivitiesView: React.FC = () => {
       day: 'numeric',
     });
 
-    const rowsHtml = safeActivities.map((act: ProjectActivity, idx: number) => {
-      const displayHrs = typeof act.workHrs === 'string' ? parseFloat(act.workHrs) : act.workHrs;
-      return `
-        <tr style="border-bottom: 1px solid #e2e8f0;">
-          <td style="padding: 12px; text-align: center; color: #64748b; font-size: 12px;">${idx + 1}</td>
-          <td style="padding: 12px; font-weight: 600; color: #0f172a; font-size: 13px;">${act.title}</td>
-          <td style="padding: 12px; text-align: center; font-weight: 700; color: #7c3aed; font-size: 13px;">${displayHrs} hrs</td>
+    let rowsHtml = '';
+    activityHierarchy.forEach((parent, pIdx) => {
+      rowsHtml += `
+        <tr style="background: #f8fafc; border-top: 2px solid #cbd5e1; border-bottom: 1px solid #e2e8f0;">
+          <td style="padding: 12px; text-align: center; font-weight: 800; color: #475569; font-size: 13px;">${pIdx + 1}</td>
+          <td style="padding: 12px; font-weight: 800; color: #0f172a; font-size: 14px;">
+            📦 ${parent.title}
+          </td>
+          <td style="padding: 12px; text-align: center; font-weight: 800; color: #7c3aed; font-size: 13px;">
+            ${parent.totalHrs} hrs
+          </td>
         </tr>
       `;
-    }).join('');
+
+      parent.subActivities.forEach((sub) => {
+        const subHrs = typeof sub.workHrs === 'string' ? parseFloat(sub.workHrs) : sub.workHrs;
+        rowsHtml += `
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 10px; text-align: center; color: #94a3b8; font-size: 11px;"></td>
+            <td style="padding: 10px 10px 10px 36px; color: #334155; font-size: 13px; font-weight: 600;">
+              <span style="color: #a855f7; font-weight: 700; margin-right: 6px;">└─</span> 📌 ${sub.title}
+            </td>
+            <td style="padding: 10px; text-align: center; font-weight: 700; color: #6b21a8; font-size: 12px;">
+              ${subHrs} hrs
+            </td>
+          </tr>
+        `;
+      });
+    });
 
     const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
-          <title>${projectName} - Activities & Work Hours Report</title>
+          <title>${projectName} - Activity Hierarchy Report</title>
           <style>
             @media print {
               @page { margin: 20mm; size: A4; }
@@ -261,21 +384,23 @@ export const ProjectActivitiesView: React.FC = () => {
           <div class="header">
             <div>
               <h1 class="title">${projectName}</h1>
-              <p class="subtitle">Project Activities & Work Hours Report</p>
+              <p class="subtitle">Main & Sub-Activity Hierarchy Report</p>
             </div>
-            <div class="badge">
-              Date: ${reportDate}
-            </div>
+            <div class="badge">Date: ${reportDate}</div>
           </div>
 
           <div class="kpi-container">
             <div class="kpi-card">
-              <div class="kpi-label">Total Activities</div>
-              <div class="kpi-value">${safeActivities.length}</div>
+              <div class="kpi-label">Main Activities</div>
+              <div class="kpi-value">${activityHierarchy.length}</div>
             </div>
             <div class="kpi-card">
-              <div class="kpi-label">Total Work Hours</div>
-              <div class="kpi-value" style="color: #7c3aed;">${totalWorkHrs} hrs</div>
+              <div class="kpi-label">Total Sub-Activities</div>
+              <div class="kpi-value">${safeActivities.length - activityHierarchy.length}</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Grand Total Work Hrs</div>
+              <div class="kpi-value" style="color: #7c3aed;">${grandTotalWorkHrs} hrs</div>
             </div>
           </div>
 
@@ -283,7 +408,7 @@ export const ProjectActivitiesView: React.FC = () => {
             <thead>
               <tr>
                 <th style="width: 50px; text-align: center;">#</th>
-                <th>Activity Name</th>
+                <th>Activity Hierarchy</th>
                 <th style="width: 140px; text-align: center;">Work Hrs</th>
               </tr>
             </thead>
@@ -292,8 +417,8 @@ export const ProjectActivitiesView: React.FC = () => {
             </tbody>
             <tfoot>
               <tr>
-                <td colspan="2" style="font-size: 13px; color: #0f172a;">Total (${safeActivities.length} Activities)</td>
-                <td style="text-align: center; font-size: 14px; color: #7c3aed;">${totalWorkHrs} hrs</td>
+                <td colspan="2" style="font-size: 13px; color: #0f172a;">Grand Total (${safeActivities.length} Total Logged Items)</td>
+                <td style="text-align: center; font-size: 14px; color: #7c3aed;">${grandTotalWorkHrs} hrs</td>
               </tr>
             </tfoot>
           </table>
@@ -328,28 +453,28 @@ export const ProjectActivitiesView: React.FC = () => {
             </h2>
           </div>
           <p className="text-xs text-muted-foreground font-light">
-            Record and view activities and work hours for {project?.name || 'this project'}.
+            Manage main activities, sub-activities, and work hours for {project?.name || 'this project'}.
           </p>
         </div>
 
-        {/* Actions: Export PDF & Add Activity */}
+        {/* Actions: Export PDF & Add Main Activity */}
         <div className="flex items-center space-x-3 shrink-0">
           <button
             onClick={handleExportPDF}
             disabled={!safeActivities.length}
             className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-white dark:bg-zinc-850 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 transition-all text-xs font-bold shadow-sm active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Export Activities as PDF"
+            title="Export Activity Hierarchy as PDF"
           >
             <FileDown className="w-4 h-4 text-purple-500" />
             <span>Export as PDF</span>
           </button>
 
           <button
-            onClick={handleOpenAddDrawer}
+            onClick={() => handleOpenAddDrawer(null)}
             className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white transition-all text-xs font-extrabold shadow-lg shadow-purple-500/20 active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Activity</span>
+            <span>Add Main Activity</span>
           </button>
         </div>
       </div>
@@ -369,107 +494,206 @@ export const ProjectActivitiesView: React.FC = () => {
         </div>
 
         {/* Summary Badges */}
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 px-3.5 py-1.5 rounded-xl">
-            <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Total Activities:</span>
-            <span className="text-xs font-black text-slate-900 dark:text-white">{safeActivities.length}</span>
+        <div className="flex items-center space-x-3 overflow-x-auto">
+          <div className="flex items-center space-x-2 bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 px-3.5 py-1.5 rounded-xl shrink-0">
+            <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Main Activities:</span>
+            <span className="text-xs font-black text-slate-900 dark:text-white">{activityHierarchy.length}</span>
           </div>
 
-          <div className="flex items-center space-x-2 bg-purple-500/10 border border-purple-500/20 px-3.5 py-1.5 rounded-xl">
+          <div className="flex items-center space-x-2 bg-purple-500/10 border border-purple-500/20 px-3.5 py-1.5 rounded-xl shrink-0">
             <Clock className="w-3.5 h-3.5 text-purple-500" />
             <span className="text-[10px] font-black uppercase text-purple-600 dark:text-purple-400 tracking-wider">Total Work Hrs:</span>
-            <span className="text-xs font-black text-purple-600 dark:text-purple-400">{totalWorkHrs} hrs</span>
+            <span className="text-xs font-black text-purple-600 dark:text-purple-400">{grandTotalWorkHrs} hrs</span>
           </div>
         </div>
       </div>
 
-      {/* ── Main Activities & Work Hrs Table ── */}
+      {/* ── Main Activity & Sub Activity Hierarchy Table ── */}
       {isLoading ? (
         <div className="w-full h-48 flex flex-col items-center justify-center space-y-2">
           <Loader2 className="w-6 h-6 text-purple-500 animate-spin" />
           <span className="text-xs text-muted-foreground">Loading project activities from database...</span>
         </div>
-      ) : filteredActivities.length === 0 ? (
+      ) : filteredHierarchy.length === 0 ? (
         <div className="text-center py-16 border border-dashed border-slate-250 dark:border-zinc-800 rounded-3xl space-y-3 bg-slate-50/20 dark:bg-zinc-900/10">
-          <Layers className="w-12 h-12 mx-auto text-slate-300 dark:text-zinc-700" />
+          <FolderKanban className="w-12 h-12 mx-auto text-slate-300 dark:text-zinc-700" />
           <div className="space-y-1">
             <h4 className="text-sm font-bold text-slate-800 dark:text-zinc-300">No Activities Logged</h4>
             <p className="text-xs text-muted-foreground font-light max-w-sm mx-auto">
-              Click "+ Add Activity" to record a new activity and work hours for this project.
+              Click "+ Add Main Activity" to record a new main activity for this project.
             </p>
           </div>
           <button
-            onClick={handleOpenAddDrawer}
-            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition shadow-md"
+            onClick={() => handleOpenAddDrawer(null)}
+            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition shadow-md cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Activity</span>
+            <span>Add Main Activity</span>
           </button>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-background/40 shadow-sm">
-          <table className="w-full text-left border-collapse min-w-[500px]">
+          <table className="w-full text-left border-collapse min-w-[640px]">
             <thead>
               <tr className="border-b border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-zinc-900/60 text-[11px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">
-                <th className="px-6 py-4">Activity</th>
-                <th className="px-6 py-4 w-48 text-center text-purple-600 dark:text-purple-400">
+                <th className="px-5 py-4">Activity Hierarchy</th>
+                <th className="px-5 py-4 w-44 text-center text-purple-600 dark:text-purple-400">
                   Work Hrs
                 </th>
-                <th className="px-6 py-4 w-24 text-right">Actions</th>
+                <th className="px-5 py-4 w-52 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-150 dark:divide-zinc-850 text-xs font-medium">
-              {filteredActivities.map((act: ProjectActivity) => {
-                const displayHrs = typeof act.workHrs === 'string' ? parseFloat(act.workHrs) : act.workHrs;
+              {filteredHierarchy.map((parent) => {
+                const parentExpanded = isExpanded(parent.id);
+                const hasSubs = parent.subActivities.length > 0;
+
                 return (
-                  <tr
-                    key={act.id}
-                    className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/20 transition-colors duration-150"
-                  >
-                    {/* Activity Name */}
-                    <td className="px-6 py-4 align-middle">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-500 shrink-0">
-                          <CheckCircle2 className="w-4 h-4" />
+                  <React.Fragment key={parent.id}>
+                    {/* ── Main Activity Row ── */}
+                    <tr className="bg-slate-50/60 dark:bg-zinc-900/40 hover:bg-slate-100/70 dark:hover:bg-zinc-900/70 transition-colors duration-150 group border-t-2 border-slate-200/80 dark:border-zinc-800">
+                      {/* Title & Expand Caret */}
+                      <td className="px-5 py-3.5 align-middle">
+                        <div className="flex items-center space-x-2.5">
+                          {/* Caret Button */}
+                          <button
+                            onClick={() => toggleExpand(parent.id)}
+                            className="p-1 rounded-md text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-500/10 transition cursor-pointer shrink-0"
+                            title={parentExpanded ? 'Collapse sub-activities' : 'Expand sub-activities'}
+                          >
+                            {parentExpanded ? (
+                              <ChevronDown className="w-4 h-4 text-purple-500" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 text-slate-400" />
+                            )}
+                          </button>
+
+                          {/* Container Icon */}
+                          <div className="p-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-500 shrink-0">
+                            <Layers className="w-4 h-4" />
+                          </div>
+
+                          {/* Main Activity Title */}
+                          <div className="space-y-0.5">
+                            <span className="font-black text-slate-900 dark:text-white text-xs tracking-tight">
+                              {parent.title}
+                            </span>
+                            {hasSubs && (
+                              <span className="ml-2 px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-bold">
+                                {parent.subActivities.length} sub-{parent.subActivities.length === 1 ? 'activity' : 'activities'}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <p className="font-extrabold text-slate-900 dark:text-zinc-100 text-xs leading-snug">
-                          {act.title}
-                        </p>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Work Hrs */}
-                    <td className="px-6 py-4 align-middle text-center">
-                      <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 font-extrabold text-xs">
-                        <Clock className="w-3.5 h-3.5 shrink-0 text-purple-500" />
-                        <span>{displayHrs} hrs</span>
-                      </span>
-                    </td>
+                      {/* Work Hrs */}
+                      <td className="px-5 py-3.5 align-middle text-center">
+                        <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-700 dark:text-purple-300 font-black text-xs">
+                          <Clock className="w-3.5 h-3.5 shrink-0 text-purple-500" />
+                          <span>{parent.totalHrs} hrs</span>
+                        </span>
+                      </td>
 
-                    {/* Actions */}
-                    <td className="px-6 py-4 align-middle text-right">
-                      <button
-                        onClick={() => handleDeleteActivity(act)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition cursor-pointer"
-                        title="Delete Activity"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
+                      {/* Actions: Add Sub Activity, Edit & Delete */}
+                      <td className="px-5 py-3.5 align-middle text-right">
+                        <div className="flex items-center justify-end space-x-2">
+                          <button
+                            onClick={() => handleOpenAddDrawer(parent.id)}
+                            className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-purple-500/10 hover:bg-purple-500 text-purple-600 hover:text-white border border-purple-500/20 transition text-[11px] font-extrabold cursor-pointer active:scale-95"
+                            title="Add sub-activity under this main activity"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Sub Activity</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleOpenEditDrawer(parent)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-500/10 transition cursor-pointer"
+                            title="Edit Main Activity"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteActivity(parent, true)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition cursor-pointer"
+                            title="Delete Main Activity"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* ── Sub-Activity Rows (if expanded) ── */}
+                    {parentExpanded &&
+                      parent.subActivities.map((sub) => {
+                        const subHrs = typeof sub.workHrs === 'string' ? parseFloat(sub.workHrs) : sub.workHrs;
+
+                        return (
+                          <tr
+                            key={sub.id}
+                            className="bg-white dark:bg-zinc-950/20 hover:bg-slate-50/80 dark:hover:bg-zinc-900/30 transition-colors duration-150"
+                          >
+                            {/* Indented Sub-Activity Title */}
+                            <td className="px-5 py-2.5 align-middle pl-12">
+                              <div className="flex items-center space-x-2.5">
+                                <CornerDownRight className="w-4 h-4 text-purple-400 shrink-0" />
+                                <div className="p-1 rounded-md bg-purple-500/10 text-purple-500 shrink-0">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                </div>
+                                <span className="font-semibold text-slate-700 dark:text-zinc-200 text-xs">
+                                  {sub.title}
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* Sub-Activity Work Hrs */}
+                            <td className="px-5 py-2.5 align-middle text-center">
+                              <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold text-[11px]">
+                                <Clock className="w-3 h-3 text-slate-400" />
+                                <span>{subHrs} hrs</span>
+                              </span>
+                            </td>
+
+                            {/* Sub-Activity Edit & Delete Actions */}
+                            <td className="px-5 py-2.5 align-middle text-right">
+                              <div className="flex items-center justify-end space-x-1">
+                                <button
+                                  onClick={() => handleOpenEditDrawer(sub)}
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-500/10 transition cursor-pointer"
+                                  title="Edit Sub-Activity"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+
+                                <button
+                                  onClick={() => handleDeleteActivity(sub, false)}
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition cursor-pointer"
+                                  title="Delete Sub-Activity"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </React.Fragment>
                 );
               })}
             </tbody>
             {/* Table Footer Totals */}
             <tfoot>
-              <tr className="border-t border-slate-200 dark:border-zinc-800 bg-slate-50/90 dark:bg-zinc-900/80 font-black text-xs">
-                <td className="px-6 py-3.5 text-slate-700 dark:text-zinc-300">
-                  Total ({filteredActivities.length} Activities)
+              <tr className="border-t-2 border-slate-200 dark:border-zinc-800 bg-slate-50/90 dark:bg-zinc-900/80 font-black text-xs">
+                <td className="px-5 py-3.5 text-slate-700 dark:text-zinc-300">
+                  Grand Total ({filteredHierarchy.length} Main Activities, {safeActivities.length} Total Items)
                 </td>
-                <td className="px-6 py-3.5 text-center text-purple-600 dark:text-purple-400 text-sm">
-                  {totalWorkHrs} hrs
+                <td className="px-5 py-3.5 text-center text-purple-600 dark:text-purple-400 text-sm">
+                  {grandTotalWorkHrs} hrs
                 </td>
-                <td className="px-6 py-3.5 text-right" />
+                <td className="px-5 py-3.5 text-right" />
               </tr>
             </tfoot>
           </table>
@@ -491,11 +715,20 @@ export const ProjectActivitiesView: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 px-6 py-5 bg-white dark:bg-zinc-900/50">
               <div className="flex items-center space-x-2.5">
                 <div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-500">
-                  <Plus className="w-4 h-4" />
+                  {editingActivity ? <Pencil className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                 </div>
-                <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white">
-                  Add Activity
-                </h3>
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white">
+                    {editingActivity
+                      ? (editingActivity.parentId ? 'Edit Sub-Activity' : 'Edit Main Activity')
+                      : (targetParentActivity ? 'Add Sub-Activity' : 'Add Main Activity')}
+                  </h3>
+                  {targetParentActivity && !editingActivity && (
+                    <p className="text-[11px] text-purple-600 dark:text-purple-400 font-bold truncate max-w-[260px]">
+                      Under: {targetParentActivity.title}
+                    </p>
+                  )}
+                </div>
               </div>
               <button
                 type="button"
@@ -517,17 +750,34 @@ export const ProjectActivitiesView: React.FC = () => {
                   </div>
                 )}
 
-                {/* Input Field 1: Activity */}
+                {/* Parent Activity Indicator (If Sub Activity) */}
+                {targetParentActivity && !editingActivity && (
+                  <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl space-y-1">
+                    <span className="text-[10px] font-black uppercase text-purple-600 dark:text-purple-400 tracking-wider">
+                      Parent Activity:
+                    </span>
+                    <p className="text-xs font-black text-slate-900 dark:text-white">
+                      📦 {targetParentActivity.title}
+                    </p>
+                  </div>
+                )}
+
+                {/* Input Field 1: Title */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">
-                    Activity <span className="text-red-500">*</span>
+                    {editingActivity
+                      ? 'Activity Name'
+                      : targetParentActivity
+                      ? 'Sub-Activity Name'
+                      : 'Main Activity Name'}{' '}
+                    <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     disabled={isSaving}
                     value={formTitle}
                     onChange={(e) => setFormTitle(e.target.value)}
-                    placeholder="Enter activity title..."
+                    placeholder={targetParentActivity ? "e.g. AS-IS Mapping..." : "e.g. Requirement Gathering..."}
                     className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium transition outline-none"
                     autoFocus
                     required
@@ -547,7 +797,7 @@ export const ProjectActivitiesView: React.FC = () => {
                       disabled={isSaving}
                       value={formWorkHrs}
                       onChange={(e) => setFormWorkHrs(e.target.value)}
-                      placeholder="Enter work hours (e.g. 8)"
+                      placeholder="Enter work hours (e.g. 4)"
                       className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-bold transition outline-none pl-9"
                       required
                     />
@@ -579,8 +829,14 @@ export const ProjectActivitiesView: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      <Plus className="w-4 h-4" />
-                      <span>Save Activity</span>
+                      {editingActivity ? <Pencil className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                      <span>
+                        {editingActivity
+                          ? 'Update Activity'
+                          : targetParentActivity
+                          ? 'Save Sub-Activity'
+                          : 'Save Main Activity'}
+                      </span>
                     </>
                   )}
                 </button>
@@ -595,3 +851,4 @@ export const ProjectActivitiesView: React.FC = () => {
 };
 
 export default ProjectActivitiesView;
+
