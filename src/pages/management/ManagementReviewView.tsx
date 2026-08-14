@@ -339,7 +339,7 @@ export const ManagementReviewView: React.FC = () => {
             <span>OPL (Open Points List)</span>
           </h2>
           <p className="text-xs text-muted-foreground font-light">
-            Monitor and track subtasks, deliverables status, and open action points across management review.
+            Monitor and track management review decisions, executive deliverables, and open action points.
           </p>
         </div>
 
@@ -392,7 +392,7 @@ export const ManagementReviewView: React.FC = () => {
             </div>
 
             <div>
-              <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Action Point / Subtask Title</label>
+              <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Action Point Title</label>
               <input
                 type="text"
                 placeholder="What needs to be done?"
@@ -566,7 +566,7 @@ export const ManagementReviewView: React.FC = () => {
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
               <tr className="border-b border-slate-200 dark:border-zinc-850 bg-slate-50/70 dark:bg-zinc-900/50">
-                <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">Sub Task Title</th>
+                <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">Action Point Title</th>
                 <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider w-32">Status</th>
                 <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider w-24 text-center">Priority</th>
                 <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider w-36">Assigned To</th>
@@ -603,7 +603,7 @@ export const ManagementReviewView: React.FC = () => {
                           {item.title}
                         </button>
                         <p className="text-[9px] text-slate-450 mt-0.5">
-                          Task: <span className="font-semibold text-slate-650 dark:text-zinc-400">{item.category}</span>
+                          Category: <span className="font-semibold text-slate-650 dark:text-zinc-400">{item.category}</span>
                         </p>
                       </div>
                     </td>
@@ -737,7 +737,7 @@ export const ManagementReviewView: React.FC = () => {
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
               <div>
-                <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Sub Task Title</label>
+                <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Action Point Title</label>
                 <input
                   type="text"
                   value={editTitle}
