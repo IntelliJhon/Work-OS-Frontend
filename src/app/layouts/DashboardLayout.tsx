@@ -172,7 +172,7 @@ export const DashboardLayout: React.FC = () => {
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Projects', path: '/projects', icon: FolderKanban },
-    { name: 'Management Review', path: '/dashboard/management-review', icon: ShieldAlert, permission: PERMISSIONS.WORKSPACE_ROLES_READ },
+    { name: 'Management Review', path: '/dashboard/management-review', icon: ShieldAlert, permission: PERMISSIONS.WORKSPACE_MEMBERS_READ },
     { name: 'Alerts Center', path: '/notifications', icon: Bell },
     { name: 'Tasks', path: '/dashboard/tasks', icon: CheckSquare, permission: PERMISSIONS.TASK_READ },
     { name: 'Settings', path: '/settings/members', icon: Settings, permission: PERMISSIONS.WORKSPACE_MEMBERS_READ },

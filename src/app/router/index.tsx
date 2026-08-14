@@ -90,7 +90,7 @@ export const AppRouter: React.FC = () => {
               <Route path="/notifications" element={<NotificationCenter />} />
 
               {/* Management Review & Admin OPL */}
-              <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.WORKSPACE_ROLES_READ]} />}>
+              <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.WORKSPACE_MEMBERS_READ]} />}>
                 <Route path="/dashboard/management-review" element={<ManagementReviewView />} />
               </Route>
 
