@@ -47,49 +47,45 @@ const STORAGE_KEY = 'work_os_management_review_opl';
 const INITIAL_DEMO_ITEMS: ManagementOPLItem[] = [
   {
     id: 'mgt-opl-1',
-    title: 'How to enable client to maintain Wallet',
-    category: 'Go Live | in AU region',
-    status: 'to_do',
-    priority: 'medium',
-    assignee: 'Unassigned',
-    remarks: 'We need to handover the wallet money maintenance to customer. At moment its handled by Intellijohn, which is not worth to maintain in the...',
+    title: 'Conduct Q3 Quality & Regulatory Compliance Audit',
+    category: 'Quality & Regulatory Audit',
+    status: 'in_progress',
+    priority: 'high',
+    assignee: 'Admin Acme',
+    remarks: 'Reviewing ISO 9001 audit checklists, tenant security compliance, and governance documentation.',
     createdAt: new Date().toISOString(),
   },
   {
     id: 'mgt-opl-2',
-    title: 'Handover to client',
-    category: 'Go Live | in AU region',
+    title: 'Review Executive Financial Allocation & Project Margins',
+    category: 'Financial Allocation & Budget',
     status: 'to_do',
-    priority: 'medium',
-    assignee: 'Unassigned',
-    remarks: '',
+    priority: 'critical',
+    assignee: 'Finance Director',
+    remarks: 'Analyze quarterly resource utilization, department expenditures, and revenue margins across active workspaces.',
     createdAt: new Date().toISOString(),
   },
   {
     id: 'mgt-opl-3',
-    title: 'Messages to customer in not activated',
-    category: 'Go Live | in AU region',
+    title: 'Finalize Workspace Escalation & Governance Protocols',
+    category: 'Operations & Compliance',
     status: 'done',
-    priority: 'high',
-    assignee: 'Shahariyas s',
-    files: [
-      { id: 'f1', name: 'pixmagicDispact.png' },
-      { id: 'f2', name: 'PixmagicOrder.png' }
-    ],
-    remarks: 'Template Messages formats attached Hi {Name}, Thank you for your PixMagic order! Our Melbourne studio team is now preparing it, and we\'ll keep you...',
+    priority: 'medium',
+    assignee: 'Admin Acme',
+    remarks: 'Approved executive SLA thresholds and published governance guidelines across all tenant accounts.',
     createdAt: new Date().toISOString(),
     completedAt: new Date().toISOString(),
   },
 ];
 
 const CATEGORIES = [
-  'Go Live | in AU region',
-  'Compliance & Regulatory',
-  'Financial Allocation',
-  'Quality & Risk',
-  'Infrastructure',
-  'Operations & Governance',
-  'Strategy'
+  'Executive Strategy & Governance',
+  'Quality & Regulatory Audit',
+  'Financial Allocation & Budget',
+  'Operations & Compliance',
+  'Risk Management',
+  'Infrastructure & Security',
+  'Human Resources & Talent'
 ];
 
 const PRIORITY_CONFIG = {
@@ -162,7 +158,7 @@ export const ManagementReviewView: React.FC = () => {
   // Form State for Add
   const [showForm, setShowForm] = useState(false);
   const [newTitle, setNewTitle] = useState('');
-  const [newCategory, setNewCategory] = useState('Go Live | in AU region');
+  const [newCategory, setNewCategory] = useState('Executive Strategy & Governance');
   const [newPriority, setNewPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('medium');
   const [newAssignee, setNewAssignee] = useState('');
   const [newRemarks, setNewRemarks] = useState('');
@@ -172,7 +168,7 @@ export const ManagementReviewView: React.FC = () => {
   // Edit Drawer State
   const [editingItem, setEditingItem] = useState<ManagementOPLItem | null>(null);
   const [editTitle, setEditTitle] = useState('');
-  const [editCategory, setEditCategory] = useState('Go Live | in AU region');
+  const [editCategory, setEditCategory] = useState('Executive Strategy & Governance');
   const [editStatus, setEditStatus] = useState<'to_do' | 'in_progress' | 'done'>('to_do');
   const [editPriority, setEditPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('medium');
   const [editAssignee, setEditAssignee] = useState('');
