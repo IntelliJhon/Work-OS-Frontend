@@ -7,18 +7,23 @@ export const usePermissions = () => {
   const permissions = user?.permissions || {};
   const role = user?.role || 'Guest';
 
+  const isAdminRole = (r: string): boolean => {
+    const lower = (r || '').toLowerCase();
+    return lower.includes('admin') || lower.includes('owner');
+  };
+
   const can = (permission: Permission): boolean => {
-    if (role === 'Admin' || role === 'Tenant Admin') return true;
+    if (isAdminRole(role)) return true;
     return hasPermission(permissions, permission);
   };
 
   const canAny = (perms: Permission[]): boolean => {
-    if (role === 'Admin' || role === 'Tenant Admin') return true;
+    if (isAdminRole(role)) return true;
     return hasAnyPermission(permissions, perms);
   };
 
   const canAll = (perms: Permission[]): boolean => {
-    if (role === 'Admin' || role === 'Tenant Admin') return true;
+    if (isAdminRole(role)) return true;
     return hasAllPermissions(permissions, perms);
   };
 
