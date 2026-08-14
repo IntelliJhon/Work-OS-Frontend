@@ -10,7 +10,6 @@ import {
   ListTodo,
   Plus,
   Search,
-  FileDown,
   CheckCircle,
   HelpCircle,
   AlertTriangle,
@@ -279,8 +278,8 @@ export const ManagementReviewView: React.FC = () => {
     const isOk = await confirm({
       title: 'Delete Open Point',
       message: `Are you sure you want to permanently delete this subtask point "${item.title}"?`,
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
+      confirmLabel: 'Delete',
+      cancelLabel: 'Cancel',
       variant: 'danger',
     });
     if (!isOk) return;
