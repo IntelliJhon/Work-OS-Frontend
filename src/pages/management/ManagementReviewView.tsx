@@ -119,11 +119,25 @@ export const ManagementReviewView: React.FC = () => {
     }
   }, [user, isAdmin, navigate]);
 
-  // Load items from localStorage
+  // Load items from localStorage with auto-purge for legacy cached project data
   const [items, setItems] = useState<ManagementOPLItem[]>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (
+          Array.isArray(parsed) &&
+          parsed.some(
+            (i: any) =>
+              i.category === 'Go Live | in AU region' ||
+              (i.title && i.title.toLowerCase().includes('wallet'))
+          )
+        ) {
+          localStorage.removeItem(STORAGE_KEY);
+          return INITIAL_DEMO_ITEMS;
+        }
+        return parsed;
+      }
     } catch (err) {
       console.error('[ManagementReview] Failed to load OPL items', err);
     }
