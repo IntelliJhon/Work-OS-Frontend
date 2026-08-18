@@ -1,11 +1,14 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
 import { usePermissions } from '../../features/auth/usePermissions';
 import { PERMISSIONS } from '../../features/auth/permission.constants';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { usersApi, type User } from '../../services/api/users';
+import { tasksApi, type Task } from '../../services/api/tasks.api';
+import { uploadsApi } from '../../services/api/uploads';
 import {
   ListTodo,
   Plus,
@@ -19,7 +22,8 @@ import {
   Paperclip,
   X,
   FileText,
-  Download
+  Download,
+  Loader2
 } from 'lucide-react';
 
 export interface ManagementSubTaskFile {
@@ -31,7 +35,7 @@ export interface ManagementSubTaskFile {
 export interface ManagementOPLItem {
   id: string;
   title: string;
-  category: string; // e.g. Strategy, Compliance, Operations, Financial, Quality, Risk
+  category: string;
   status: 'to_do' | 'in_progress' | 'done';
   priority: 'low' | 'medium' | 'high' | 'critical';
   assignee?: string;
@@ -66,6 +70,7 @@ export const ManagementReviewView: React.FC = () => {
   const { can, role: userRole } = usePermissions();
   const navigate = useNavigate();
   const confirm = useConfirm();
+  const queryClient = useQueryClient();
 
   // Admin Access Guard (Case-insensitive & Permission fallback)
   const isAdmin = useMemo(() => {
@@ -85,41 +90,11 @@ export const ManagementReviewView: React.FC = () => {
     }
   }, [user, isAdmin, navigate]);
 
-  // Load items from localStorage with auto-purge for legacy/demo data
-  const [items, setItems] = useState<ManagementOPLItem[]>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (
-          Array.isArray(parsed) &&
-          parsed.some(
-            (i: any) =>
-              i.id?.startsWith('mgt-opl-') ||
-              i.category === 'Go Live | in AU region' ||
-              (i.title && i.title.toLowerCase().includes('wallet')) ||
-              (i.title && i.title.toLowerCase().includes('quality'))
-          )
-        ) {
-          localStorage.removeItem(STORAGE_KEY);
-          return [];
-        }
-        return parsed;
-      }
-    } catch (err) {
-      console.error('[ManagementReview] Failed to load OPL items', err);
-    }
-    return [];
+  // Remote Data from Database
+  const { data: rawDbTasks = [], isLoading } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: tasksApi.list,
   });
-
-  // Save to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    } catch (err) {
-      console.error('[ManagementReview] Failed to save OPL items', err);
-    }
-  }, [items]);
 
   // Fetch workspace members for assignee selection
   const [members, setMembers] = useState<User[]>([]);
@@ -131,6 +106,82 @@ export const ManagementReviewView: React.FC = () => {
       })
       .catch((err) => console.error('[ManagementReview] Failed to fetch users', err));
   }, []);
+
+  const safeDbTasks = Array.isArray(rawDbTasks) ? rawDbTasks : (rawDbTasks as any)?.tasks || [];
+
+  // Filter tasks belonging to Management Review
+  const dbManagementItems = useMemo(() => {
+    return safeDbTasks
+      .filter((t: Task) => t && t.customFields?.context === 'management_review')
+      .map((t: Task): ManagementOPLItem => {
+        const cf = t.customFields || {};
+        return {
+          id: t.id,
+          title: t.name,
+          category: cf.category || 'Executive Strategy & Governance',
+          status: (t.status === 'done' ? 'done' : t.status === 'in_progress' ? 'in_progress' : 'to_do') as any,
+          priority: (cf.priority || 'medium') as any,
+          assignee: cf.assigneeName || undefined,
+          assigneeId: t.assigneeId || undefined,
+          remarks: cf.remarks || t.description || undefined,
+          files: Array.isArray(cf.files) ? cf.files : undefined,
+          createdAt: t.createdAt,
+          completedAt: t.completedAt,
+        };
+      })
+      .sort((a: ManagementOPLItem, b: ManagementOPLItem) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [safeDbTasks]);
+
+  // Recycle / Migrate any legacy localStorage items to Database
+  const [migrationDone, setMigrationDone] = useState(false);
+  useEffect(() => {
+    if (migrationDone || isLoading) return;
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const localItems = JSON.parse(stored);
+        if (Array.isArray(localItems) && localItems.length > 0) {
+          // Filter out items already in DB by title
+          const existingTitles = new Set(dbManagementItems.map((i: ManagementOPLItem) => i.title.toLowerCase()));
+          const itemsToMigrate = localItems.filter((i: any) =>
+            i.title &&
+            !existingTitles.has(i.title.toLowerCase()) &&
+            i.category !== 'Go Live | in AU region'
+          );
+
+          if (itemsToMigrate.length > 0) {
+            Promise.all(
+              itemsToMigrate.map((item: any) =>
+                tasksApi.create({
+                  name: item.title,
+                  status: item.status || 'to_do',
+                  customFields: {
+                    context: 'management_review',
+                    category: item.category || 'Executive Strategy & Governance',
+                    priority: item.priority || 'medium',
+                    remarks: item.remarks || '',
+                    assigneeName: item.assignee || 'Admin Acme',
+                    files: item.files || [],
+                  },
+                })
+              )
+            )
+              .then(() => {
+                localStorage.removeItem(STORAGE_KEY);
+                queryClient.invalidateQueries({ queryKey: ['tasks'] });
+              })
+              .catch(err => console.error('[ManagementReview] Failed to migrate items to DB', err));
+          } else {
+            localStorage.removeItem(STORAGE_KEY);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[ManagementReview] Migration check error', err);
+    } finally {
+      setMigrationDone(true);
+    }
+  }, [migrationDone, isLoading, dbManagementItems, queryClient]);
 
   // Filter & Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -145,6 +196,8 @@ export const ManagementReviewView: React.FC = () => {
   const [newAssignee, setNewAssignee] = useState('');
   const [newRemarks, setNewRemarks] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState<ManagementSubTaskFile[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Edit Drawer State
@@ -156,63 +209,96 @@ export const ManagementReviewView: React.FC = () => {
   const [editAssignee, setEditAssignee] = useState('');
   const [editRemarks, setEditRemarks] = useState('');
   const [editFiles, setEditFiles] = useState<ManagementSubTaskFile[]>([]);
+  const [isEditSaving, setIsEditSaving] = useState(false);
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Handlers for Add
-  const handleAddFile = (files: FileList | null) => {
+  // Handlers for Add File
+  const handleAddFile = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    const newFiles: ManagementSubTaskFile[] = Array.from(files).map(f => ({
-      id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-      name: f.name,
-      publicUrl: URL.createObjectURL(f)
-    }));
-    setUploadedFiles(prev => [...prev, ...newFiles]);
+    setIsUploading(true);
+    try {
+      const res = await uploadsApi.upload('TASK', 'management_review', Array.from(files));
+      const uploaded: ManagementSubTaskFile[] = res.uploads.map((u: any) => ({
+        id: u.id,
+        name: u.originalName,
+        publicUrl: u.publicUrl,
+      }));
+      setUploadedFiles(prev => [...prev, ...uploaded]);
+    } catch (err) {
+      // Fallback local file object
+      const fallbackFiles: ManagementSubTaskFile[] = Array.from(files).map(f => ({
+        id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        name: f.name,
+      }));
+      setUploadedFiles(prev => [...prev, ...fallbackFiles]);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
-  const handleAddOpenPoint = () => {
+  // Create Item in DB
+  const handleAddOpenPoint = async () => {
     if (!newTitle.trim()) return;
-    const newItem: ManagementOPLItem = {
-      id: `mgt-opl-${Date.now()}`,
-      title: newTitle.trim(),
-      category: newCategory,
-      status: 'to_do',
-      priority: newPriority,
-      assignee: newAssignee.trim() || undefined,
-      remarks: newRemarks.trim() || undefined,
-      files: uploadedFiles.length > 0 ? uploadedFiles : undefined,
-      createdAt: new Date().toISOString(),
-    };
+    setIsSaving(true);
+    try {
+      const selectedUser = members.find((m) => `${m.firstName || ''} ${m.lastName || ''}`.trim() === newAssignee.trim());
 
-    setItems(prev => [newItem, ...prev]);
+      await tasksApi.create({
+        name: newTitle.trim(),
+        status: 'to_do',
+        assigneeId: selectedUser?.id || null,
+        customFields: {
+          context: 'management_review',
+          category: newCategory,
+          priority: newPriority,
+          remarks: newRemarks.trim() || undefined,
+          assigneeName: newAssignee.trim() || 'Admin Acme',
+          files: uploadedFiles.length > 0 ? uploadedFiles : undefined,
+        },
+      });
 
-    // Reset Form
-    setNewTitle('');
-    setNewAssignee('');
-    setNewRemarks('');
-    setUploadedFiles([]);
-    setShowForm(false);
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+
+      // Reset Form
+      setNewTitle('');
+      setNewAssignee('');
+      setNewRemarks('');
+      setUploadedFiles([]);
+      setShowForm(false);
+    } catch (err: any) {
+      console.error('[ManagementReview] Failed to create item', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  // Handlers for Update Status
-  const handleUpdateStatus = (item: ManagementOPLItem, status: 'to_do' | 'in_progress' | 'done') => {
-    setItems(prev =>
-      prev.map(i =>
-        i.id === item.id
-          ? {
-              ...i,
-              status,
-              completedAt: status === 'done' ? new Date().toISOString() : null
-            }
-          : i
-      )
-    );
+  // Handlers for Update Status in DB
+  const handleUpdateStatus = async (item: ManagementOPLItem, status: 'to_do' | 'in_progress' | 'done') => {
+    try {
+      const targetTask = safeDbTasks.find((t: Task) => t.id === item.id);
+      if (!targetTask) return;
+
+      await tasksApi.update(item.id, {
+        status,
+        completedAt: status === 'done' ? new Date().toISOString() : null,
+        customFields: {
+          ...(targetTask.customFields || {}),
+          status,
+        },
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    } catch (err) {
+      console.error('[ManagementReview] Failed to update status', err);
+    }
   };
 
   // Handlers for Edit Modal
   const handleOpenEditModal = (item: ManagementOPLItem) => {
     setEditingItem(item);
     setEditTitle(item.title);
-    setEditCategory(item.category || 'Go Live | in AU region');
+    setEditCategory(item.category || 'Executive Strategy & Governance');
     setEditStatus(item.status);
     setEditPriority(item.priority || 'medium');
     setEditAssignee(item.assignee || '');
@@ -220,54 +306,79 @@ export const ManagementReviewView: React.FC = () => {
     setEditFiles(item.files || []);
   };
 
-  const handleAddEditFile = (files: FileList | null) => {
+  const handleAddEditFile = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    const newFiles: ManagementSubTaskFile[] = Array.from(files).map(f => ({
-      id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-      name: f.name,
-      publicUrl: URL.createObjectURL(f)
-    }));
-    setEditFiles(prev => [...prev, ...newFiles]);
+    try {
+      const res = await uploadsApi.upload('TASK', editingItem?.id || 'management_review', Array.from(files));
+      const uploaded: ManagementSubTaskFile[] = res.uploads.map((u: any) => ({
+        id: u.id,
+        name: u.originalName,
+        publicUrl: u.publicUrl,
+      }));
+      setEditFiles(prev => [...prev, ...uploaded]);
+    } catch (err) {
+      const fallbackFiles: ManagementSubTaskFile[] = Array.from(files).map(f => ({
+        id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        name: f.name,
+      }));
+      setEditFiles(prev => [...prev, ...fallbackFiles]);
+    }
   };
 
-  const handleSaveEditChanges = () => {
+  const handleSaveEditChanges = async () => {
     if (!editingItem || !editTitle.trim()) return;
-    setItems(prev =>
-      prev.map(i =>
-        i.id === editingItem.id
-          ? {
-              ...i,
-              title: editTitle.trim(),
-              category: editCategory,
-              status: editStatus,
-              priority: editPriority,
-              assignee: editAssignee.trim() || undefined,
-              remarks: editRemarks.trim() || undefined,
-              files: editFiles.length > 0 ? editFiles : undefined,
-              completedAt: editStatus === 'done' ? (i.completedAt || new Date().toISOString()) : null
-            }
-          : i
-      )
-    );
-    setEditingItem(null);
+    setIsEditSaving(true);
+    try {
+      const targetTask = safeDbTasks.find((t: Task) => t.id === editingItem.id);
+      if (!targetTask) return;
+
+      const selectedUser = members.find((m) => `${m.firstName || ''} ${m.lastName || ''}`.trim() === editAssignee.trim());
+
+      await tasksApi.update(editingItem.id, {
+        name: editTitle.trim(),
+        status: editStatus,
+        assigneeId: selectedUser?.id || null,
+        completedAt: editStatus === 'done' ? (targetTask.completedAt || new Date().toISOString()) : null,
+        customFields: {
+          ...(targetTask.customFields || {}),
+          category: editCategory,
+          priority: editPriority,
+          remarks: editRemarks.trim() || undefined,
+          assigneeName: editAssignee.trim() || 'Admin Acme',
+          files: editFiles.length > 0 ? editFiles : undefined,
+        },
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      setEditingItem(null);
+    } catch (err) {
+      console.error('[ManagementReview] Failed to update item', err);
+    } finally {
+      setIsEditSaving(false);
+    }
   };
 
   const handleDeleteItem = async (item: ManagementOPLItem) => {
     const isOk = await confirm({
       title: 'Delete Open Point',
-      message: `Are you sure you want to permanently delete this subtask point "${item.title}"?`,
+      message: `Are you sure you want to permanently delete this action point "${item.title}"?`,
       confirmLabel: 'Delete',
       cancelLabel: 'Cancel',
       variant: 'danger',
     });
     if (!isOk) return;
 
-    setItems(prev => prev.filter(i => i.id !== item.id));
+    try {
+      await tasksApi.delete(item.id);
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    } catch (err) {
+      console.error('[ManagementReview] Failed to delete item', err);
+    }
   };
 
   // Filtered Items
   const filteredOPLItems = useMemo(() => {
-    return items.filter(item => {
+    return dbManagementItems.filter((item: ManagementOPLItem) => {
       // Status filter
       if (statusFilter === 'open' && item.status === 'done') return false;
       if (statusFilter === 'completed' && item.status !== 'done') return false;
@@ -287,13 +398,13 @@ export const ManagementReviewView: React.FC = () => {
       }
       return true;
     });
-  }, [items, statusFilter, priorityFilter, searchQuery]);
+  }, [dbManagementItems, statusFilter, priorityFilter, searchQuery]);
 
   // Stats calculation
-  const totalCount = items.length;
-  const openCount = items.filter(i => i.status !== 'done').length;
-  const completedCount = items.filter(i => i.status === 'done').length;
-  const criticalCount = items.filter(i => i.status !== 'done' && (i.priority === 'critical' || i.priority === 'high')).length;
+  const totalCount = dbManagementItems.length;
+  const openCount = dbManagementItems.filter((i: ManagementOPLItem) => i.status !== 'done').length;
+  const completedCount = dbManagementItems.filter((i: ManagementOPLItem) => i.status === 'done').length;
+  const criticalCount = dbManagementItems.filter((i: ManagementOPLItem) => i.status !== 'done' && (i.priority === 'critical' || i.priority === 'high')).length;
 
   if (!isAdmin) return null;
 
@@ -340,7 +451,7 @@ export const ManagementReviewView: React.FC = () => {
         ))}
       </div>
 
-      {/* ── Subtask Creation Form Panel ── */}
+      {/* ── Creation Form Panel ── */}
       {showForm && (
         <div className="glass-panel rounded-2xl p-5 border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/10 space-y-4 animate-fade-in">
           <h3 className="text-sm font-black uppercase text-slate-650 dark:text-zinc-300 tracking-wider">Log a New Action Point</h3>
@@ -426,11 +537,12 @@ export const ManagementReviewView: React.FC = () => {
               />
               <button
                 type="button"
+                disabled={isUploading}
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center space-x-1.5 px-4.5 py-2.5 rounded-xl border border-dashed border-purple-300 dark:border-purple-800 bg-white dark:bg-background text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition text-xs cursor-pointer font-bold"
+                className="flex items-center space-x-1.5 px-4.5 py-2.5 rounded-xl border border-dashed border-purple-300 dark:border-purple-800 bg-white dark:bg-background text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition text-xs cursor-pointer font-bold disabled:opacity-50"
               >
-                <Paperclip className="w-3.5 h-3.5" />
-                <span>Attach Files</span>
+                {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Paperclip className="w-3.5 h-3.5" />}
+                <span>{isUploading ? 'Uploading...' : 'Attach Files'}</span>
               </button>
               {uploadedFiles.length > 0 && (
                 <button type="button" onClick={() => setUploadedFiles([])} className="text-[10px] text-slate-450 hover:text-red-400 transition underline cursor-pointer">
@@ -465,10 +577,10 @@ export const ManagementReviewView: React.FC = () => {
             <button
               type="button"
               onClick={handleAddOpenPoint}
-              disabled={!newTitle.trim()}
+              disabled={!newTitle.trim() || isSaving}
               className="flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition disabled:opacity-50 active:scale-95 shadow-lg shadow-purple-500/20"
             >
-              Log Point
+              {isSaving ? 'Saving to Database...' : 'Log Point'}
             </button>
           </div>
         </div>
@@ -521,7 +633,13 @@ export const ManagementReviewView: React.FC = () => {
       </div>
 
       {/* ── OPL Listing Table ── */}
-      {filteredOPLItems.length === 0 ? (
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-20 rounded-2xl bg-slate-100/60 dark:bg-white/5 animate-pulse" />
+          ))}
+        </div>
+      ) : filteredOPLItems.length === 0 ? (
         <div className="text-center py-16 border border-dashed border-slate-250 dark:border-zinc-800 rounded-3xl space-y-2">
           <ListTodo className="w-10 h-10 mx-auto text-slate-350 dark:text-zinc-650" />
           <h4 className="text-sm font-bold text-slate-800 dark:text-zinc-300">No Action Points Found</h4>
@@ -544,8 +662,8 @@ export const ManagementReviewView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-150 dark:divide-zinc-850">
-              {filteredOPLItems.map((item) => {
-                const cfg = PRIORITY_CONFIG[item.priority || 'medium'];
+              {filteredOPLItems.map((item: ManagementOPLItem) => {
+                const cfg = PRIORITY_CONFIG[(item.priority || 'medium') as keyof typeof PRIORITY_CONFIG] || PRIORITY_CONFIG.medium;
                 const subStatus = item.status;
                 const isDone = subStatus === 'done';
 
@@ -616,7 +734,7 @@ export const ManagementReviewView: React.FC = () => {
                     <td className="px-4 py-3.5 align-top">
                       {item.files && item.files.length > 0 ? (
                         <div className="flex flex-col gap-1">
-                          {item.files.map((file) => (
+                          {item.files.map((file: ManagementSubTaskFile) => (
                             <div key={file.id} className="flex items-center space-x-1 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-[9px] max-w-[160px]">
                               <FileText className="w-2.5 h-2.5 text-slate-450 shrink-0" />
                               <a
@@ -832,10 +950,10 @@ export const ManagementReviewView: React.FC = () => {
               <button
                 type="button"
                 onClick={handleSaveEditChanges}
-                disabled={!editTitle.trim()}
+                disabled={!editTitle.trim() || isEditSaving}
                 className="flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition disabled:opacity-50 active:scale-95 shadow-lg shadow-purple-500/20"
               >
-                Save Changes
+                {isEditSaving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </div>

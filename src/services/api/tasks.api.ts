@@ -14,6 +14,11 @@ export interface Task {
   timeEstimate: number | null;
   completedAt: string | null;
   customFields?: {
+    context?: string;
+    category?: string;
+    remarks?: string;
+    assigneeName?: string;
+    files?: any[];
     priority?: 'low' | 'medium' | 'high' | 'critical';
     startDate?: string;
     dueDate?: string;
