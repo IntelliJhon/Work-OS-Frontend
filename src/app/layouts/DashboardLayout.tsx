@@ -14,6 +14,8 @@ import { PERMISSIONS } from '../../features/auth/permission.constants';
 import { notificationsApi } from '../../services/api/notifications';
 import { projectsApi } from '../../services/api/projects';
 import type { Project } from '../../services/api/projects';
+import { clientsApi } from '../../services/api/clients.api';
+import { useQuery } from '@tanstack/react-query';
 import { AlertSoundManager } from '../../components/notifications/AlertSoundManager';
 import { RealtimeAlertToast, triggerRealtimeToast } from '../../components/notifications/RealtimeAlertToast';
 import { NotificationDrawer } from '../../components/notifications/NotificationDrawer';
@@ -30,7 +32,8 @@ import {
   Radio,
   Moon,
   Sun,
-  ShieldAlert
+  ShieldAlert,
+  Users
 } from 'lucide-react';
 
 export const DashboardLayout: React.FC = () => {
@@ -167,11 +170,26 @@ export const DashboardLayout: React.FC = () => {
   };
 
 
+  const { data: clientsInfo } = useQuery({
+    queryKey: ['clients-info'],
+    queryFn: clientsApi.list,
+    enabled: !!user,
+    staleTime: 300000,
+  });
+
+  const LEADSNDEALS_TENANT_ID = 'aee1faf8-27d5-4f5d-9b14-9246abbd0eec';
+  const isLeadsndealsTenant =
+    user?.tenantId === LEADSNDEALS_TENANT_ID ||
+    user?.tenantId === 'leadsndeals' ||
+    clientsInfo?.slug === 'leadsndeals' ||
+    clientsInfo?.isOurCompany === true;
+
   const { can } = usePermissions();
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Projects', path: '/projects', icon: FolderKanban },
+    { name: 'Clients', path: '/clients', icon: Users },
     { name: 'Management Review', path: '/dashboard/management-review', icon: ShieldAlert, permission: PERMISSIONS.WORKSPACE_MEMBERS_READ },
     { name: 'Alerts Center', path: '/notifications', icon: Bell },
     { name: 'Tasks', path: '/dashboard/tasks', icon: CheckSquare, permission: PERMISSIONS.TASK_READ },
@@ -179,6 +197,9 @@ export const DashboardLayout: React.FC = () => {
   ];
 
   const filteredItems = navItems.filter((item) => {
+    if (item.name === 'Clients' && !isLeadsndealsTenant) {
+      return false;
+    }
     if (item.permission) {
       return can(item.permission);
     }
