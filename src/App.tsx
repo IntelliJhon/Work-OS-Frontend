@@ -6,7 +6,7 @@ import { AuthProvider } from './app/providers/AuthProvider';
 import { AppRouter } from './app/router';
 import { queryClient } from './services/api/queryClient';
 import { ConfirmProvider } from './components/ui/ConfirmDialog';
-
+import { ToastProvider } from './components/ui/Toast';
 
 export const App: React.FC = () => {
   return (
@@ -15,8 +15,9 @@ export const App: React.FC = () => {
         <AuthProvider>
           <SocketProvider>
             <ConfirmProvider>
-
-              <AppRouter />
+              <ToastProvider>
+                <AppRouter />
+              </ToastProvider>
             </ConfirmProvider>
           </SocketProvider>
         </AuthProvider>

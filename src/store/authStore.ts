@@ -1,7 +1,5 @@
 import { create } from 'zustand';
-import Cookies from 'js-cookie';
-
-import { getRefreshToken } from '../utils/cookies';
+import { getRefreshToken, setRefreshToken, removeRefreshToken } from '../utils/cookies';
 
 export interface UserProfile {
   id: string;
@@ -40,12 +38,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   setUser: (user) => set({ user }),
 
   login: (user, accessToken, refreshToken) => {
-    // Set refreshToken cookie: secure, same-site strict, expires in 7 days
-    Cookies.set('refreshToken', refreshToken, {
-      secure: true,
-      sameSite: 'strict',
-      expires: 7,
-    });
+    setRefreshToken(refreshToken);
     set({
       user,
       accessToken,
@@ -57,7 +50,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: () => {
-    Cookies.remove('refreshToken');
+    removeRefreshToken();
     set({
       user: null,
       accessToken: null,
