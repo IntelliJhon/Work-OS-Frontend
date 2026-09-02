@@ -29,6 +29,7 @@ const AcceptInvite = lazy(() => import('../../pages/auth/AcceptInvite'));
 const TasksPage = lazy(() => import('../../pages/tasks/TasksPage').then(m => ({ default: m.TasksPage })));
 const ManagementReviewView = lazy(() => import('../../pages/management/ManagementReviewView'));
 const ClientsList = lazy(() => import('../../pages/clients/ClientsList'));
+const EmployeesPage = lazy(() => import('../../pages/employees/EmployeesPage'));
 
 import { PERMISSIONS } from '../../features/auth/permission.constants';
 
@@ -90,6 +91,7 @@ export const AppRouter: React.FC = () => {
 
               <Route path="/notifications" element={<NotificationCenter />} />
               <Route path="/clients" element={<ClientsList />} />
+              <Route path="/employees" element={<EmployeesPage />} />
 
               {/* Management Review & Admin OPL */}
               <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.WORKSPACE_MEMBERS_READ]} />}>
