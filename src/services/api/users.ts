@@ -34,7 +34,7 @@ export const usersApi = {
   },
 
   update: async (id: string, updates: { roleId?: string; firstName?: string; lastName?: string }): Promise<User> => {
-    const { data } = await apiClient.put<User>(`/users/${id}`, updates);
+    const { data } = await apiClient.patch<User>(`/users/${id}`, updates);
     return data;
   },
 
