@@ -25,4 +25,8 @@ export const complaintsApi = {
     const { data } = await apiClient.get<{ success: boolean; complaints: Complaint[] }>('/complaints');
     return data.complaints || [];
   },
+
+  sendAlert: async (payload: Partial<Complaint>): Promise<void> => {
+    await apiClient.post('/complaints/send-whatsapp-alert', payload);
+  },
 };

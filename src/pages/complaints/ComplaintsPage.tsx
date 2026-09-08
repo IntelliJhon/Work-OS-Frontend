@@ -145,6 +145,18 @@ export const ComplaintsPage: React.FC = () => {
     setShowAddModal(false);
     showToast(`New ${prefix} complaint #${newEntry.ticketId} created!`);
 
+    // Dispatch WhatsApp template alert for new UI complaint
+    void complaintsApi.sendAlert({
+      ticketId: newEntry.ticketId,
+      channel: newEntry.channel,
+      complainantName: newEntry.complainantName,
+      complainantPhone: newEntry.complainantPhone,
+      company: newEntry.company,
+      description: newEntry.description,
+      category: newEntry.category,
+      imageUrl: newEntry.imageUrl,
+    });
+
     // Reset form
     setNewSubject('');
     setNewComplainantName('');
