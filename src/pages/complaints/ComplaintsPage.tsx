@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { complaintsApi } from '../../services/api/complaints';
 import type { Complaint } from '../../services/api/complaints';
+import { useSocket } from '../../services/socket/socket-context';
 import {
   MessageSquareWarning,
   MessageSquare,
@@ -24,10 +25,11 @@ import {
 } from 'lucide-react';
 
 export const ComplaintsPage: React.FC = () => {
+  const { socket } = useSocket();
   const [activeTab, setActiveTab] = useState<'waau' | 'direct-sms'>('waau');
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  
+
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -52,25 +54,52 @@ export const ComplaintsPage: React.FC = () => {
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
+    setTimeout(() => setToastMessage(null), 4000);
   };
 
-  const loadComplaints = async () => {
-    setIsLoading(true);
+  const loadComplaints = async (showLoadingSpinner = false) => {
+    if (showLoadingSpinner) setIsLoading(true);
     try {
       const data = await complaintsApi.list();
       setComplaints(data);
     } catch (err) {
       console.error('[ComplaintsPage] Failed to fetch complaints from backend API', err);
-      showToast('Failed to load complaints from backend.');
+      if (showLoadingSpinner) showToast('Failed to load complaints from backend.');
     } finally {
-      setIsLoading(false);
+      if (showLoadingSpinner) setIsLoading(false);
     }
   };
 
+  // Initial load & continuous silent 10s background polling
   useEffect(() => {
-    void loadComplaints();
+    void loadComplaints(true);
+
+    const intervalId = setInterval(() => {
+      void loadComplaints(false);
+    }, 10000);
+
+    return () => clearInterval(intervalId);
   }, []);
+
+  // Listen for real-time Socket.IO complaint events
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleRealtimeNewComplaint = (data: any) => {
+      console.log('[ComplaintsPage] Socket event received - reloading complaints live', data);
+      void loadComplaints(false);
+      const ticketId = data?.ticketId || 'New Ticket';
+      showToast(`🔔 Live Complaint Auto-Fetched: #${ticketId}`);
+    };
+
+    socket.on('complaint_new', handleRealtimeNewComplaint);
+    socket.on('complaints_updated', handleRealtimeNewComplaint);
+
+    return () => {
+      socket.off('complaint_new', handleRealtimeNewComplaint);
+      socket.off('complaints_updated', handleRealtimeNewComplaint);
+    };
+  }, [socket]);
 
   // Filter complaints by current tab & filters
   const currentTabComplaints = useMemo(() => {
