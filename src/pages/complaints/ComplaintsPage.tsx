@@ -13,8 +13,6 @@ import {
   FileText,
   User,
   Phone,
-  Mail,
-  Calendar,
   X,
   Eye,
   Sparkles,
@@ -155,6 +153,8 @@ export const ComplaintsPage: React.FC = () => {
     setNewCompany('');
     setNewImageUrl('');
     setNewDescription('');
+    setNewCategory('Technical');
+    setNewPriority('medium');
   };
 
   const getPriorityBadge = (priority: Complaint['priority']) => {
@@ -702,6 +702,41 @@ export const ComplaintsPage: React.FC = () => {
                     />
                   </div>
                 )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+                    Category
+                  </label>
+                  <select
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value as Complaint['category'])}
+                    className="w-full bg-slate-50 dark:bg-zinc-900 border border-border rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500/50 cursor-pointer"
+                  >
+                    <option value="Technical">Technical</option>
+                    <option value="Billing">Billing</option>
+                    <option value="Service Quality">Service Quality</option>
+                    <option value="Account">Account</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+                    Priority Level
+                  </label>
+                  <select
+                    value={newPriority}
+                    onChange={(e) => setNewPriority(e.target.value as Complaint['priority'])}
+                    className="w-full bg-slate-50 dark:bg-zinc-900 border border-border rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500/50 cursor-pointer"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
               </div>
 
               <div>
