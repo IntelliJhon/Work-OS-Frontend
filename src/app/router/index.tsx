@@ -30,6 +30,7 @@ const TasksPage = lazy(() => import('../../pages/tasks/TasksPage').then(m => ({ 
 const ManagementReviewView = lazy(() => import('../../pages/management/ManagementReviewView'));
 const ClientsList = lazy(() => import('../../pages/clients/ClientsList'));
 const EmployeesPage = lazy(() => import('../../pages/employees/EmployeesPage'));
+const ComplaintsPage = lazy(() => import('../../pages/complaints/ComplaintsPage'));
 
 import { PERMISSIONS } from '../../features/auth/permission.constants';
 
@@ -92,6 +93,7 @@ export const AppRouter: React.FC = () => {
               <Route path="/notifications" element={<NotificationCenter />} />
               <Route path="/clients" element={<ClientsList />} />
               <Route path="/employees" element={<EmployeesPage />} />
+              <Route path="/complaints" element={<ComplaintsPage />} />
 
               {/* Management Review & Admin OPL */}
               <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.WORKSPACE_MEMBERS_READ]} />}>

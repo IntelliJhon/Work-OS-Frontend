@@ -34,7 +34,8 @@ import {
   Sun,
   ShieldAlert,
   Users,
-  UserCheck
+  UserCheck,
+  MessageSquareWarning
 } from 'lucide-react';
 
 export const DashboardLayout: React.FC = () => {
@@ -191,6 +192,7 @@ export const DashboardLayout: React.FC = () => {
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Projects', path: '/projects', icon: FolderKanban },
     { name: 'Employees', path: '/employees', icon: UserCheck },
+    { name: 'Complaints', path: '/complaints', icon: MessageSquareWarning },
     { name: 'Clients', path: '/clients', icon: Users },
     { name: 'Management Review', path: '/dashboard/management-review', icon: ShieldAlert, permission: PERMISSIONS.WORKSPACE_MEMBERS_READ },
     { name: 'Alerts Center', path: '/notifications', icon: Bell },
