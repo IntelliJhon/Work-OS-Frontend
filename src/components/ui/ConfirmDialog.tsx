@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, Trash2, CheckCircle, X } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -96,17 +97,17 @@ const ConfirmDialogUI: React.FC<{
     setTimeout(() => { state.resolve(false); onClose(); }, 200);
   };
 
-  return (
+  return createPortal(
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-[9998] bg-black/40 backdrop-blur-[2px] transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0'}`}
+        className={`fixed inset-0 z-[100000] bg-black/50 backdrop-blur-[2px] transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0'}`}
         onClick={handleCancel}
       />
 
       {/* Dialog */}
       <div
-        className={`fixed z-[9999] inset-0 flex items-center justify-center p-4 pointer-events-none`}
+        className={`fixed z-[100001] inset-0 flex items-center justify-center p-4 pointer-events-none`}
       >
         <div
           className={`
@@ -166,7 +167,8 @@ const ConfirmDialogUI: React.FC<{
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 };
 

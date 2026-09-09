@@ -1,9 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { usersApi, type User } from '../../services/api/users';
 import { tasksApi, type Task } from '../../services/api/tasks.api';
 import { projectsApi, type Project } from '../../services/api/projects';
+import { workReportsApi, type WorkReport } from '../../services/api/work-reports.api';
+import { useAuthStore } from '../../store/authStore';
+import { useConfirm } from '../../components/ui/ConfirmDialog';
+import { useToast } from '../../components/ui/Toast';
 import {
   Users,
   Search,
@@ -22,16 +26,36 @@ import {
   LayoutGrid,
   Table as TableIcon,
   ChevronRight,
-  AlertTriangle
+  AlertTriangle,
+  FileText,
+  Plus,
+  Edit2,
+  Trash2,
+  Upload,
+  Paperclip,
+  ExternalLink,
+  Loader2,
+  User as UserIcon,
+  Check
 } from 'lucide-react';
 
 type TaskStatusCategory = 'all' | 'done' | 'in_progress' | 'in_review' | 'to_do';
+
+function formatFileSize(bytesStr?: string | number): string {
+  const bytes = typeof bytesStr === 'string' ? parseInt(bytesStr, 10) : bytesStr;
+  if (!bytes || isNaN(bytes) || bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
 
 export const EmployeesPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
+  const [workReportEmployee, setWorkReportEmployee] = useState<User | null>(null);
 
   // 1. Fetch Users (Employees)
   const {
@@ -433,10 +457,24 @@ export const EmployeesPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Footer Action */}
-                <div className="pt-2 flex items-center justify-between text-xs font-bold text-indigo-600 dark:text-indigo-400 group-hover:translate-x-0.5 transition-transform">
-                  <span>View Task Distribution</span>
-                  <ChevronRight className="w-4 h-4" />
+                {/* Footer Actions: View Task Distribution (Left) & Work Report (Right) */}
+                <div className="pt-2.5 border-t border-slate-100 dark:border-zinc-900 flex items-center justify-between gap-2">
+                  <div className="flex items-center space-x-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 group-hover:translate-x-0.5 transition-transform">
+                    <span>View Task Distribution</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setWorkReportEmployee(emp);
+                    }}
+                    className="px-2.5 py-1 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/50 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/50 text-xs font-bold transition flex items-center space-x-1 cursor-pointer shrink-0 shadow-2xs"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                    <span>Work Report</span>
+                  </button>
                 </div>
               </div>
             );
@@ -445,7 +483,7 @@ export const EmployeesPage: React.FC = () => {
       ) : (
         /* ── TABLE VIEW ── */
         <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-background/25">
-          <table className="w-full text-left border-collapse min-w-[900px]">
+          <table className="w-full text-left border-collapse min-w-[950px]">
             <thead>
               <tr className="border-b border-slate-200 dark:border-zinc-850 bg-slate-50/70 dark:bg-zinc-900/50">
                 <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">Employee</th>
@@ -456,7 +494,7 @@ export const EmployeesPage: React.FC = () => {
                 <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-center">In Review</th>
                 <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-center">To Do</th>
                 <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-center">Total</th>
-                <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-right">Action</th>
+                <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-150 dark:divide-zinc-850">
@@ -528,17 +566,31 @@ export const EmployeesPage: React.FC = () => {
                     </td>
 
                     <td className="px-4 py-3.5 align-middle text-right">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedEmployee(emp);
-                        }}
-                        className="px-2.5 py-1 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-300 text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer"
-                      >
-                        <span>View Tasks</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center justify-end space-x-1.5">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedEmployee(emp);
+                          }}
+                          className="px-2.5 py-1 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-300 text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>Tasks</span>
+                          <ChevronRight className="w-3 h-3" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setWorkReportEmployee(emp);
+                          }}
+                          className="px-2.5 py-1 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/50 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/50 text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer shrink-0"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                          <span>Work Report</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -559,7 +611,541 @@ export const EmployeesPage: React.FC = () => {
           onClose={() => setSelectedEmployee(null)}
         />
       )}
+
+      {/* ────────────────────────────────────────────────────────── */}
+      {/* ── EMPLOYEE WORK REPORT MODAL ──────────────────────────── */}
+      {/* ────────────────────────────────────────────────────────── */}
+      {workReportEmployee && (
+        <WorkReportModal
+          employee={workReportEmployee}
+          onClose={() => setWorkReportEmployee(null)}
+        />
+      )}
     </div>
+  );
+};
+
+// ── Contextual Employee Work Report Modal ──
+interface WorkReportModalProps {
+  employee: User;
+  onClose: () => void;
+}
+
+const WorkReportModal: React.FC<WorkReportModalProps> = ({ employee, onClose }) => {
+  const { user } = useAuthStore();
+  const confirm = useConfirm();
+  const { toast } = useToast();
+
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingReport, setEditingReport] = useState<WorkReport | null>(null);
+
+  // Form State
+  const [title, setTitle] = useState('');
+  const [reportText, setReportText] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [documentUrl, setDocumentUrl] = useState('');
+  const [activeTab, setActiveTab] = useState<'upload' | 'link'>('upload');
+  const [errorMessage, setErrorMessage] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fullName = `${employee.firstName || ''} ${employee.lastName || ''}`.trim() || employee.email.split('@')[0];
+
+  // Role & Ownership check
+  const isUserAdmin = useMemo(() => {
+    if (!user) return false;
+    const role = (user.roleName || user.role || '').toLowerCase();
+    return role.includes('admin') || role === 'superadmin' || role === 'tenant admin';
+  }, [user]);
+
+  const canEditReport = (report: WorkReport) => {
+    if (isUserAdmin) return true;
+    const currentUserId = user?.id;
+    const currentUserEmail = user?.email?.toLowerCase();
+    if (currentUserId && (currentUserId === report.authorId || currentUserId === report.employeeId)) return true;
+    if (currentUserEmail && (currentUserEmail === report.authorEmail?.toLowerCase() || currentUserEmail === report.employeeId?.toLowerCase())) return true;
+    return false;
+  };
+
+  // Fetch Work Reports for target employee
+  const { data: reports = [], isLoading, refetch } = useQuery({
+    queryKey: ['work-reports', employee.id],
+    queryFn: () => workReportsApi.listByEmployee(employee.id),
+  });
+
+  // Create / Update Mutation
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('employeeId', employee.id);
+        if (title) formData.append('title', title);
+        formData.append('reportText', reportText);
+        formData.append('file', selectedFile);
+
+        if (editingReport) {
+          return workReportsApi.update(editingReport.id, formData);
+        } else {
+          return workReportsApi.create(formData);
+        }
+      } else {
+        const payload = {
+          employeeId: employee.id,
+          title: title.trim() || undefined,
+          reportText: reportText.trim(),
+          documentUrl: documentUrl.trim() || undefined,
+          documentName: documentUrl.trim() ? (documentUrl.split('/').pop() || 'attached_document') : undefined,
+        };
+
+        if (editingReport) {
+          return workReportsApi.update(editingReport.id, payload);
+        } else {
+          return workReportsApi.create(payload);
+        }
+      }
+    },
+    onSuccess: () => {
+      toast.success(editingReport ? 'Work report updated successfully.' : 'Work report submitted successfully.');
+      resetForm();
+      refetch();
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.error || err?.message || 'Failed to save work report';
+      setErrorMessage(msg);
+      toast.error(msg);
+    },
+  });
+
+  // Delete Mutation
+  const deleteMutation = useMutation({
+    mutationFn: (reportId: string) => workReportsApi.delete(reportId),
+    onSuccess: () => {
+      toast.success('Work report deleted.');
+      refetch();
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error || err?.message || 'Failed to delete work report');
+    },
+  });
+
+  const handleDelete = async (report: WorkReport) => {
+    if (!canEditReport(report)) {
+      toast.error('Permission denied: You can only delete your own work reports.');
+      return;
+    }
+
+    const ok = await confirm({
+      title: 'Delete Work Report',
+      message: 'Are you sure you want to delete this work report? This action cannot be undone.',
+      confirmLabel: 'Delete Report',
+      variant: 'danger',
+    });
+
+    if (ok) {
+      deleteMutation.mutate(report.id);
+    }
+  };
+
+  const handleStartEdit = (report: WorkReport) => {
+    if (!canEditReport(report)) {
+      toast.error('Permission denied: You can only edit your own work reports.');
+      return;
+    }
+    setEditingReport(report);
+    setTitle(report.title || '');
+    setReportText(report.reportText || '');
+    setDocumentUrl(report.documentUrl || '');
+    setSelectedFile(null);
+    setShowAddForm(true);
+  };
+
+  const resetForm = () => {
+    setShowAddForm(false);
+    setEditingReport(null);
+    setTitle('');
+    setReportText('');
+    setSelectedFile(null);
+    setDocumentUrl('');
+    setErrorMessage('');
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reportText.trim()) {
+      setErrorMessage('Work report text content is required.');
+      return;
+    }
+    saveMutation.mutate();
+  };
+
+  return createPortal(
+    <>
+      {/* Backdrop */}
+      <div className="fixed inset-0 z-[9998] bg-slate-950/50 backdrop-blur-[2px] transition-opacity" onClick={onClose} />
+
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto">
+        <div className="relative w-full max-w-5xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] my-auto animate-scale-in">
+          {/* Header */}
+          <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-zinc-900/80 shrink-0">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold text-sm flex items-center justify-center border border-purple-500/20 shrink-0">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <span>Work Reports</span>
+                  <span className="px-2 py-0.2 rounded-full text-[10px] font-black bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60">
+                    {reports.length}
+                  </span>
+                </h3>
+                <p className="text-[11px] text-muted-foreground font-light flex items-center gap-1.5 mt-0.5">
+                  <span>Employee:</span>
+                  <span className="font-semibold text-slate-800 dark:text-zinc-200">{fullName}</span>
+                  <span>({employee.email})</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              {!showAddForm && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetForm();
+                    setShowAddForm(true);
+                  }}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition shadow-sm cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Work Report</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Body Content */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* ADD / EDIT FORM CONTAINER */}
+            {showAddForm && (
+              <form onSubmit={handleSubmit} className="p-4 rounded-2xl bg-purple-50/40 dark:bg-purple-950/10 border border-purple-200 dark:border-purple-900/40 space-y-4 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-purple-900 dark:text-purple-300 flex items-center gap-1.5 uppercase tracking-wider">
+                    {editingReport ? <Edit2 className="w-3.5 h-3.5 text-purple-600" /> : <Plus className="w-3.5 h-3.5 text-purple-600" />}
+                    <span>{editingReport ? 'Edit Work Report' : 'New Work Report Entry'}</span>
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-zinc-400 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+
+                {errorMessage && (
+                  <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 text-xs text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
+
+                {/* Report Title */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-800 dark:text-zinc-200">
+                    Report Title / Summary (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Weekly Accomplishments & Project Status Report"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-purple-500 font-medium"
+                  />
+                </div>
+
+                {/* Long Text Report */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-800 dark:text-zinc-200">
+                    Work Report Details *
+                  </label>
+                  <textarea
+                    required
+                    rows={6}
+                    placeholder="Enter full work report details, completed tasks, milestones reached, challenges faced..."
+                    value={reportText}
+                    onChange={(e) => setReportText(e.target.value)}
+                    className="w-full p-3 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-purple-500 font-medium resize-y min-h-[120px]"
+                  />
+                </div>
+
+                {/* Document Attachment Section */}
+                <div className="space-y-2 pt-2 border-t border-purple-200/60 dark:border-purple-900/30">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-800 dark:text-zinc-200 flex items-center gap-1.5">
+                      <Paperclip className="w-3.5 h-3.5 text-purple-600" />
+                      <span>Attach Document (Optional)</span>
+                    </label>
+
+                    {/* Mode Toggle */}
+                    <div className="flex items-center p-0.5 rounded-lg bg-slate-200/80 dark:bg-zinc-800 text-[10px] font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('upload')}
+                        className={`px-2 py-0.5 rounded-md transition cursor-pointer ${
+                          activeTab === 'upload'
+                            ? 'bg-white dark:bg-zinc-950 text-purple-600 dark:text-purple-400 shadow-sm'
+                            : 'text-slate-500 dark:text-zinc-400'
+                        }`}
+                      >
+                        Upload File
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('link')}
+                        className={`px-2 py-0.5 rounded-md transition cursor-pointer ${
+                          activeTab === 'link'
+                            ? 'bg-white dark:bg-zinc-950 text-purple-600 dark:text-purple-400 shadow-sm'
+                            : 'text-slate-500 dark:text-zinc-400'
+                        }`}
+                      >
+                        URL Link
+                      </button>
+                    </div>
+                  </div>
+
+                  {activeTab === 'upload' ? (
+                    <div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            setSelectedFile(e.target.files[0]);
+                          }
+                        }}
+                        className="hidden"
+                      />
+                      {selectedFile ? (
+                        <div className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs">
+                          <div className="flex items-center space-x-2 truncate max-w-[80%]">
+                            <Paperclip className="w-4 h-4 text-purple-500 shrink-0" />
+                            <span className="font-semibold text-slate-800 dark:text-zinc-200 truncate">{selectedFile.name}</span>
+                            <span className="text-[10px] text-slate-400">({formatFileSize(selectedFile.size)})</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedFile(null)}
+                            className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="w-full py-2.5 px-3 rounded-xl border border-dashed border-purple-300 dark:border-purple-800/60 bg-white dark:bg-zinc-900 hover:bg-purple-50/50 text-xs font-semibold text-purple-700 dark:text-purple-300 flex items-center justify-center space-x-2 cursor-pointer transition"
+                        >
+                          <Upload className="w-4 h-4" />
+                          <span>Choose Document (PDF, Word, Images, Excel up to 25MB)</span>
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <input
+                      type="url"
+                      placeholder="https://drive.google.com/... or document URL"
+                      value={documentUrl}
+                      onChange={(e) => setDocumentUrl(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-purple-500 font-medium"
+                    />
+                  )}
+                </div>
+
+                <div className="flex items-center justify-end space-x-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-zinc-800 text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:bg-slate-200 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saveMutation.isPending}
+                    className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md transition flex items-center space-x-1.5 disabled:opacity-50 cursor-pointer"
+                  >
+                    {saveMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Check className="w-4 h-4" />
+                    )}
+                    <span>{editingReport ? 'Update Report' : 'Submit Report'}</span>
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* LIST OF WORK REPORTS */}
+            {isLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-28 rounded-2xl bg-slate-100/60 dark:bg-white/5 animate-pulse border border-slate-100 dark:border-zinc-850" />
+                ))}
+              </div>
+            ) : reports.length === 0 ? (
+              <div className="text-center py-12 border border-dashed border-slate-250 dark:border-zinc-800 rounded-3xl space-y-3 bg-slate-50/30 dark:bg-zinc-900/10">
+                <FileText className="w-10 h-10 mx-auto text-slate-350 dark:text-zinc-650" />
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-slate-800 dark:text-zinc-200">No Work Reports Logged</h4>
+                  <p className="text-xs text-muted-foreground font-light max-w-xs mx-auto">
+                    No work reports have been submitted for {fullName} yet.
+                  </p>
+                </div>
+                {!showAddForm && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAddForm(true)}
+                    className="mt-1 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition shadow-sm cursor-pointer inline-flex items-center space-x-1.5"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Create First Work Report</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {reports.map((report) => {
+                  const canEdit = canEditReport(report);
+                  const createdDate = new Date(report.createdAt).toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                  });
+                  const createdTime = new Date(report.createdAt).toLocaleTimeString(undefined, {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  });
+                  const updatedTimeStr = report.updatedAt && report.updatedAt !== report.createdAt
+                    ? new Date(report.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                    : null;
+
+                  return (
+                    <div
+                      key={report.id}
+                      className="glass-panel rounded-2xl p-4 border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-950/60 space-y-3 transition-all hover:border-purple-300 dark:hover:border-purple-800/60"
+                    >
+                      {/* Report Card Header */}
+                      <div className="flex items-start justify-between gap-3 border-b border-slate-150 dark:border-zinc-850 pb-2.5">
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-zinc-100">
+                            {report.title || 'Work Report Submission'}
+                          </h4>
+                          <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground mt-1">
+                            <span className="flex items-center gap-1 font-medium text-slate-700 dark:text-zinc-300">
+                              <UserIcon className="w-3 h-3 text-purple-500" />
+                              <span>By {report.authorName || report.authorEmail || 'Employee'}</span>
+                            </span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1 font-mono font-semibold text-slate-600 dark:text-zinc-400">
+                              <Calendar className="w-3 h-3 text-slate-400" />
+                              <span>{createdDate} at {createdTime}</span>
+                            </span>
+                            {updatedTimeStr && (
+                              <span className="text-[9px] text-purple-600 dark:text-purple-400 font-semibold italic">
+                                (Edited: {updatedTimeStr})
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Actions (Edit / Delete) */}
+                        <div className="flex items-center space-x-1.5 shrink-0">
+                          {canEdit ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleStartEdit(report)}
+                                className="px-2 py-1 rounded-lg text-slate-500 hover:text-purple-600 dark:text-zinc-400 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition text-xs font-bold flex items-center gap-1 cursor-pointer"
+                                title="Edit Work Report"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                                <span>Edit</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(report)}
+                                className="p-1 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition cursor-pointer"
+                                title="Delete Work Report"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 font-semibold italic bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
+                              Read only
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Long Text Report Body */}
+                      <div className="text-xs text-slate-800 dark:text-zinc-200 leading-relaxed font-light whitespace-pre-wrap bg-slate-50/70 dark:bg-zinc-900/40 p-3 rounded-xl border border-slate-100 dark:border-zinc-850">
+                        {report.reportText}
+                      </div>
+
+                      {/* Document Attachment Preview / Link */}
+                      {report.documentUrl && (
+                        <div className="flex items-center justify-between p-2.5 rounded-xl bg-purple-50/60 dark:bg-purple-950/20 border border-purple-200/50 dark:border-purple-900/30 text-xs">
+                          <div className="flex items-center space-x-2 truncate max-w-[75%]">
+                            <Paperclip className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                            <span className="font-bold text-purple-900 dark:text-purple-300 truncate font-mono text-[11px]">
+                              {report.documentName || 'Attached Document'}
+                            </span>
+                          </div>
+                          <a
+                            href={report.documentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-bold flex items-center gap-1 transition shadow-2xs"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            <span>View Document</span>
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Modal Footer */}
+          <div className="p-4 border-t border-slate-200 dark:border-zinc-800 bg-slate-50/90 dark:bg-zinc-900/90 flex items-center justify-between shrink-0">
+            <span className="text-xs text-muted-foreground font-medium">
+              Work reports for {fullName}
+            </span>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-1.5 rounded-xl bg-slate-200 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-xs font-bold text-slate-900 dark:text-white transition cursor-pointer"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    </>,
+    document.body
   );
 };
 
@@ -607,246 +1193,221 @@ const EmployeeTaskModal: React.FC<EmployeeTaskModalProps> = ({
     });
   }, [allTasks, employee.id, emailLower, nameLower]);
 
-  // Counts by status
+  // Status Counts
   const doneTasks = useMemo(() => employeeTasks.filter((t) => getTaskCategory(t.status) === 'done'), [employeeTasks]);
   const inProgressTasks = useMemo(() => employeeTasks.filter((t) => getTaskCategory(t.status) === 'in_progress'), [employeeTasks]);
   const inReviewTasks = useMemo(() => employeeTasks.filter((t) => getTaskCategory(t.status) === 'in_review'), [employeeTasks]);
   const toDoTasks = useMemo(() => employeeTasks.filter((t) => getTaskCategory(t.status) === 'to_do'), [employeeTasks]);
 
-  // Filtered tasks for current tab & search query
-  const displayedTasks = useMemo(() => {
-    let list = employeeTasks;
+  // Tab filtered tasks
+  const tabFilteredTasks = useMemo(() => {
+    switch (activeTab) {
+      case 'done': return doneTasks;
+      case 'in_progress': return inProgressTasks;
+      case 'in_review': return inReviewTasks;
+      case 'to_do': return toDoTasks;
+      default: return employeeTasks;
+    }
+  }, [activeTab, doneTasks, inProgressTasks, inReviewTasks, toDoTasks, employeeTasks]);
 
-    if (activeTab === 'done') list = doneTasks;
-    else if (activeTab === 'in_progress') list = inProgressTasks;
-    else if (activeTab === 'in_review') list = inReviewTasks;
-    else if (activeTab === 'to_do') list = toDoTasks;
-
-    if (!taskSearch.trim()) return list;
-
+  // Final search filtered tasks
+  const filteredTasks = useMemo(() => {
+    if (!taskSearch.trim()) return tabFilteredTasks;
     const q = taskSearch.toLowerCase().trim();
-    return list.filter((t) => {
-      const name = (t.name || '').toLowerCase();
+    return tabFilteredTasks.filter((t) => {
+      const title = (t.title || '').toLowerCase();
       const desc = (t.description || '').toLowerCase();
-      const proj = (t.projectId ? projectMap.get(t.projectId) || '' : '').toLowerCase();
-      return name.includes(q) || desc.includes(q) || proj.includes(q);
+      const pName = (t.projectId ? projectMap.get(t.projectId) || '' : '').toLowerCase();
+      return title.includes(q) || desc.includes(q) || pName.includes(q);
     });
-  }, [employeeTasks, doneTasks, inProgressTasks, inReviewTasks, toDoTasks, activeTab, taskSearch, projectMap]);
+  }, [tabFilteredTasks, taskSearch, projectMap]);
 
   return createPortal(
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-[9998] bg-slate-950/60 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 z-[9998] bg-slate-950/50 backdrop-blur-[2px] transition-opacity" onClick={onClose} />
 
-      {/* Modal Dialog */}
+      {/* Modal Container */}
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto">
-        <div className="relative w-full max-w-3xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] my-auto animate-scale-in">
+        <div className="relative w-full max-w-4xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] my-auto animate-scale-in">
           {/* Modal Header */}
-          <div className="p-6 border-b border-slate-200 dark:border-zinc-800 bg-slate-50/90 dark:bg-zinc-900/90 shrink-0 space-y-4">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center space-x-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-black text-lg flex items-center justify-center shadow-lg shadow-indigo-500/20 shrink-0 uppercase">
-                  {fullName.charAt(0)}
-                </div>
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white">{fullName}</h3>
-                    {employee.roleName && (
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                        {employee.roleName}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                    <Mail className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{employee.email}</span>
-                  </p>
-                </div>
+          <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-zinc-900/80 shrink-0">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-black text-sm flex items-center justify-center shadow-md shrink-0 uppercase">
+                {fullName.charAt(0)}
               </div>
-
-              <button
-                type="button"
-                onClick={onClose}
-                className="p-1.5 rounded-lg bg-slate-200/70 hover:bg-slate-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <span>{fullName}</span>
+                  {employee.roleName && (
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60">
+                      {employee.roleName}
+                    </span>
+                  )}
+                </h3>
+                <p className="text-[11px] text-muted-foreground font-light flex items-center gap-1 mt-0.5">
+                  <Mail className="w-3 h-3 text-slate-400" />
+                  <span>{employee.email}</span>
+                </p>
+              </div>
             </div>
 
-            {/* Quick Stat Pill Highlights */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setActiveTab('all')}
-                className={`p-2 rounded-xl border text-left transition cursor-pointer ${
-                  activeTab === 'all'
-                    ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-300 dark:border-indigo-700'
-                    : 'bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 hover:border-slate-300'
-                }`}
-              >
-                <p className="text-[9px] font-black uppercase text-slate-400">Total Tasks</p>
-                <p className="text-sm font-extrabold text-slate-900 dark:text-white mt-0.5">{employeeTasks.length}</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('done')}
-                className={`p-2 rounded-xl border text-left transition cursor-pointer ${
-                  activeTab === 'done'
-                    ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-700'
-                    : 'bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 hover:border-slate-300'
-                }`}
-              >
-                <p className="text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 className="w-2.5 h-2.5" />
-                  <span>Done</span>
-                </p>
-                <p className="text-sm font-extrabold text-emerald-700 dark:text-emerald-300 mt-0.5">{doneTasks.length}</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('in_progress')}
-                className={`p-2 rounded-xl border text-left transition cursor-pointer ${
-                  activeTab === 'in_progress'
-                    ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-300 dark:border-blue-700'
-                    : 'bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 hover:border-slate-300'
-                }`}
-              >
-                <p className="text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 flex items-center gap-1">
-                  <Clock className="w-2.5 h-2.5" />
-                  <span>In Progress</span>
-                </p>
-                <p className="text-sm font-extrabold text-blue-700 dark:text-blue-300 mt-0.5">{inProgressTasks.length}</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('in_review')}
-                className={`p-2 rounded-xl border text-left transition cursor-pointer ${
-                  activeTab === 'in_review'
-                    ? 'bg-purple-50 dark:bg-purple-950/60 border-purple-300 dark:border-purple-700'
-                    : 'bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 hover:border-slate-300'
-                }`}
-              >
-                <p className="text-[9px] font-black uppercase text-purple-600 dark:text-purple-400 flex items-center gap-1">
-                  <Sparkles className="w-2.5 h-2.5" />
-                  <span>In Review</span>
-                </p>
-                <p className="text-sm font-extrabold text-purple-700 dark:text-purple-300 mt-0.5">{inReviewTasks.length}</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('to_do')}
-                className={`p-2 rounded-xl border text-left transition cursor-pointer ${
-                  activeTab === 'to_do'
-                    ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-700'
-                    : 'bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 hover:border-slate-300'
-                }`}
-              >
-                <p className="text-[9px] font-black uppercase text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                  <AlertCircle className="w-2.5 h-2.5" />
-                  <span>To Do</span>
-                </p>
-                <p className="text-sm font-extrabold text-amber-700 dark:text-amber-300 mt-0.5">{toDoTasks.length}</p>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
-          {/* Modal Filter / Search Bar */}
-          <div className="p-4 border-b border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="relative w-full sm:w-72">
+          {/* Filter Tabs Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 shrink-0">
+            <div className="flex items-center space-x-1.5 overflow-x-auto">
+              <button
+                onClick={() => setActiveTab('all')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                  activeTab === 'all'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800'
+                }`}
+              >
+                All ({employeeTasks.length})
+              </button>
+
+              <button
+                onClick={() => setActiveTab('done')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                  activeTab === 'done'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800'
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Done ({doneTasks.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('in_progress')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                  activeTab === 'in_progress'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5 text-blue-400" />
+                <span>Active ({inProgressTasks.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('in_review')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                  activeTab === 'in_review'
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                <span>Review ({inReviewTasks.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('to_do')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                  activeTab === 'to_do'
+                    ? 'bg-amber-500 text-white shadow-sm'
+                    : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800'
+                }`}
+              >
+                <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+                <span>To Do ({toDoTasks.length})</span>
+              </button>
+            </div>
+
+            {/* Task Search Input */}
+            <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search assigned tasks..."
+                placeholder="Search tasks or project..."
                 value={taskSearch}
                 onChange={(e) => setTaskSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-indigo-500 font-medium"
+                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-indigo-500 font-medium"
               />
-            </div>
-
-            <div className="text-[11px] text-muted-foreground font-semibold self-end sm:self-auto">
-              Showing {displayedTasks.length} task(s)
             </div>
           </div>
 
-          {/* Modal Tasks List Area */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-slate-50/50 dark:bg-zinc-900/20 max-h-[50vh]">
-            {displayedTasks.length === 0 ? (
-              <div className="text-center py-12 border border-dashed border-slate-200 dark:border-zinc-800 rounded-2xl space-y-2">
-                <CheckSquare className="w-8 h-8 mx-auto text-slate-350 dark:text-zinc-650" />
-                <p className="text-xs font-bold text-slate-700 dark:text-zinc-300">No tasks in this category</p>
-                <p className="text-[11px] text-muted-foreground">
-                  {taskSearch ? 'No tasks match your search filter.' : `This employee currently has no tasks in "${activeTab.replace('_', ' ')}".`}
+          {/* Task List Content */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
+            {filteredTasks.length === 0 ? (
+              <div className="text-center py-12 border border-dashed border-slate-250 dark:border-zinc-800 rounded-3xl space-y-2">
+                <CheckSquare className="w-10 h-10 mx-auto text-slate-350 dark:text-zinc-650" />
+                <h4 className="text-sm font-bold text-slate-800 dark:text-zinc-300">No Assigned Tasks</h4>
+                <p className="text-xs text-muted-foreground font-light max-w-xs mx-auto">
+                  {taskSearch ? 'No tasks match your search filter.' : `No ${activeTab !== 'all' ? activeTab.replace('_', ' ') : ''} tasks assigned to this employee.`}
                 </p>
               </div>
             ) : (
-              displayedTasks.map((t) => {
+              filteredTasks.map((t) => {
                 const category = getTaskCategory(t.status);
-                const projectName = t.projectId ? projectMap.get(t.projectId) || 'Workspace Project' : 'General Task';
+                const projectName = t.projectId ? projectMap.get(t.projectId) : undefined;
                 const subtasks = t.customFields?.subtasks || [];
-                const doneSubtasks = subtasks.filter((st) => st.done || st.status === 'done').length;
-                const priority = t.customFields?.priority || 'medium';
-
-                const statusBadgeStyle = {
-                  done: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
-                  in_progress: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800',
-                  in_review: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800',
-                  to_do: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800',
-                }[category];
-
-                const priorityBadgeStyle = {
-                  critical: 'text-rose-600 bg-rose-50 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900',
-                  high: 'text-orange-600 bg-orange-50 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-900',
-                  medium: 'text-indigo-600 bg-indigo-50 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-900',
-                  low: 'text-slate-600 bg-slate-100 border-slate-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700',
-                }[priority] || 'text-indigo-600 bg-indigo-50 border-indigo-200';
+                const doneSubtasks = subtasks.filter((s: any) => s.completed).length;
 
                 return (
                   <div
                     key={t.id}
-                    className="p-4 rounded-2xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition space-y-2.5"
+                    className="p-3.5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-950/60 hover:bg-slate-50 dark:hover:bg-zinc-900/50 transition-all space-y-2 group"
                   >
-                    {/* Task Title & Status Pill */}
                     <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-0.5 min-w-0">
+                      <div className="space-y-1">
                         <div className="flex items-center space-x-2">
-                          <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1">
-                            <Briefcase className="w-3 h-3" />
-                            {projectName}
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${
+                            category === 'done'
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50'
+                              : category === 'in_progress'
+                              ? 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50'
+                              : category === 'in_review'
+                              ? 'bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-900/50'
+                              : 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50'
+                          }`}>
+                            {t.status.replace('_', ' ')}
                           </span>
+
+                          {projectName && (
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 flex items-center gap-1 bg-slate-100 dark:bg-zinc-850 px-2 py-0.5 rounded-md">
+                              <Briefcase className="w-2.5 h-2.5 text-indigo-500" />
+                              <span>{projectName}</span>
+                            </span>
+                          )}
                         </div>
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-zinc-100 leading-snug">
-                          {t.name}
+
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                          {t.title}
                         </h4>
                       </div>
 
-                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border shrink-0 ${statusBadgeStyle}`}>
-                        {t.status ? t.status.replace('_', ' ') : category}
-                      </span>
+                      {t.priority && (
+                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase shrink-0 ${
+                          t.priority.toLowerCase() === 'high' || t.priority.toLowerCase() === 'urgent'
+                            ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-900'
+                            : t.priority.toLowerCase() === 'medium'
+                            ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-900'
+                            : 'bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400'
+                        }`}>
+                          {t.priority}
+                        </span>
+                      )}
                     </div>
 
-                    {/* Task Description snippet if available */}
                     {t.description && (
-                      <p className="text-[11px] text-slate-600 dark:text-zinc-400 line-clamp-2 leading-relaxed">
+                      <p className="text-[11px] text-slate-500 dark:text-zinc-400 line-clamp-2 font-light">
                         {t.description}
                       </p>
                     )}
 
-                    {/* Metadata Footer */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-zinc-900 text-[10px] text-slate-500 dark:text-zinc-400 font-medium">
+                    <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-zinc-500 pt-1 border-t border-slate-100 dark:border-zinc-900">
                       <div className="flex items-center space-x-3">
-                        {/* Priority Badge */}
-                        <span className={`px-2 py-0.2 rounded-md font-bold uppercase tracking-wider border ${priorityBadgeStyle}`}>
-                          {priority}
-                        </span>
-
-                        {/* Due Date / Date created */}
                         {t.customFields?.dueDate ? (
                           <span className="flex items-center gap-1 text-slate-700 dark:text-zinc-300 font-semibold">
                             <Calendar className="w-3 h-3 text-slate-400" />
@@ -859,7 +1420,6 @@ const EmployeeTaskModal: React.FC<EmployeeTaskModalProps> = ({
                           </span>
                         ) : null}
 
-                        {/* Subtasks Count */}
                         {subtasks.length > 0 && (
                           <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-zinc-300">
                             <Layers className="w-3 h-3 text-slate-400" />

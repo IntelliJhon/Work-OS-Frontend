@@ -61,7 +61,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       {children}
       {typeof document !== 'undefined' &&
         createPortal(
-          <div className="fixed bottom-5 right-5 z-[99999] flex flex-col space-y-2.5 max-w-sm w-full pointer-events-none p-2 sm:p-0">
+          <div className="fixed bottom-5 right-5 z-[100050] flex flex-col space-y-2.5 max-w-sm w-full pointer-events-none p-2 sm:p-0">
             {toasts.map((item) => (
               <ToastCard key={item.id} item={item} onDismiss={() => removeToast(item.id)} />
             ))}

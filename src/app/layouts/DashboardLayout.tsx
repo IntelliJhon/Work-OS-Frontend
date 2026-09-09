@@ -201,7 +201,7 @@ export const DashboardLayout: React.FC = () => {
   ];
 
   const filteredItems = navItems.filter((item) => {
-    if (item.name === 'Clients' && !isLeadsndealsTenant) {
+    if ((item.name === 'Clients' || item.name === 'Complaints') && !isLeadsndealsTenant) {
       return false;
     }
     if (item.permission) {
