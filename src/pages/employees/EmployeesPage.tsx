@@ -661,10 +661,19 @@ const WorkReportModal: React.FC<WorkReportModalProps> = ({ employee, onClose }) 
     if (isUserAdmin) return true;
     const currentUserId = user?.id;
     const currentUserEmail = user?.email?.toLowerCase();
-    if (currentUserId && (currentUserId === report.authorId || currentUserId === report.employeeId)) return true;
-    if (currentUserEmail && (currentUserEmail === report.authorEmail?.toLowerCase() || currentUserEmail === report.employeeId?.toLowerCase())) return true;
+    if (currentUserId && currentUserId === report.authorId) return true;
+    if (currentUserEmail && currentUserEmail === report.authorEmail?.toLowerCase()) return true;
     return false;
   };
+
+  const canCreateReport = useMemo(() => {
+    if (isUserAdmin) return true;
+    const currentUserId = user?.id;
+    const currentUserEmail = user?.email?.toLowerCase();
+    if (currentUserId && currentUserId === employee.id) return true;
+    if (currentUserEmail && currentUserEmail === employee.email?.toLowerCase()) return true;
+    return false;
+  }, [isUserAdmin, user, employee]);
 
   // Fetch Work Reports for target employee
   const { data: reports = [], isLoading, refetch } = useQuery({
@@ -770,6 +779,14 @@ const WorkReportModal: React.FC<WorkReportModalProps> = ({ employee, onClose }) 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editingReport && !canCreateReport) {
+      toast.error('Permission denied: You can only add work reports for your own profile.');
+      return;
+    }
+    if (editingReport && !canEditReport(editingReport)) {
+      toast.error('Permission denied: You can only edit your own work reports.');
+      return;
+    }
     if (!reportText.trim()) {
       setErrorMessage('Work report text content is required.');
       return;
@@ -806,7 +823,13 @@ const WorkReportModal: React.FC<WorkReportModalProps> = ({ employee, onClose }) 
             </div>
 
             <div className="flex items-center space-x-2">
-              {!showAddForm && (
+              {!canCreateReport && (
+                <span className="px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50 text-xs font-semibold">
+                  Read-Only View
+                </span>
+              )}
+
+              {canCreateReport && !showAddForm && (
                 <button
                   type="button"
                   onClick={() => {
@@ -1009,7 +1032,7 @@ const WorkReportModal: React.FC<WorkReportModalProps> = ({ employee, onClose }) 
                     No work reports have been submitted for {fullName} yet.
                   </p>
                 </div>
-                {!showAddForm && (
+                {canCreateReport && !showAddForm && (
                   <button
                     type="button"
                     onClick={() => setShowAddForm(true)}
@@ -1215,7 +1238,7 @@ const EmployeeTaskModal: React.FC<EmployeeTaskModalProps> = ({
     if (!taskSearch.trim()) return tabFilteredTasks;
     const q = taskSearch.toLowerCase().trim();
     return tabFilteredTasks.filter((t) => {
-      const title = (t.title || '').toLowerCase();
+      const title = (t.title || t.name || '').toLowerCase();
       const desc = (t.description || '').toLowerCase();
       const pName = (t.projectId ? projectMap.get(t.projectId) || '' : '').toLowerCase();
       return title.includes(q) || desc.includes(q) || pName.includes(q);
@@ -1383,19 +1406,19 @@ const EmployeeTaskModal: React.FC<EmployeeTaskModalProps> = ({
                         </div>
 
                         <h4 className="text-xs font-bold text-slate-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                          {t.title}
+                          {t.title || t.name}
                         </h4>
                       </div>
 
-                      {t.priority && (
+                      {(t.priority || t.customFields?.priority) && (
                         <span className={`px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase shrink-0 ${
-                          t.priority.toLowerCase() === 'high' || t.priority.toLowerCase() === 'urgent'
+                          ((t.priority || t.customFields?.priority) || '').toLowerCase() === 'high' || ((t.priority || t.customFields?.priority) || '').toLowerCase() === 'urgent' || ((t.priority || t.customFields?.priority) || '').toLowerCase() === 'critical'
                             ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-900'
-                            : t.priority.toLowerCase() === 'medium'
+                            : ((t.priority || t.customFields?.priority) || '').toLowerCase() === 'medium'
                             ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-900'
                             : 'bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400'
                         }`}>
-                          {t.priority}
+                          {t.priority || t.customFields?.priority}
                         </span>
                       )}
                     </div>

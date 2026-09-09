@@ -9,7 +9,9 @@ export interface Task {
   sprintId: string | null;
   assigneeId: string | null;
   name: string;
+  title?: string;
   description: string | null;
+  priority?: 'low' | 'medium' | 'high' | 'critical' | string;
   status: 'to_do' | 'in_progress' | 'in_review' | 'done' | 'blocked' | string;
   timeEstimate: number | null;
   completedAt: string | null;

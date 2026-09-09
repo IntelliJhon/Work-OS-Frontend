@@ -8,6 +8,7 @@ export interface UserProfile {
   lastName: string;
   tenantId: string;
   role: string;
+  roleName?: string;
   permissions?: Record<string, boolean>;
 }
 
