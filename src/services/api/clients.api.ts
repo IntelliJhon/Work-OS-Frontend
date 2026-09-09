@@ -132,6 +132,45 @@ export interface AddDocumentPayload {
   fileSize?: number;
 }
 
+export interface EnquiryClient {
+  id: string;
+  tenantId: string;
+  clientName: string;
+  number: string;
+  email?: string | null;
+  remarks?: string | null;
+  sourceSheetName?: string | null;
+  createdBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateEnquiryPayload {
+  clientName: string;
+  number: string;
+  email?: string;
+  remarks?: string;
+  sourceSheetName?: string;
+}
+
+export interface BulkImportEnquiriesPayload {
+  items: Array<{
+    clientName: string;
+    number: string;
+    email?: string;
+    remarks?: string;
+    sourceSheetName?: string;
+  }>;
+  sourceSheetName?: string;
+}
+
+export interface UpdateEnquiryPayload {
+  clientName?: string;
+  number?: string;
+  email?: string;
+  remarks?: string;
+}
+
 export const clientsApi = {
   list: async (): Promise<GetClientsResponse> => {
     const { data } = await apiClient.get<GetClientsResponse>('/clients');
@@ -191,6 +230,31 @@ export const clientsApi = {
 
   deleteOnboardingClient: async (id: string): Promise<{ success: boolean; message: string }> => {
     const { data } = await apiClient.delete<{ success: boolean; message: string }>(`/clients/onboarding/${id}`);
+    return data;
+  },
+
+  getEnquiryList: async (): Promise<{ success: boolean; data: EnquiryClient[] }> => {
+    const { data } = await apiClient.get<{ success: boolean; data: EnquiryClient[] }>('/clients/enquiries');
+    return data;
+  },
+
+  createEnquiryClient: async (payload: CreateEnquiryPayload): Promise<{ success: boolean; data: EnquiryClient }> => {
+    const { data } = await apiClient.post<{ success: boolean; data: EnquiryClient }>('/clients/enquiries', payload);
+    return data;
+  },
+
+  importEnquiryClientsBulk: async (payload: BulkImportEnquiriesPayload): Promise<{ success: boolean; count: number; data: EnquiryClient[] }> => {
+    const { data } = await apiClient.post<{ success: boolean; count: number; data: EnquiryClient[] }>('/clients/enquiries/import', payload);
+    return data;
+  },
+
+  updateEnquiryClient: async (id: string, payload: UpdateEnquiryPayload): Promise<{ success: boolean; data: EnquiryClient }> => {
+    const { data } = await apiClient.put<{ success: boolean; data: EnquiryClient }>(`/clients/enquiries/${id}`, payload);
+    return data;
+  },
+
+  deleteEnquiryClient: async (id: string): Promise<{ success: boolean; message: string }> => {
+    const { data } = await apiClient.delete<{ success: boolean; message: string }>(`/clients/enquiries/${id}`);
     return data;
   },
 };
