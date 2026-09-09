@@ -1664,10 +1664,6 @@ const CreateOnboardingModal: React.FC<CreateModalProps> = ({
       setErrorMessage('Client / Company Name is required.');
       return;
     }
-    if (!email.trim()) {
-      setErrorMessage('Contact Email is required.');
-      return;
-    }
     saveMutation.mutate();
   };
 
@@ -1745,10 +1741,9 @@ const CreateOnboardingModal: React.FC<CreateModalProps> = ({
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-800 dark:text-zinc-200">Contact Email *</label>
+                <label className="text-xs font-bold text-slate-800 dark:text-zinc-200">Contact Email</label>
                 <input
                   type="email"
-                  required
                   placeholder="e.g. contact@apex.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
