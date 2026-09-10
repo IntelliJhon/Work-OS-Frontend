@@ -724,6 +724,7 @@ export const ClientsList: React.FC = () => {
                   <tr className="border-b border-slate-200 dark:border-zinc-850 bg-slate-50/70 dark:bg-zinc-900/50">
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">Client User</th>
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">Account ID</th>
+                    <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">Subscription Expiry</th>
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-center">Status</th>
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-center">Docs</th>
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">Important Remark</th>
@@ -737,6 +738,16 @@ export const ClientsList: React.FC = () => {
                     const fullName = `${firstName} ${lastName}`.trim() || client.email.split('@')[0];
                     const isEditing = editingClientId === client.id;
                     const docCount = client.documentsCount || 0;
+
+                    const expiryDateObj = client.expiry ? new Date(client.expiry) : null;
+                    const isExpiryValid = expiryDateObj && !isNaN(expiryDateObj.getTime());
+                    const formattedExpiry = isExpiryValid
+                      ? expiryDateObj.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
+                      : '-';
+
+                    const diffDays = isExpiryValid
+                      ? Math.ceil((expiryDateObj.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                      : null;
 
                     return (
                       <tr key={client.id} className="hover:bg-slate-50/80 dark:hover:bg-zinc-900/40 transition-colors">
@@ -761,6 +772,30 @@ export const ClientsList: React.FC = () => {
                           <span className="font-mono text-[11px] font-semibold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-850 px-2 py-1 rounded-lg">
                             {client.id}
                           </span>
+                        </td>
+
+                        <td className="px-5 py-4 align-middle">
+                          {isExpiryValid ? (
+                            <div className="space-y-0.5">
+                              <span className="text-xs font-bold text-slate-900 dark:text-zinc-100 flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                <span>{formattedExpiry}</span>
+                              </span>
+                              {diffDays !== null && (
+                                <p className="text-[10px] font-semibold">
+                                  {diffDays <= 0 ? (
+                                    <span className="text-rose-600 dark:text-rose-400 font-bold">Expired ({Math.abs(diffDays)}d ago)</span>
+                                  ) : diffDays <= 7 ? (
+                                    <span className="text-amber-600 dark:text-amber-400 font-bold">Expiring in {diffDays} day{diffDays === 1 ? '' : 's'}</span>
+                                  ) : (
+                                    <span className="text-emerald-600 dark:text-emerald-400">{diffDays} days remaining</span>
+                                  )}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 text-xs italic">-</span>
+                          )}
                         </td>
 
                         <td className="px-5 py-4 align-middle text-center">
