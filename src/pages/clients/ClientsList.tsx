@@ -879,6 +879,7 @@ export const ClientsList: React.FC = () => {
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">Client User</th>
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">Account ID</th>
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">Subscription Expiry</th>
+                    <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-right">Balance</th>
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-center">Status</th>
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-center">Docs</th>
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">Important Remark</th>
@@ -950,6 +951,25 @@ export const ClientsList: React.FC = () => {
                           ) : (
                             <span className="text-slate-400 text-xs italic">-</span>
                           )}
+                        </td>
+
+                        <td className="px-5 py-4 align-middle text-right">
+                          {(() => {
+                            const balanceVal = typeof client.balance === 'number' ? client.balance : 0;
+                            const currencySymbol = client.currency === 'USD' ? '$' : (client.currency === 'EUR' ? '€' : (client.currency === 'GBP' ? '£' : '₹'));
+                            const formattedNum = balanceVal.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+                            return (
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-extrabold font-mono ${
+                                balanceVal > 0
+                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40'
+                                  : balanceVal < 0
+                                  ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/40'
+                                  : 'bg-slate-100 text-slate-600 dark:bg-zinc-850 dark:text-zinc-400 border border-slate-200/60 dark:border-zinc-750'
+                              }`}>
+                                {currencySymbol}{formattedNum}
+                              </span>
+                            );
+                          })()}
                         </td>
 
                         <td className="px-5 py-4 align-middle text-center">
