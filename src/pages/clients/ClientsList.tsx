@@ -398,7 +398,7 @@ export const ClientsList: React.FC = () => {
     let expired = 0;
     let expire1Day = 0;
     let expire3Days = 0;
-    let expire7Days = 0;
+    let expire5Days = 0;
 
     const nowTime = new Date().getTime();
 
@@ -412,10 +412,10 @@ export const ClientsList: React.FC = () => {
       if (diffDays <= 0) expired++;
       if (diffDays === 1) expire1Day++;
       if (diffDays > 0 && diffDays <= 3) expire3Days++;
-      if (diffDays > 0 && diffDays <= 7) expire7Days++;
+      if (diffDays > 0 && diffDays <= 5) expire5Days++;
     });
 
-    return { expired, expire1Day, expire3Days, expire7Days };
+    return { expired, expire1Day, expire3Days, expire5Days };
   }, [onboardedClients]);
 
   // Filtered Onboarded Clients
@@ -437,8 +437,8 @@ export const ClientsList: React.FC = () => {
           if (diffDays !== 1) return false;
         } else if (expiryFilter === '3_days') {
           if (diffDays <= 0 || diffDays > 3) return false;
-        } else if (expiryFilter === '7_days') {
-          if (diffDays <= 0 || diffDays > 7) return false;
+        } else if (expiryFilter === '5_days') {
+          if (diffDays <= 0 || diffDays > 5) return false;
         } else if (expiryFilter === '30_days') {
           if (diffDays <= 0 || diffDays > 30) return false;
         }
@@ -749,7 +749,7 @@ export const ClientsList: React.FC = () => {
                     <option value="expired">🚨 Expired Accounts ({expiryCounts.expired})</option>
                     <option value="1_day">⚠️ Expire in 1 Day ({expiryCounts.expire1Day})</option>
                     <option value="3_days">⏳ Expire in 3 Days ({expiryCounts.expire3Days})</option>
-                    <option value="7_days">📅 Expire in 7 Days ({expiryCounts.expire7Days})</option>
+                    <option value="5_days">📅 Expire in 5 Days ({expiryCounts.expire5Days})</option>
                     <option value="30_days">📆 Expire in 30 Days</option>
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -826,16 +826,16 @@ export const ClientsList: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => setExpiryFilter('7_days')}
+                onClick={() => setExpiryFilter('5_days')}
                 className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  expiryFilter === '7_days'
+                  expiryFilter === '5_days'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 hover:bg-blue-100 dark:hover:bg-blue-900/50'
                 }`}
               >
-                <span>Expire in 7 Days</span>
+                <span>Expire in 5 Days</span>
                 <span className="px-1.5 py-0.5 rounded-md bg-blue-200/60 dark:bg-blue-900/60 text-[10px]">
-                  {expiryCounts.expire7Days}
+                  {expiryCounts.expire5Days}
                 </span>
               </button>
             </div>
