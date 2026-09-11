@@ -42,7 +42,9 @@ import {
   File as FileIcon,
   Download,
   Upload,
-  ExternalLink
+  ExternalLink,
+  ChevronDown,
+  Filter
 } from 'lucide-react';
 
 const STAGES = [
@@ -89,6 +91,7 @@ function getDocumentIcon(fileType: string, fileName: string) {
 export const ClientsList: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'onboarded' | 'onboarding' | 'enquiry'>('onboarded');
   const [searchQuery, setSearchQuery] = useState('');
+  const [expiryFilter, setExpiryFilter] = useState<string>('all');
   const [stageFilter, setStageFilter] = useState<string>('all');
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
   const [commentDraft, setCommentDraft] = useState('');
@@ -390,11 +393,60 @@ export const ClientsList: React.FC = () => {
     }
   };
 
+  // Calculate Expiry Counts for Onboarded Clients
+  const expiryCounts = useMemo(() => {
+    let expired = 0;
+    let expire1Day = 0;
+    let expire3Days = 0;
+    let expire7Days = 0;
+
+    const nowTime = new Date().getTime();
+
+    onboardedClients.forEach((client: ClientUser) => {
+      if (!client.expiry) return;
+      const expiryDateObj = new Date(client.expiry);
+      if (isNaN(expiryDateObj.getTime())) return;
+
+      const diffDays = Math.ceil((expiryDateObj.getTime() - nowTime) / (1000 * 60 * 60 * 24));
+
+      if (diffDays <= 0) expired++;
+      if (diffDays === 1) expire1Day++;
+      if (diffDays > 0 && diffDays <= 3) expire3Days++;
+      if (diffDays > 0 && diffDays <= 7) expire7Days++;
+    });
+
+    return { expired, expire1Day, expire3Days, expire7Days };
+  }, [onboardedClients]);
+
   // Filtered Onboarded Clients
   const filteredOnboardedClients = useMemo(() => {
-    if (!searchQuery.trim()) return onboardedClients;
-    const q = searchQuery.toLowerCase().trim();
+    const nowTime = new Date().getTime();
+
     return onboardedClients.filter((client: ClientUser) => {
+      // 1. Subscription Expiry Filter
+      if (expiryFilter !== 'all') {
+        if (!client.expiry) return false;
+        const expiryDateObj = new Date(client.expiry);
+        if (isNaN(expiryDateObj.getTime())) return false;
+
+        const diffDays = Math.ceil((expiryDateObj.getTime() - nowTime) / (1000 * 60 * 60 * 24));
+
+        if (expiryFilter === 'expired') {
+          if (diffDays > 0) return false;
+        } else if (expiryFilter === '1_day') {
+          if (diffDays !== 1) return false;
+        } else if (expiryFilter === '3_days') {
+          if (diffDays <= 0 || diffDays > 3) return false;
+        } else if (expiryFilter === '7_days') {
+          if (diffDays <= 0 || diffDays > 7) return false;
+        } else if (expiryFilter === '30_days') {
+          if (diffDays <= 0 || diffDays > 30) return false;
+        }
+      }
+
+      // 2. Search Query Filter
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase().trim();
       const firstName = client.profile?.name?.first || '';
       const lastName = client.profile?.name?.last || '';
       const fullName = `${firstName} ${lastName}`.toLowerCase();
@@ -411,7 +463,7 @@ export const ClientsList: React.FC = () => {
         comment.includes(q)
       );
     });
-  }, [onboardedClients, searchQuery]);
+  }, [onboardedClients, searchQuery, expiryFilter]);
 
   // Filtered Onboarding Clients
   const filteredOnboardingClients = useMemo(() => {
@@ -669,21 +721,123 @@ export const ClientsList: React.FC = () => {
             </div>
           </div>
 
-          {/* Search Controls */}
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-slate-50/50 dark:bg-zinc-900/10 border border-slate-200 dark:border-zinc-800 p-4 rounded-2xl">
-            <div className="relative w-full sm:w-80">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search by client name, email, ID, country..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-xl bg-white dark:bg-background border border-slate-200 dark:border-zinc-850 text-xs text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-blue-500 font-medium"
-              />
+          {/* Search & Subscription Expiry Filter Controls */}
+          <div className="flex flex-col gap-3 bg-slate-50/50 dark:bg-zinc-900/10 border border-slate-200 dark:border-zinc-800 p-4 rounded-2xl">
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+                {/* Search Input */}
+                <div className="relative w-full sm:w-72">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by client name, email, ID..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 rounded-xl bg-white dark:bg-background border border-slate-200 dark:border-zinc-850 text-xs text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-blue-500 font-medium"
+                  />
+                </div>
+
+                {/* Expiry Filter Dropdown */}
+                <div className="relative flex items-center w-full sm:w-60">
+                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500 pointer-events-none" />
+                  <select
+                    value={expiryFilter}
+                    onChange={(e) => setExpiryFilter(e.target.value)}
+                    className="w-full pl-9 pr-8 py-2 rounded-xl bg-white dark:bg-background border border-slate-200 dark:border-zinc-850 text-xs font-bold text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-blue-500 appearance-none cursor-pointer"
+                  >
+                    <option value="all">All Expiry Statuses</option>
+                    <option value="expired">🚨 Expired Accounts ({expiryCounts.expired})</option>
+                    <option value="1_day">⚠️ Expire in 1 Day ({expiryCounts.expire1Day})</option>
+                    <option value="3_days">⏳ Expire in 3 Days ({expiryCounts.expire3Days})</option>
+                    <option value="7_days">📅 Expire in 7 Days ({expiryCounts.expire7Days})</option>
+                    <option value="30_days">📆 Expire in 30 Days</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div className="text-xs text-slate-500 dark:text-zinc-400 font-semibold self-end sm:self-auto shrink-0">
+                Showing {filteredOnboardedClients.length} of {totalOnboarded} clients
+              </div>
             </div>
 
-            <div className="text-xs text-slate-500 dark:text-zinc-400 font-semibold self-end sm:self-auto">
-              Showing {filteredOnboardedClients.length} of {totalOnboarded} clients
+            {/* Quick Expiry Filter Pills */}
+            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-200/60 dark:border-zinc-800/60">
+              <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 flex items-center gap-1 mr-1">
+                <Filter className="w-3 h-3" /> Expiry Filters:
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setExpiryFilter('all')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  expiryFilter === 'all'
+                    ? 'bg-slate-800 text-white dark:bg-zinc-200 dark:text-zinc-900 shadow-sm'
+                    : 'bg-white dark:bg-zinc-850 text-slate-600 dark:text-zinc-300 border border-slate-200 dark:border-zinc-750 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                }`}
+              >
+                All ({totalOnboarded})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setExpiryFilter('expired')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  expiryFilter === 'expired'
+                    ? 'bg-rose-600 text-white shadow-sm'
+                    : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50 hover:bg-rose-100 dark:hover:bg-rose-900/50'
+                }`}
+              >
+                <span>Expired</span>
+                <span className="px-1.5 py-0.5 rounded-md bg-rose-200/60 dark:bg-rose-900/60 text-[10px]">
+                  {expiryCounts.expired}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setExpiryFilter('1_day')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  expiryFilter === '1_day'
+                    ? 'bg-amber-600 text-white shadow-sm'
+                    : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 hover:bg-amber-100 dark:hover:bg-amber-900/50'
+                }`}
+              >
+                <span>Expire in 1 Day</span>
+                <span className="px-1.5 py-0.5 rounded-md bg-amber-200/60 dark:bg-amber-900/60 text-[10px]">
+                  {expiryCounts.expire1Day}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setExpiryFilter('3_days')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  expiryFilter === '3_days'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50'
+                }`}
+              >
+                <span>Expire in 3 Days</span>
+                <span className="px-1.5 py-0.5 rounded-md bg-indigo-200/60 dark:bg-indigo-900/60 text-[10px]">
+                  {expiryCounts.expire3Days}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setExpiryFilter('7_days')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  expiryFilter === '7_days'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 hover:bg-blue-100 dark:hover:bg-blue-900/50'
+                }`}
+              >
+                <span>Expire in 7 Days</span>
+                <span className="px-1.5 py-0.5 rounded-md bg-blue-200/60 dark:bg-blue-900/60 text-[10px]">
+                  {expiryCounts.expire7Days}
+                </span>
+              </button>
             </div>
           </div>
 
