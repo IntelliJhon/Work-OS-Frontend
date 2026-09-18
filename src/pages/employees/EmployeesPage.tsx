@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersApi, type User } from '../../services/api/users';
 import { tasksApi, type Task } from '../../services/api/tasks.api';
 import { projectsApi, type Project } from '../../services/api/projects';
 import { workReportsApi, type WorkReport } from '../../services/api/work-reports.api';
+import { clientsApi } from '../../services/api/clients.api';
+import { MentionTextarea, type MentionCandidate } from '../../components/ui/MentionTextarea';
 import { useAuthStore } from '../../store/authStore';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { useToast } from '../../components/ui/Toast';
@@ -625,6 +627,78 @@ export const EmployeesPage: React.FC = () => {
   );
 };
 
+// Helper to render report text with styled @client mentions and formatting
+function renderFormattedReportText(text: string, knownClientNames?: string[]) {
+  if (!text) return null;
+
+  const lines = text.split('\n');
+
+  // Build regex matching known clients if available, or fallback to word-based mention
+  let regex: RegExp;
+  if (knownClientNames && knownClientNames.length > 0) {
+    const sorted = [...knownClientNames]
+      .filter((n) => Boolean(n && n.trim()))
+      .sort((a, b) => b.length - a.length);
+    const pattern = sorted.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+    regex = new RegExp(`(@(?:${pattern})|\\*\\*[^*]+\\*\\*)`, 'gi');
+  } else {
+    regex = /(@[^\s\n,.:;()]|\*\*[^*]+\*\*)/g;
+  }
+
+  return (
+    <div className="space-y-1">
+      {lines.map((line, lineIdx) => {
+        if (!line.trim()) {
+          return <div key={lineIdx} className="h-2" />;
+        }
+
+        const tokens: React.ReactNode[] = [];
+        let lastIndex = 0;
+        let match: RegExpExecArray | null;
+
+        while ((match = regex.exec(line)) !== null) {
+          if (match.index > lastIndex) {
+            tokens.push(line.substring(lastIndex, match.index));
+          }
+
+          const matchedStr = match[0];
+          if (matchedStr.startsWith('@')) {
+            const clientName = matchedStr.slice(1);
+            tokens.push(
+              <span
+                key={`${lineIdx}-${match.index}`}
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-bold text-[11px] border border-purple-200/70 dark:border-purple-800/40 mr-1"
+              >
+                <span className="text-purple-500">@</span>
+                <span>{clientName}</span>
+              </span>
+            );
+          } else if (matchedStr.startsWith('**') && matchedStr.endsWith('**')) {
+            const innerText = matchedStr.slice(2, -2);
+            tokens.push(
+              <strong key={`${lineIdx}-${match.index}`} className="font-bold text-purple-900 dark:text-purple-200">
+                {innerText}
+              </strong>
+            );
+          }
+
+          lastIndex = regex.lastIndex;
+        }
+
+        if (lastIndex < line.length) {
+          tokens.push(line.substring(lastIndex));
+        }
+
+        return (
+          <div key={lineIdx} className="leading-relaxed">
+            {tokens}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Contextual Employee Work Report Modal ──
 interface WorkReportModalProps {
   employee: User;
@@ -635,6 +709,7 @@ const WorkReportModal: React.FC<WorkReportModalProps> = ({ employee, onClose }) 
   const { user } = useAuthStore();
   const confirm = useConfirm();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingReport, setEditingReport] = useState<WorkReport | null>(null);
@@ -681,6 +756,52 @@ const WorkReportModal: React.FC<WorkReportModalProps> = ({ employee, onClose }) 
     queryFn: () => workReportsApi.listByEmployee(employee.id),
   });
 
+  // Fetch Onboarded & Onboarding clients for @ mention autocomplete
+  const { data: onboardedData } = useQuery({
+    queryKey: ['clients-list'],
+    queryFn: clientsApi.list,
+    staleTime: 120000,
+  });
+
+  const { data: onboardingData } = useQuery({
+    queryKey: ['onboarding-clients-list'],
+    queryFn: clientsApi.getOnboardingList,
+    staleTime: 120000,
+  });
+
+  const mentionCandidates: MentionCandidate[] = useMemo(() => {
+    const list: MentionCandidate[] = [];
+    if (onboardedData?.users) {
+      for (const u of onboardedData.users) {
+        const name = `${u.profile?.name?.first || ''} ${u.profile?.name?.last || ''}`.trim() || u.email;
+        if (name) {
+          list.push({
+            id: u.id,
+            name,
+            type: 'onboarded',
+            email: u.email,
+            contactPerson: u.profile?.name?.first ? `${u.profile.name.first} ${u.profile.name.last || ''}`.trim() : undefined,
+          });
+        }
+      }
+    }
+    if (onboardingData?.data) {
+      for (const c of onboardingData.data) {
+        if (c.clientName) {
+          list.push({
+            id: c.id,
+            name: c.clientName,
+            type: 'onboarding',
+            email: c.email,
+            stage: c.stage,
+            contactPerson: c.contactPerson || undefined,
+          });
+        }
+      }
+    }
+    return list;
+  }, [onboardedData, onboardingData]);
+
   // Create / Update Mutation
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -712,10 +833,16 @@ const WorkReportModal: React.FC<WorkReportModalProps> = ({ employee, onClose }) 
         }
       }
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success(editingReport ? 'Work report updated successfully.' : 'Work report submitted successfully.');
       resetForm();
-      refetch();
+      await Promise.all([
+        refetch(),
+        queryClient.invalidateQueries({ queryKey: ['work-reports'] }),
+        queryClient.invalidateQueries({ queryKey: ['clients-list'] }),
+        queryClient.invalidateQueries({ queryKey: ['onboarding-clients-list'] }),
+        queryClient.invalidateQueries({ queryKey: ['client-notes'] }),
+      ]);
     },
     onError: (err: any) => {
       const msg = err?.response?.data?.error || err?.message || 'Failed to save work report';
@@ -727,9 +854,15 @@ const WorkReportModal: React.FC<WorkReportModalProps> = ({ employee, onClose }) 
   // Delete Mutation
   const deleteMutation = useMutation({
     mutationFn: (reportId: string) => workReportsApi.delete(reportId),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success('Work report deleted.');
-      refetch();
+      await Promise.all([
+        refetch(),
+        queryClient.invalidateQueries({ queryKey: ['work-reports'] }),
+        queryClient.invalidateQueries({ queryKey: ['clients-list'] }),
+        queryClient.invalidateQueries({ queryKey: ['onboarding-clients-list'] }),
+        queryClient.invalidateQueries({ queryKey: ['client-notes'] }),
+      ]);
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.error || err?.message || 'Failed to delete work report');
@@ -893,17 +1026,23 @@ const WorkReportModal: React.FC<WorkReportModalProps> = ({ employee, onClose }) 
                   />
                 </div>
 
-                {/* Long Text Report */}
+                {/* Long Text Report with @ Mention Autocomplete */}
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-800 dark:text-zinc-200">
-                    Work Report Details *
-                  </label>
-                  <textarea
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-800 dark:text-zinc-200 flex items-center gap-1.5">
+                      <span>Work Report Details *</span>
+                      <span className="text-[10px] font-normal text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 px-1.5 py-0.5 rounded-md">
+                        Type <kbd className="font-mono font-bold">@</kbd> to mention clients
+                      </span>
+                    </label>
+                  </div>
+                  <MentionTextarea
                     required
                     rows={6}
-                    placeholder="Enter full work report details, completed tasks, milestones reached, challenges faced..."
+                    placeholder="Enter full work report details. Type '@' to mention an onboarded or onboarding client..."
                     value={reportText}
-                    onChange={(e) => setReportText(e.target.value)}
+                    onChange={setReportText}
+                    candidates={mentionCandidates}
                     className="w-full p-3 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-purple-500 font-medium resize-y min-h-[120px]"
                   />
                 </div>
@@ -1120,8 +1259,8 @@ const WorkReportModal: React.FC<WorkReportModalProps> = ({ employee, onClose }) 
                       </div>
 
                       {/* Long Text Report Body */}
-                      <div className="text-xs text-slate-800 dark:text-zinc-200 leading-relaxed font-light whitespace-pre-wrap bg-slate-50/70 dark:bg-zinc-900/40 p-3 rounded-xl border border-slate-100 dark:border-zinc-850">
-                        {report.reportText}
+                      <div className="text-xs text-slate-800 dark:text-zinc-200 leading-relaxed font-light bg-slate-50/70 dark:bg-zinc-900/40 p-3 rounded-xl border border-slate-100 dark:border-zinc-850">
+                        {renderFormattedReportText(report.reportText, mentionCandidates.map((c) => c.name))}
                       </div>
 
                       {/* Document Attachment Preview / Link */}

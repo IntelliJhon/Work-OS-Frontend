@@ -93,8 +93,7 @@ export const ClientsList: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [expiryFilter, setExpiryFilter] = useState<string>('all');
   const [stageFilter, setStageFilter] = useState<string>('all');
-  const [editingClientId, setEditingClientId] = useState<string | null>(null);
-  const [commentDraft, setCommentDraft] = useState('');
+  const [editingOnboardedClient, setEditingOnboardedClient] = useState<ClientUser | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingOnboardingClient, setEditingOnboardingClient] = useState<OnboardingClient | null>(null);
 
@@ -333,9 +332,8 @@ export const ClientsList: React.FC = () => {
           ),
         };
       });
-      setEditingClientId(null);
-      setCommentDraft('');
-      toast.success('Important update saved.');
+      setEditingOnboardedClient(null);
+      toast.success('Client remarks updated successfully.');
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.error || err?.message || 'Failed to save update');
@@ -367,17 +365,11 @@ export const ClientsList: React.FC = () => {
   });
 
   const handleStartEdit = (client: ClientUser) => {
-    setEditingClientId(client.id);
-    setCommentDraft(client.comment || '');
+    setEditingOnboardedClient(client);
   };
 
-  const handleCancelEdit = () => {
-    setEditingClientId(null);
-    setCommentDraft('');
-  };
-
-  const handleSaveComment = (clientId: string) => {
-    saveCommentMutation.mutate({ clientId, comment: commentDraft });
+  const handleSaveComment = (clientId: string, comment: string) => {
+    saveCommentMutation.mutate({ clientId, comment });
   };
 
   const handleDeleteOnboarding = async (id: string, name: string) => {
@@ -891,7 +883,6 @@ export const ClientsList: React.FC = () => {
                     const firstName = client.profile?.name?.first || '';
                     const lastName = client.profile?.name?.last || '';
                     const fullName = `${firstName} ${lastName}`.trim() || client.email.split('@')[0];
-                    const isEditing = editingClientId === client.id;
                     const docCount = client.documentsCount || 0;
 
                     const expiryDateObj = client.expiry ? new Date(client.expiry) : null;
@@ -1011,72 +1002,57 @@ export const ClientsList: React.FC = () => {
                         </td>
 
                         <td className="px-5 py-4 align-middle">
-                          {isEditing ? (
-                            <div className="flex items-center space-x-2">
-                              <input
-                                type="text"
-                                value={commentDraft}
-                                onChange={(e) => setCommentDraft(e.target.value)}
-                                placeholder="Type important account note..."
-                                className="w-full px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-blue-500 text-xs text-slate-900 dark:text-zinc-100 focus:outline-none"
-                                autoFocus
-                              />
-                              <button
-                                onClick={() => handleSaveComment(client.id)}
-                                disabled={saveCommentMutation.isPending}
-                                className="p-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition cursor-pointer shrink-0 disabled:opacity-50"
-                                title="Save"
-                              >
-                                {saveCommentMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                              </button>
-                              <button
-                                onClick={handleCancelEdit}
-                                className="p-1.5 rounded-lg bg-slate-200 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 transition cursor-pointer shrink-0"
-                                title="Cancel"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-between group/note gap-2">
-                              <span className="text-xs text-slate-700 dark:text-zinc-300 font-medium truncate max-w-xs">
-                                {client.comment ? (
-                                  <span className="flex items-center gap-1.5">
-                                    <MessageSquare className="w-3.5 h-3.5 text-purple-500 shrink-0" />
-                                    <span>{client.comment}</span>
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-400 italic text-[11px]">No notes added</span>
-                                )}
-                              </span>
-                              <button
-                                onClick={() => handleStartEdit(client)}
-                                className="opacity-0 group-hover/note:opacity-100 p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer shrink-0"
-                                title="Edit Important Remark"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          )}
+                          <div className="flex items-center justify-between group/note gap-2">
+                            <span className="text-xs text-slate-700 dark:text-zinc-300 font-medium truncate max-w-xs" title={client.comment || ''}>
+                              {client.comment ? (
+                                <span className="flex items-center gap-1.5 truncate">
+                                  <MessageSquare className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                                  <span className="truncate">{client.comment}</span>
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 italic text-[11px]">No notes added</span>
+                              )}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleStartEdit(client)}
+                              className="opacity-0 group-hover/note:opacity-100 p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded transition cursor-pointer shrink-0"
+                              title="Edit Client Remarks"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
 
                         <td className="px-5 py-4 align-middle text-right">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              setActiveDocsClient({
-                                id: client.id,
-                                name: fullName,
-                                email: client.email,
-                                anchorRect: rect
-                              });
-                            }}
-                            className="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer"
-                          >
-                            <Paperclip className="w-3.5 h-3.5 text-purple-500" />
-                            <span>Files</span>
-                          </button>
+                          <div className="flex items-center justify-end space-x-1.5">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                setActiveDocsClient({
+                                  id: client.id,
+                                  name: fullName,
+                                  email: client.email,
+                                  anchorRect: rect
+                                });
+                              }}
+                              className="px-2.5 py-1 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer"
+                              title="Manage Documents & Attachments"
+                            >
+                              <Paperclip className="w-3.5 h-3.5 text-purple-500" />
+                              <span>Files</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleStartEdit(client)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+                              title="Edit Client Remarks"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -1336,15 +1312,30 @@ export const ClientsList: React.FC = () => {
                           )}
                         </td>
 
-                        <td className="px-5 py-4 align-middle text-xs font-medium text-slate-700 dark:text-zinc-300 max-w-[220px]" title={client.notes || ''}>
-                          {client.notes ? (
-                            <span className="flex items-center gap-1.5 truncate">
-                              <MessageSquare className="w-3.5 h-3.5 text-purple-500 shrink-0" />
-                              <span className="truncate">{client.notes}</span>
+                        <td className="px-5 py-4 align-middle text-xs font-medium text-slate-700 dark:text-zinc-300 max-w-[220px]">
+                          <div className="flex items-center justify-between group/note gap-2">
+                            <span className="truncate" title={client.notes || ''}>
+                              {client.notes ? (
+                                <span className="flex items-center gap-1.5 truncate">
+                                  <MessageSquare className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                                  <span className="truncate">{client.notes}</span>
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 italic text-[11px]">-</span>
+                              )}
                             </span>
-                          ) : (
-                            <span className="text-slate-400 italic text-[11px]">-</span>
-                          )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingOnboardingClient(client);
+                                setShowCreateModal(true);
+                              }}
+                              className="opacity-0 group-hover/note:opacity-100 p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded transition cursor-pointer shrink-0"
+                              title="Edit Client Remarks"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
 
                         <td className="px-5 py-4 align-middle text-right">
@@ -1616,6 +1607,17 @@ export const ClientsList: React.FC = () => {
           clientEmail={activeDocsClient.email}
           anchorRect={activeDocsClient.anchorRect}
           onClose={() => setActiveDocsClient(null)}
+        />
+      )}
+
+      {/* Edit Onboarded Client Remarks Modal */}
+      {editingOnboardedClient && (
+        <EditOnboardedRemarksModal
+          isOpen={Boolean(editingOnboardedClient)}
+          client={editingOnboardedClient}
+          onClose={() => setEditingOnboardedClient(null)}
+          onSave={handleSaveComment}
+          isSaving={saveCommentMutation.isPending}
         />
       )}
 
@@ -2000,6 +2002,115 @@ const ClientDocumentsPopover: React.FC<ClientDocsPopoverProps> = ({
               Done
             </button>
           </div>
+        </div>
+      </div>
+    </>,
+    document.body
+  );
+};
+
+// ── Edit Onboarded Client Remarks Modal (Portal) ──
+interface EditOnboardedRemarksModalProps {
+  isOpen: boolean;
+  client: ClientUser | null;
+  onClose: () => void;
+  onSave: (clientId: string, comment: string) => void;
+  isSaving: boolean;
+}
+
+const EditOnboardedRemarksModal: React.FC<EditOnboardedRemarksModalProps> = ({
+  isOpen,
+  client,
+  onClose,
+  onSave,
+  isSaving,
+}) => {
+  const [remarks, setRemarks] = useState('');
+
+  React.useEffect(() => {
+    if (client) {
+      setRemarks(client.comment || '');
+    }
+  }, [client]);
+
+  if (!isOpen || !client) return null;
+
+  const firstName = client.profile?.name?.first || '';
+  const lastName = client.profile?.name?.last || '';
+  const fullName = `${firstName} ${lastName}`.trim() || client.email.split('@')[0];
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(client.id, remarks.trim());
+  };
+
+  return createPortal(
+    <>
+      <div
+        className="fixed inset-0 z-[9998] bg-slate-950/50 backdrop-blur-[2px] transition-opacity"
+        onClick={onClose}
+      />
+
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto">
+        <div className="relative w-full max-w-md bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] my-auto animate-scale-in">
+          <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-zinc-900/80">
+            <div className="flex items-center space-x-2.5">
+              <span className="p-2 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                <Edit2 className="w-4 h-4" />
+              </span>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                  Edit Client Remarks
+                </h3>
+                <p className="text-[11px] text-muted-foreground font-light">
+                  Client: <strong className="font-bold text-slate-800 dark:text-zinc-200">{fullName}</strong>
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-800 dark:text-zinc-200">Remarks & Notes</label>
+              <textarea
+                rows={5}
+                placeholder="Add important notes, remarks, or updates for this client..."
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500 resize-none font-medium"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-200 dark:border-zinc-800">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-xs font-semibold text-slate-700 dark:text-zinc-200 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md hover:shadow-lg transition flex items-center space-x-1.5 disabled:opacity-50 cursor-pointer"
+              >
+                {isSaving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Check className="w-4 h-4" />
+                )}
+                <span>Update Remarks</span>
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </>,
