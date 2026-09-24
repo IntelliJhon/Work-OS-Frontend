@@ -35,6 +35,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         console.error('[Socket] Connection error:', errorMessage);
       };
 
+      const onRoomJoinError = (data: { roomId?: string; code?: string; error?: string }) => {
+        console.warn('[Socket] Room join rejected:', data?.roomId, data?.code || data?.error);
+      };
+
       // Invalidation event handlers
       const onTaskUpdated = (data: { projectId?: string; payload?: { projectId?: string } }) => {
         console.log('[Socket] TASK_UPDATED received', data);
@@ -85,7 +89,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       sock.on('connect', onConnect);
       sock.on('disconnect', onDisconnect);
       sock.on('connect_error', onConnectError);
-      
+      sock.on('room_join_error', onRoomJoinError);
+
       sock.on('TASK_UPDATED', onTaskUpdated);
       sock.on('PHASE_ACTIVATED', onPhaseEvent);
       sock.on('PHASE_COMPLETED', onPhaseEvent);
@@ -115,7 +120,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         sock.off('connect', onConnect);
         sock.off('disconnect', onDisconnect);
         sock.off('connect_error', onConnectError);
-        
+        sock.off('room_join_error', onRoomJoinError);
+
         sock.off('TASK_UPDATED', onTaskUpdated);
         sock.off('PHASE_ACTIVATED', onPhaseEvent);
         sock.off('PHASE_COMPLETED', onPhaseEvent);

@@ -19,6 +19,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AlertSoundManager } from '../../components/notifications/AlertSoundManager';
 import { RealtimeAlertToast, triggerRealtimeToast } from '../../components/notifications/RealtimeAlertToast';
 import { NotificationDrawer } from '../../components/notifications/NotificationDrawer';
+import { VoiceNotesNavBadge } from '../../pages/voice-notes/VoiceNotesNavBadge';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -35,7 +36,8 @@ import {
   ShieldAlert,
   Users,
   UserCheck,
-  MessageSquareWarning
+  MessageSquareWarning,
+  Mic
 } from 'lucide-react';
 
 export const DashboardLayout: React.FC = () => {
@@ -197,6 +199,7 @@ export const DashboardLayout: React.FC = () => {
     { name: 'Management Review', path: '/dashboard/management-review', icon: ShieldAlert, permission: PERMISSIONS.WORKSPACE_MEMBERS_READ },
     { name: 'Alerts Center', path: '/notifications', icon: Bell },
     { name: 'Tasks', path: '/dashboard/tasks', icon: CheckSquare, permission: PERMISSIONS.TASK_READ },
+    { name: 'Voice Notes', path: '/voice-notes', icon: Mic, permission: PERMISSIONS.VOICE_NOTES_READ },
     { name: 'Settings', path: '/settings/members', icon: Settings, permission: PERMISSIONS.WORKSPACE_MEMBERS_READ },
   ];
 
@@ -378,6 +381,7 @@ export const DashboardLayout: React.FC = () => {
               >
                 <Icon className="w-5 h-5" />
                 <span>{item.name}</span>
+                {item.path === '/voice-notes' && <VoiceNotesNavBadge />}
               </Link>
             );
           })}

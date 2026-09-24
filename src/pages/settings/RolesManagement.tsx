@@ -23,6 +23,9 @@ const PERMISSION_KEYS = [
   { key: 'workspace.roles.read', group: 'Administration', label: 'Read Roles', desc: 'Access to view RBAC configurations and roles.' },
   { key: 'workspace.roles.update', group: 'Administration', label: 'Modify Roles Settings', desc: 'Access to change permission matrices.' },
   { key: 'workspace.security.read', group: 'Administration', label: 'Read Security Logs', desc: 'Access to view system audit logs ledger.' },
+  { key: 'workspace.voice.manage', group: 'Administration', label: 'Manage Voice Number', desc: 'Register and verify the WhatsApp number allowed to send voice notes.' },
+  { key: 'voice_notes.read', group: 'Voice Notes', label: 'Read Voice Notes', desc: 'Access to view the voice notes inbox and transcripts.' },
+  { key: 'voice_notes.update', group: 'Voice Notes', label: 'Process Voice Notes', desc: 'Allows converting voice notes to tasks, dismissing and restoring them.' },
 ];
 
 export const RolesManagement: React.FC = () => {

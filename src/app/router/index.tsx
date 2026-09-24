@@ -25,6 +25,8 @@ const SettingsLayout = lazy(() => import('../layouts/SettingsLayout'));
 const MembersManagement = lazy(() => import('../../pages/settings/MembersManagement'));
 const RolesManagement = lazy(() => import('../../pages/settings/RolesManagement'));
 const SecurityActivityCenter = lazy(() => import('../../pages/settings/SecurityActivityCenter'));
+const VoiceNotesSettings = lazy(() => import('../../pages/settings/voice/VoiceNotesSettings'));
+const VoiceNotesPage = lazy(() => import('../../pages/voice-notes/VoiceNotesPage'));
 const AcceptInvite = lazy(() => import('../../pages/auth/AcceptInvite'));
 const TasksPage = lazy(() => import('../../pages/tasks/TasksPage').then(m => ({ default: m.TasksPage })));
 const ManagementReviewView = lazy(() => import('../../pages/management/ManagementReviewView'));
@@ -100,6 +102,10 @@ export const AppRouter: React.FC = () => {
                 <Route path="/dashboard/management-review" element={<ManagementReviewView />} />
               </Route>
 
+              <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.VOICE_NOTES_READ]} />}>
+                <Route path="/voice-notes" element={<VoiceNotesPage />} />
+              </Route>
+
               {/* Placeholders for secondary navigation */}
               <Route path="/dashboard/tasks" element={<TasksPage />} />
               <Route
@@ -153,6 +159,9 @@ export const AppRouter: React.FC = () => {
                 </Route>
                 <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.WORKSPACE_SECURITY_READ]} />}>
                   <Route path="security" element={<SecurityActivityCenter />} />
+                </Route>
+                <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.WORKSPACE_VOICE_MANAGE]} />}>
+                  <Route path="voice-notes" element={<VoiceNotesSettings />} />
                 </Route>
               </Route>
             </Route>

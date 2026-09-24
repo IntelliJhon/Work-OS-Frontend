@@ -571,6 +571,8 @@ interface CreateTaskModalProps {
     dueDate: string;
     timeEstimate?: number | null;
   }) => Promise<void>;
+  /** Prefills the form each time the modal opens (e.g. from a voice note). */
+  initialValues?: { name?: string; description?: string };
 }
 
 export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
@@ -578,9 +580,18 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   onClose,
   users,
   onCreate,
+  initialValues,
 }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+
+  useEffect(() => {
+    if (isOpen && initialValues) {
+      setName(initialValues.name ?? '');
+      setDescription(initialValues.description ?? '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
   const [assigneeId, setAssigneeId] = useState('');
   const [priority, setPriority] = useState('medium');
   const [dueDate, setDueDate] = useState('');

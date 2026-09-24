@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Users, Shield, Lock, ChevronRight } from 'lucide-react';
+import { Users, Shield, Lock, Mic, ChevronRight } from 'lucide-react';
 import { usePermissions } from '../../features/auth/usePermissions';
 
 export const SettingsLayout: React.FC = () => {
@@ -28,6 +28,13 @@ export const SettingsLayout: React.FC = () => {
       icon: Lock,
       description: 'View tenant audit logs, sign-in history, and activity.',
       permission: 'workspace.security.read',
+    },
+    {
+      name: 'Voice Notes',
+      path: '/settings/voice-notes',
+      icon: Mic,
+      description: 'Register the WhatsApp number that sends voice notes.',
+      permission: 'workspace.voice.manage',
     },
   ];
 

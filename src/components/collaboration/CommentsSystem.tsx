@@ -58,8 +58,9 @@ export const CommentsSystem: React.FC<CommentsSystemProps> = ({ projectId, entit
     }
   }, [projectId, user, loadComments]);
 
-  // Join socket room for project to receive real-time comment/discussion events
-  useSocketRoom(`project:${projectId}`, isConnected && !!user);
+  // Join socket room for project to receive real-time comment/discussion events.
+  // 'global' (workspace) tasks have no project room; the server relays those via the tenant room.
+  useSocketRoom(`project:${projectId}`, isConnected && !!user && projectId !== 'global');
 
   // Request comments sync on mount
   useEffect(() => {
