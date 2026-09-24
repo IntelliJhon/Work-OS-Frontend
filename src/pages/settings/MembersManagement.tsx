@@ -12,9 +12,10 @@ import { useAuthStore } from '../../store/authStore';
 import { usePermissions } from '../../features/auth/usePermissions';
 import { PERMISSIONS } from '../../features/auth/permission.constants';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
-import { 
+import { MemberPhoneField } from './members/MemberPhoneField';
+import {
   Users, Mail, UserPlus, RefreshCw, Trash2, Shield, Search,
-  ChevronLeft, ChevronRight, X, Clock, Check, AlertCircle, ShieldAlert
+  ChevronLeft, ChevronRight, X, Clock, Check, AlertCircle, ShieldAlert, MessageCircle
 } from 'lucide-react';
 
 export const MembersManagement: React.FC = () => {
@@ -44,6 +45,7 @@ export const MembersManagement: React.FC = () => {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRoleId, setInviteRoleId] = useState('');
+  const [invitePhone, setInvitePhone] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [generatedInviteUrl, setGeneratedInviteUrl] = useState('');
@@ -195,7 +197,7 @@ export const MembersManagement: React.FC = () => {
 
     setSubmittingInvite(true);
     try {
-      const response = await invitationsApi.create({ email: inviteEmail, roleId: inviteRoleId });
+      const response = await invitationsApi.create({ email: inviteEmail, roleId: inviteRoleId, phone: invitePhone.trim() || null });
       const token = (response as unknown as { token?: string }).token;
       if (token) {
         const inviteUrl = `${window.location.origin}/invite/accept/${token}`;
@@ -212,6 +214,7 @@ export const MembersManagement: React.FC = () => {
 
       setInviteEmail('');
       setInviteRoleId('');
+      setInvitePhone('');
     } catch (err: unknown) {
       setErrorMsg(getApiErrorMessage(err, 'Failed to send invitation'));
     } finally {
@@ -404,6 +407,12 @@ export const MembersManagement: React.FC = () => {
                               )}
                             </p>
                             <p className="text-[11px] text-muted-foreground font-light mt-0.5">{member.email}</p>
+                            <MemberPhoneField
+                              userId={member.id}
+                              phone={member.phone}
+                              canEdit={can(PERMISSIONS.WORKSPACE_MEMBERS_UPDATE)}
+                              onSaved={(phone) => setUsers((prev) => prev.map((u) => (u.id === member.id ? { ...u, phone } : u)))}
+                            />
                           </div>
                         </div>
                       </td>
@@ -688,6 +697,23 @@ export const MembersManagement: React.FC = () => {
                         </option>
                       ))}
                     </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-2">
+                    WhatsApp Number <span className="normal-case font-light tracking-normal">(optional, for work notifications)</span>
+                  </label>
+                  <div className="relative">
+                    <MessageCircle className="absolute left-3.5 top-3 w-4 h-4 text-slate-500 dark:text-zinc-500" />
+                    <input
+                      type="tel"
+                      placeholder="+91 98765 43210"
+                      maxLength={25}
+                      value={invitePhone}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInvitePhone(e.target.value.replace(/[^\d+\s-]/g, ''))}
+                      className="w-full bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-border/80 rounded-xl pl-10 pr-4 py-2.5 text-xs font-light text-slate-900 dark:text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition"
+                    />
                   </div>
                 </div>
 

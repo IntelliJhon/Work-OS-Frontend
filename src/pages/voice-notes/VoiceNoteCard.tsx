@@ -10,6 +10,8 @@ import {
   User,
   XCircle,
   CheckCircle2,
+  UserSearch,
+  CalendarClock,
 } from 'lucide-react';
 import type { VoiceNote } from '../../services/api/voiceNotes';
 
@@ -24,6 +26,15 @@ interface VoiceNoteCardProps {
 }
 
 const isPlayableUrl = (url: string | null): url is string => !!url && /^https?:\/\//i.test(url);
+
+/** "25 Sep, 5:00 pm" from the local date/time stored on the note (no timezone shifting). */
+const formatDue = (dueDate: string, dueTime: string | null): string => {
+  const [y, m, d] = dueDate.split('-').map(Number);
+  const [h, min] = (dueTime || '00:00').split(':').map(Number);
+  const when = new Date(y, m - 1, d, h, min);
+  const date = when.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  return dueTime ? `${date}, ${when.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}` : date;
+};
 
 export const VoiceNoteCard: React.FC<VoiceNoteCardProps> = ({
   note,
@@ -59,7 +70,19 @@ export const VoiceNoteCard: React.FC<VoiceNoteCardProps> = ({
         {note.status === 'converted' && (
           <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 dark:text-emerald-400 font-bold uppercase tracking-wider">
             <CheckCircle2 className="w-3 h-3" />
-            Task created
+            {note.workId ? `${note.workId}${note.taskAssigneeName ? ` → ${note.taskAssigneeName}` : ''}` : 'Task created'}
+          </span>
+        )}
+        {note.status === 'awaiting_assignee' && (
+          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 dark:text-blue-400 font-bold uppercase tracking-wider">
+            <UserSearch className="w-3 h-3" />
+            {note.assigneeName ? `Who is "${note.assigneeName}"?` : 'Needs assignee'}
+          </span>
+        )}
+        {note.dueDate && (
+          <span className="flex items-center gap-1">
+            <CalendarClock className="w-3 h-3" />
+            Due {formatDue(note.dueDate, note.dueTime)}
           </span>
         )}
         <span className="flex items-center gap-1">
@@ -119,7 +142,7 @@ export const VoiceNoteCard: React.FC<VoiceNoteCardProps> = ({
         <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-border">
           {isBusy && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground mr-auto" />}
 
-          {(note.status === 'new' || note.status === 'unclear') && (
+          {(note.status === 'new' || note.status === 'unclear' || note.status === 'awaiting_assignee') && (
             <>
               <button
                 type="button"

@@ -24,7 +24,7 @@ export interface VerifyInvitationResponse {
 }
 
 export const invitationsApi = {
-  create: async (invitation: { email: string; roleId: string }): Promise<Invitation> => {
+  create: async (invitation: { email: string; roleId: string; phone?: string | null }): Promise<Invitation> => {
     const { data } = await apiClient.post<Invitation>('/invitations', invitation);
     return data;
   },

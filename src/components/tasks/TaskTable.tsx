@@ -229,6 +229,7 @@ export const TaskTable: React.FC<TaskTableProps> = ({
                     {/* Name & subtask checklist count */}
                     <td className="py-3.5 px-5 font-semibold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       <div className="flex items-center space-x-3.5">
+                        {task.taskNumber ? <span className="font-mono text-[10px] text-muted-foreground shrink-0">W-{task.taskNumber}</span> : null}
                         <span className="truncate max-w-[280px]" title={task.name}>{task.name}</span>
                         {task.customFields?.subtasks && task.customFields.subtasks.length > 0 && (
                           <span 

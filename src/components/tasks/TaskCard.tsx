@@ -141,6 +141,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         {/* Task Name */}
         <div>
           <h5 className="text-xs font-bold text-foreground leading-relaxed group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+            {task.taskNumber ? <span className="font-mono text-[10px] text-muted-foreground mr-1.5">W-{task.taskNumber}</span> : null}
             {task.name}
           </h5>
           {task.description && (

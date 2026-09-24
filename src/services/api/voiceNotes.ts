@@ -1,6 +1,7 @@
 import { apiClient } from './client';
 
-export type VoiceNoteStatus = 'new' | 'converted' | 'dismissed' | 'unclear';
+/** 'awaiting_assignee': has work, but the owner still has to name (or pick) the employee on WhatsApp. */
+export type VoiceNoteStatus = 'new' | 'converted' | 'dismissed' | 'unclear' | 'awaiting_assignee';
 
 export interface VoiceNote {
   id: string;
@@ -13,8 +14,18 @@ export interface VoiceNote {
   originalTranscript: string | null;
   englishText: string;
   detectedLanguage: string | null;
+  /** Extracted from the voice: employee name as heard, short work title, due date (YYYY-MM-DD) and time (HH:mm) */
+  assigneeName: string | null;
+  taskTitle: string | null;
+  dueDate: string | null;
+  dueTime: string | null;
+  /** Choices last offered to the owner on WhatsApp */
+  assigneeCandidates: { id: string; name: string }[] | null;
   status: VoiceNoteStatus;
   taskId: string | null;
+  /** Linked task's work number, e.g. "W-12", and its assignee */
+  workId: string | null;
+  taskAssigneeName: string | null;
   reviewedBy: string | null;
   reviewedAt: string | null;
   createdAt: string;

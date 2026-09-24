@@ -572,7 +572,7 @@ interface CreateTaskModalProps {
     timeEstimate?: number | null;
   }) => Promise<void>;
   /** Prefills the form each time the modal opens (e.g. from a voice note). */
-  initialValues?: { name?: string; description?: string };
+  initialValues?: { name?: string; description?: string; assigneeId?: string; dueDate?: string };
 }
 
 export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
@@ -584,19 +584,21 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-
-  useEffect(() => {
-    if (isOpen && initialValues) {
-      setName(initialValues.name ?? '');
-      setDescription(initialValues.description ?? '');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
   const [assigneeId, setAssigneeId] = useState('');
   const [priority, setPriority] = useState('medium');
   const [dueDate, setDueDate] = useState('');
   const [timeEstimate, setTimeEstimate] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && initialValues) {
+      setName(initialValues.name ?? '');
+      setDescription(initialValues.description ?? '');
+      setAssigneeId(initialValues.assigneeId ?? '');
+      setDueDate(initialValues.dueDate ?? '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

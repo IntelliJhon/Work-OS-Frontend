@@ -8,6 +8,8 @@ export interface User {
   roleId: string;
   roleName?: string;
   twoFaEnabled?: boolean;
+  /** WhatsApp number (digits only); only returned to members who can manage members */
+  phone?: string | null;
   createdAt: string;
 }
 
@@ -33,7 +35,7 @@ export const usersApi = {
     return data;
   },
 
-  update: async (id: string, updates: { roleId?: string; firstName?: string; lastName?: string }): Promise<User> => {
+  update: async (id: string, updates: { roleId?: string; firstName?: string; lastName?: string; phone?: string | null }): Promise<User> => {
     const { data } = await apiClient.patch<User>(`/users/${id}`, updates);
     return data;
   },

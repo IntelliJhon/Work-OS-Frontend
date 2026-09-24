@@ -15,6 +15,8 @@ export interface Task {
   status: 'to_do' | 'in_progress' | 'in_review' | 'done' | 'blocked' | string;
   timeEstimate: number | null;
   completedAt: string | null;
+  /** Per-workspace work number, shown as W-<n> (assigned by the server) */
+  taskNumber?: number | null;
   customFields?: {
     context?: string;
     category?: string;

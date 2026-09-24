@@ -14,6 +14,7 @@ import { useVoiceNotesList, VOICE_NOTES_KEY } from './useVoiceNotes';
 
 const TABS: { status: VoiceNoteStatus; label: string }[] = [
   { status: 'new', label: 'New' },
+  { status: 'awaiting_assignee', label: 'Needs assignee' },
   { status: 'unclear', label: 'Unclear' },
   { status: 'converted', label: 'Converted' },
   { status: 'dismissed', label: 'Dismissed' },
@@ -21,6 +22,7 @@ const TABS: { status: VoiceNoteStatus; label: string }[] = [
 
 const EMPTY_MESSAGES: Record<VoiceNoteStatus, string> = {
   new: 'No new voice notes. Notes sent from the verified WhatsApp number appear here.',
+  awaiting_assignee: 'No voice notes waiting for an employee name.',
   unclear: 'No unclear voice notes.',
   converted: 'No voice notes have been converted to tasks yet.',
   dismissed: 'No dismissed voice notes.',
@@ -131,8 +133,11 @@ export const VoiceNotesPage: React.FC = () => {
     () =>
       taskSource
         ? {
-            name: deriveTaskName(taskSource),
+            name: taskSource.taskTitle || deriveTaskName(taskSource),
             description: taskSource.englishText || taskSource.originalTranscript || '',
+            dueDate: taskSource.dueDate || '',
+            // Preselect only when there is exactly one likely employee
+            assigneeId: taskSource.assigneeCandidates?.length === 1 ? taskSource.assigneeCandidates[0].id : '',
           }
         : undefined,
     [taskSource],
@@ -175,7 +180,7 @@ export const VoiceNotesPage: React.FC = () => {
               {count !== undefined && (
                 <span
                   className={`px-1.5 py-0.5 rounded-md text-[10px] ${
-                    tab.status === 'unclear' && count > 0
+                    (tab.status === 'unclear' || tab.status === 'awaiting_assignee') && count > 0
                       ? 'bg-amber-500/15 text-amber-500 dark:text-amber-400'
                       : 'bg-muted text-muted-foreground'
                   }`}
