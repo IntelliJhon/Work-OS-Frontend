@@ -329,11 +329,11 @@ export const DashboardLayout: React.FC = () => {
 
       {/* Sidebar Navigation */}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 w-64 bg-card/60 backdrop-blur-xl border-r border-border transition-transform duration-300 transform ${
+        className={`fixed inset-y-0 left-0 z-30 w-64 flex flex-col bg-card/60 backdrop-blur-xl border-r border-border transition-transform duration-300 transform ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="h-16 flex items-center justify-between px-6 border-b border-border">
+        <div className="h-16 shrink-0 flex items-center justify-between px-6 border-b border-border">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg glow-primary">
               <span className="font-bold text-slate-900 dark:text-white text-sm">W</span>
@@ -348,7 +348,7 @@ export const DashboardLayout: React.FC = () => {
         </div>
 
         {/* Profile Card Summary */}
-        <div className="px-4 py-4 border-b border-slate-200/50 dark:border-border/50">
+        <div className="px-4 py-4 shrink-0 border-b border-slate-200/50 dark:border-border/50">
           <div className="flex items-center space-x-3 p-2 rounded-xl bg-muted/50 border border-border">
             <div className="w-10 h-10 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
               <User className="w-5 h-5 text-indigo-400" />
@@ -365,7 +365,7 @@ export const DashboardLayout: React.FC = () => {
         </div>
 
         {/* Navigation list */}
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto max-h-[calc(100vh-170px)]">
+        <nav className="flex-1 min-h-0 px-4 py-6 space-y-1.5 overflow-y-auto">
           {filteredItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -388,7 +388,7 @@ export const DashboardLayout: React.FC = () => {
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-slate-200/50 dark:border-border/50 absolute bottom-0 w-full left-0 bg-background/80">
+        <div className="p-4 shrink-0 border-t border-slate-200/50 dark:border-border/50 bg-background/80">
           <button
             onClick={handleLogout}
             className="w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl border border-transparent hover:border-red-500/20 transition-all"
