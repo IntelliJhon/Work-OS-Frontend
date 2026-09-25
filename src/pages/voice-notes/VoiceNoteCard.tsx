@@ -13,6 +13,7 @@ import {
   UserSearch,
   CalendarClock,
   Keyboard,
+  Trash2,
 } from 'lucide-react';
 import type { VoiceNote } from '../../services/api/voiceNotes';
 
@@ -24,6 +25,7 @@ interface VoiceNoteCardProps {
   onCreateTask: (note: VoiceNote) => void;
   onDismiss: (note: VoiceNote) => void;
   onRestore: (note: VoiceNote) => void;
+  onDelete: (note: VoiceNote) => void;
 }
 
 const isPlayableUrl = (url: string | null): url is string => !!url && /^https?:\/\//i.test(url);
@@ -45,6 +47,7 @@ export const VoiceNoteCard: React.FC<VoiceNoteCardProps> = ({
   onCreateTask,
   onDismiss,
   onRestore,
+  onDelete,
 }) => {
   const [showOriginal, setShowOriginal] = useState(false);
   const isUnclear = note.status === 'unclear';
@@ -177,15 +180,26 @@ export const VoiceNoteCard: React.FC<VoiceNoteCardProps> = ({
           )}
 
           {note.status === 'dismissed' && (
-            <button
-              type="button"
-              disabled={isBusy}
-              onClick={() => onRestore(note)}
-              className={`${actionBtn} bg-muted hover:bg-accent text-muted-foreground hover:text-foreground`}
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Restore</span>
-            </button>
+            <>
+              <button
+                type="button"
+                disabled={isBusy}
+                onClick={() => onDelete(note)}
+                className={`${actionBtn} bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete</span>
+              </button>
+              <button
+                type="button"
+                disabled={isBusy}
+                onClick={() => onRestore(note)}
+                className={`${actionBtn} bg-muted hover:bg-accent text-muted-foreground hover:text-foreground`}
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Restore</span>
+              </button>
+            </>
           )}
         </div>
       )}

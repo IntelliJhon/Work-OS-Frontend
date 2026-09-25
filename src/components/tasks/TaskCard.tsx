@@ -5,6 +5,8 @@ import type { Task } from '../../services/api/tasks.api';
 import type { Project, Sprint, Phase } from '../../services/api/projects';
 import type { User } from '../../services/api/users';
 import { useAuthStore } from '../../store/authStore';
+import { hasPermission } from '../../features/auth/permissions';
+import { PERMISSIONS } from '../../features/auth/permission.constants';
 
 interface TaskCardProps {
   task: Task;
@@ -31,7 +33,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const assignee = assignees.find((u) => u.id === task.assigneeId);
 
   const { user } = useAuthStore();
-  const isFullAccess = user?.role === 'Admin' || user?.role === 'Project Manager' || project?.pmId === user?.id;
+  // Same rule as the backend: the Admin role or the admin permission (e.g. "Tenant Admin"), project managers, the project's PM
+  const isFullAccess = user?.role === 'Admin' || hasPermission(user?.permissions, PERMISSIONS.ADMIN) || user?.role === 'Project Manager' || project?.pmId === user?.id;
   const isAssignee = task.assigneeId === user?.id;
   const canDrag = isFullAccess || isAssignee;
 

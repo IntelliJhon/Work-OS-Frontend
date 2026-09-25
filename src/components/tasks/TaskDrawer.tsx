@@ -7,6 +7,8 @@ import type { User } from '../../services/api/users';
 import { CommentsSystem } from '../collaboration/CommentsSystem';
 import { useAuthStore } from '../../store/authStore';
 import { useConfirm } from '../ui/ConfirmDialog';
+import { hasPermission } from '../../features/auth/permissions';
+import { PERMISSIONS } from '../../features/auth/permission.constants';
 
 interface TaskDrawerProps {
   task: Task | null;
@@ -51,7 +53,8 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   const confirm = useConfirm();
   const project = projects.find((p) => p.id === task?.projectId);
 
-  const isFullAccess = user?.role === 'Admin' || user?.role === 'Project Manager' || project?.pmId === user?.id;
+  // Same rule as the backend: the Admin role or the admin permission (e.g. "Tenant Admin"), project managers, the project's PM
+  const isFullAccess = user?.role === 'Admin' || hasPermission(user?.permissions, PERMISSIONS.ADMIN) || user?.role === 'Project Manager' || project?.pmId === user?.id;
   const isAssignee = task?.assigneeId === user?.id;
 
   const canUpdate = isFullAccess || isAssignee;

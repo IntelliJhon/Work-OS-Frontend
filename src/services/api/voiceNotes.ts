@@ -87,6 +87,11 @@ export const voiceNotesApi = {
     const { data } = await apiClient.patch<{ data: VoiceNote }>(`/voice-notes/${id}`, payload);
     return data.data;
   },
+
+  /** Permanent; the backend only allows it for dismissed notes. */
+  remove: async (id: string): Promise<void> => {
+    await apiClient.delete(`/voice-notes/${id}`);
+  },
 };
 
 /** Backend returns { error, code } for voice errors and { error: 'Validation Error', details } for zod failures. */

@@ -8,6 +8,7 @@ import { usersApi } from '../../services/api/users';
 import { usePermissions } from '../../features/auth/usePermissions';
 import { PERMISSIONS } from '../../features/auth/permission.constants';
 import { useToast } from '../../components/ui/Toast';
+import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { CreateTaskModal } from '../tasks/TasksPage';
 import { VoiceNoteCard } from './VoiceNoteCard';
 import { useVoiceNotesList, VOICE_NOTES_KEY } from './useVoiceNotes';
@@ -39,6 +40,7 @@ const deriveTaskName = (note: VoiceNote): string => {
 export const VoiceNotesPage: React.FC = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const confirm = useConfirm();
   const { can } = usePermissions();
   const canUpdate = can(PERMISSIONS.VOICE_NOTES_UPDATE);
   const canCreateTask = can(PERMISSIONS.TASK_CREATE);
@@ -73,6 +75,27 @@ export const VoiceNotesPage: React.FC = () => {
     onError: (err) => toast.error(getVoiceApiError(err, 'Could not update the voice note.'), 'Voice Notes'),
     onSettled: () => setBusyId(null),
   });
+
+  const removeNote = useMutation({
+    mutationFn: (note: VoiceNote) => voiceNotesApi.remove(note.id),
+    onMutate: (note) => setBusyId(note.id),
+    onSuccess: () => {
+      toast.success('Voice note deleted.');
+      refreshNotes();
+    },
+    onError: (err) => toast.error(getVoiceApiError(err, 'Could not delete the voice note.'), 'Voice Notes'),
+    onSettled: () => setBusyId(null),
+  });
+
+  const handleDelete = async (note: VoiceNote) => {
+    const ok = await confirm({
+      title: 'Delete this voice note?',
+      message: 'It will be removed permanently from Work OS. This cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'danger',
+    });
+    if (ok) removeNote.mutate(note);
+  };
 
   const handleCreateTask = async (taskData: {
     name: string;
@@ -220,6 +243,7 @@ export const VoiceNotesPage: React.FC = () => {
               onCreateTask={setTaskSource}
               onDismiss={(n) => updateStatus.mutate({ note: n, status: 'dismissed' })}
               onRestore={(n) => updateStatus.mutate({ note: n, status: 'new' })}
+              onDelete={handleDelete}
             />
           ))}
           {hasNextPage && (
