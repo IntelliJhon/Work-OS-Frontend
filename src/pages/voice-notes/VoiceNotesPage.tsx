@@ -153,7 +153,7 @@ export const VoiceNotesPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Voice Notes</h1>
           <p className="text-xs text-muted-foreground mt-1 font-light">
-            WhatsApp voice notes from your workspace's verified number, transcribed and translated to English.
+            Work sent on WhatsApp from your workspace's verified number, as voice notes or typed messages, translated to English.
           </p>
         </div>
       </div>

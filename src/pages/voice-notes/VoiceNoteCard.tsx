@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   UserSearch,
   CalendarClock,
+  Keyboard,
 } from 'lucide-react';
 import type { VoiceNote } from '../../services/api/voiceNotes';
 
@@ -49,6 +50,8 @@ export const VoiceNoteCard: React.FC<VoiceNoteCardProps> = ({
   const isUnclear = note.status === 'unclear';
   const hasOriginal = !!note.originalTranscript && note.originalTranscript.trim() !== note.englishText.trim();
   const sender = note.senderName || note.senderPhone;
+  // Work typed on WhatsApp instead of spoken: stored the same way, without audio
+  const isTyped = !note.audioUrl;
 
   const actionBtn =
     'flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer';
@@ -89,6 +92,12 @@ export const VoiceNoteCard: React.FC<VoiceNoteCardProps> = ({
           <User className="w-3 h-3" />
           {sender}
         </span>
+        {isTyped && (
+          <span className="flex items-center gap-1">
+            <Keyboard className="w-3 h-3" />
+            Typed
+          </span>
+        )}
         {note.detectedLanguage && (
           <span className="flex items-center gap-1">
             <Languages className="w-3 h-3" />
@@ -120,7 +129,7 @@ export const VoiceNoteCard: React.FC<VoiceNoteCardProps> = ({
             className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-all cursor-pointer"
           >
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showOriginal ? 'rotate-180' : ''}`} />
-            Original transcript
+            {isTyped ? 'Original message' : 'Original transcript'}
           </button>
           {showOriginal && (
             <p className="mt-2 p-3 rounded-xl bg-muted/50 border border-border text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-words">
