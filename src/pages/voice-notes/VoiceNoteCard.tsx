@@ -14,6 +14,9 @@ import {
   CalendarClock,
   Keyboard,
   Trash2,
+  MessageCircleQuestion,
+  UserCheck,
+  Eye,
 } from 'lucide-react';
 import type { VoiceNote } from '../../services/api/voiceNotes';
 
@@ -79,6 +82,18 @@ export const VoiceNoteCard: React.FC<VoiceNoteCardProps> = ({
             {note.workId ? `${note.workId}${note.taskAssigneeName ? ` → ${note.taskAssigneeName}` : ''}` : 'Task created'}
           </span>
         )}
+        {note.status === 'awaiting_confirmation' && (
+          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-500 dark:text-violet-400 font-bold uppercase tracking-wider">
+            <MessageCircleQuestion className="w-3 h-3" />
+            {note.proposedAssigneeName ? `Confirm: ${note.proposedAssigneeName}?` : 'Waiting for sender'}
+          </span>
+        )}
+        {note.noteKind === 'report' && note.status !== 'converted' && (
+          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 dark:text-amber-400 font-bold uppercase tracking-wider">
+            <AlertTriangle className="w-3 h-3" />
+            Update, not new work
+          </span>
+        )}
         {note.status === 'awaiting_assignee' && (
           <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 dark:text-blue-400 font-bold uppercase tracking-wider">
             <UserSearch className="w-3 h-3" />
@@ -99,6 +114,18 @@ export const VoiceNoteCard: React.FC<VoiceNoteCardProps> = ({
           <span className="flex items-center gap-1">
             <Keyboard className="w-3 h-3" />
             Typed
+          </span>
+        )}
+        {note.reviewerName && (
+          <span className="flex items-center gap-1" title="Checks the work">
+            <UserCheck className="w-3 h-3" />
+            Checks: {note.reviewerName}
+          </span>
+        )}
+        {!!note.informedNames?.length && (
+          <span className="flex items-center gap-1" title="Should be informed">
+            <Eye className="w-3 h-3" />
+            Informed: {note.informedNames.join(', ')}
           </span>
         )}
         {note.detectedLanguage && (
@@ -154,7 +181,7 @@ export const VoiceNoteCard: React.FC<VoiceNoteCardProps> = ({
         <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-border">
           {isBusy && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground mr-auto" />}
 
-          {(note.status === 'new' || note.status === 'unclear' || note.status === 'awaiting_assignee') && (
+          {(note.status === 'new' || note.status === 'unclear' || note.status === 'awaiting_assignee' || note.status === 'awaiting_confirmation') && (
             <>
               <button
                 type="button"

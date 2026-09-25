@@ -1,7 +1,10 @@
 import { apiClient } from './client';
 
-/** 'awaiting_assignee': has work, but the owner still has to name (or pick) the employee on WhatsApp. */
-export type VoiceNoteStatus = 'new' | 'converted' | 'dismissed' | 'unclear' | 'awaiting_assignee';
+/**
+ * 'awaiting_assignee': has work, but the owner still has to name (or pick) the employee on WhatsApp.
+ * 'awaiting_confirmation': the owner was shown what was understood and must reply 1 / 2 / 3.
+ */
+export type VoiceNoteStatus = 'new' | 'converted' | 'dismissed' | 'unclear' | 'awaiting_assignee' | 'awaiting_confirmation';
 
 export interface VoiceNote {
   id: string;
@@ -21,6 +24,14 @@ export interface VoiceNote {
   dueTime: string | null;
   /** Choices last offered to the owner on WhatsApp */
   assigneeCandidates: { id: string; name: string }[] | null;
+  /** Doer waiting for the owner's confirmation */
+  proposedAssigneeId: string | null;
+  proposedAssigneeName: string | null;
+  /** Other people in the note, as understood */
+  reviewerName: string | null;
+  informedNames: string[] | null;
+  /** 'report': sounds like an update about something already done */
+  noteKind: 'instruction' | 'report' | null;
   status: VoiceNoteStatus;
   taskId: string | null;
   /** Linked task's work number, e.g. "W-12", and its assignee */
