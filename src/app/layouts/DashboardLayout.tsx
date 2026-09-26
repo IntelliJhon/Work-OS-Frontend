@@ -20,6 +20,7 @@ import { AlertSoundManager } from '../../components/notifications/AlertSoundMana
 import { RealtimeAlertToast, triggerRealtimeToast } from '../../components/notifications/RealtimeAlertToast';
 import { NotificationDrawer } from '../../components/notifications/NotificationDrawer';
 import { VoiceNotesNavBadge } from '../../pages/voice-notes/VoiceNotesNavBadge';
+import { platformApi } from '../../services/api/platform';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -37,7 +38,8 @@ import {
   Users,
   UserCheck,
   MessageSquareWarning,
-  Mic
+  Mic,
+  Bot
 } from 'lucide-react';
 
 export const DashboardLayout: React.FC = () => {
@@ -189,6 +191,7 @@ export const DashboardLayout: React.FC = () => {
     clientsInfo?.isOurCompany === true;
 
   const { can } = usePermissions();
+  const { data: platformMe } = useQuery({ queryKey: ['platform', 'me'], queryFn: platformApi.me, staleTime: 300000 });
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -201,11 +204,15 @@ export const DashboardLayout: React.FC = () => {
     { name: 'Tasks', path: '/dashboard/tasks', icon: CheckSquare, permission: PERMISSIONS.TASK_READ },
     { name: 'Voice Notes', path: '/voice-notes', icon: Mic, permission: PERMISSIONS.VOICE_NOTES_READ },
     { name: 'Settings', path: '/settings/members', icon: Settings, permission: PERMISSIONS.WORKSPACE_MEMBERS_READ },
+    { name: 'WhatsApp Bots', path: '/platform/whatsapp-bots', icon: Bot, platformOnly: true },
   ];
 
   const filteredItems = navItems.filter((item) => {
     if ((item.name === 'Clients' || item.name === 'Complaints') && !isLeadsndealsTenant) {
       return false;
+    }
+    if ('platformOnly' in item && item.platformOnly) {
+      return platformMe?.isPlatformAdmin === true;
     }
     if (item.permission) {
       return can(item.permission);

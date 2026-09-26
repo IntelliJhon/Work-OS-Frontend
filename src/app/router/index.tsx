@@ -27,6 +27,7 @@ const RolesManagement = lazy(() => import('../../pages/settings/RolesManagement'
 const SecurityActivityCenter = lazy(() => import('../../pages/settings/SecurityActivityCenter'));
 const VoiceNotesSettings = lazy(() => import('../../pages/settings/voice/VoiceNotesSettings'));
 const VoiceNotesPage = lazy(() => import('../../pages/voice-notes/VoiceNotesPage'));
+const WhatsAppBotsPage = lazy(() => import('../../pages/platform/WhatsAppBotsPage'));
 const AcceptInvite = lazy(() => import('../../pages/auth/AcceptInvite'));
 const TasksPage = lazy(() => import('../../pages/tasks/TasksPage').then(m => ({ default: m.TasksPage })));
 const ManagementReviewView = lazy(() => import('../../pages/management/ManagementReviewView'));
@@ -105,6 +106,8 @@ export const AppRouter: React.FC = () => {
               <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.VOICE_NOTES_READ]} />}>
                 <Route path="/voice-notes" element={<VoiceNotesPage />} />
               </Route>
+              {/* Platform admins only (checked by the page and the API) */}
+              <Route path="/platform/whatsapp-bots" element={<WhatsAppBotsPage />} />
 
               {/* Placeholders for secondary navigation */}
               <Route path="/dashboard/tasks" element={<TasksPage />} />
