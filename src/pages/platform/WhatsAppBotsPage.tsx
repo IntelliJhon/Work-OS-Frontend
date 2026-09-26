@@ -8,8 +8,8 @@ import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { BotForm } from './BotForm';
 
 const QUERY_KEY = ['platform', 'whatsapp-bots'];
-// The n8n webhook every WAAU bot calls; each workspace bot adds ?bot=<phone number id>
-const WEBHOOK_URL = import.meta.env.VITE_WHATSAPP_WEBHOOK_URL || '';
+// Base of the n8n "WAAU Webhook (Workspace Bot)" URL; each workspace bot calls <base>/<phone number id>
+const WEBHOOK_URL = String(import.meta.env.VITE_WHATSAPP_WEBHOOK_URL || '').replace(/\/+$/, '');
 
 const apiError = (err: any, fallback: string) =>
   err?.response?.data?.details?.[0]?.message || err?.response?.data?.error || fallback;
@@ -68,7 +68,7 @@ export const WhatsAppBotsPage: React.FC = () => {
   }, [data, search]);
 
   const copyWebhook = async (botId: string) => {
-    const url = `${WEBHOOK_URL}?bot=${botId}`;
+    const url = `${WEBHOOK_URL}/${botId}`;
     try {
       await navigator.clipboard.writeText(url);
       toast.success('Webhook URL copied.');
