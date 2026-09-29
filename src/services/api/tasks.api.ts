@@ -17,6 +17,8 @@ export interface Task {
   completedAt: string | null;
   /** Per-workspace work number, shown as W-<n> (assigned by the server) */
   taskNumber?: number | null;
+  /** Exact due moment (from the due date and time), set by the server */
+  dueAt?: string | null;
   customFields?: {
     context?: string;
     category?: string;
@@ -26,6 +28,10 @@ export interface Task {
     priority?: 'low' | 'medium' | 'high' | 'critical';
     startDate?: string;
     dueDate?: string;
+    /** 'HH:mm', local time; a reminder needs it */
+    dueTime?: string;
+    /** Minutes before the due time the assignee is reminded */
+    reminderMinutes?: number;
     storyPoints?: number;
     subtasks?: {
       id: string;

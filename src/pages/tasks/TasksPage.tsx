@@ -20,6 +20,7 @@ import { TaskBoard } from '../../components/tasks/TaskBoard';
 import { TaskDrawer } from '../../components/tasks/TaskDrawer';
 import { TaskActivityFeed } from '../../components/tasks/TaskActivityFeed';
 import { DatePickerInput } from '../../components/ui/DatePickerInput';
+import { DueReminderFields, DEFAULT_REMINDER_MINUTES, dueReminderFields } from '../../components/tasks/DueReminderFields';
 
 // APIs & Stores
 import { tasksApi } from '../../services/api/tasks.api';
@@ -307,14 +308,7 @@ export const TasksPage: React.FC = () => {
     }
   };
 
-  const handleCreateTask = async (taskData: {
-    name: string;
-    description: string;
-    assigneeId: string;
-    priority: string;
-    dueDate: string;
-    timeEstimate?: number | null;
-  }) => {
+  const handleCreateTask = async (taskData: NewTaskData) => {
     try {
       // Submit Create Task payload
       const payload = {
@@ -329,6 +323,7 @@ export const TasksPage: React.FC = () => {
         customFields: {
           priority: taskData.priority as any,
           dueDate: taskData.dueDate || undefined,
+          ...dueReminderFields(taskData.dueDate, taskData.dueTime, taskData.reminderMinutes),
           storyPoints: 0,
           phaseId: undefined,
           subtasks: [],
@@ -559,20 +554,26 @@ export const TasksPage: React.FC = () => {
   );
 };
 
+export interface NewTaskData {
+  name: string;
+  description: string;
+  assigneeId: string;
+  priority: string;
+  dueDate: string;
+  /** 'HH:mm' or '' */
+  dueTime: string;
+  /** Minutes before the due time; 0 = no reminder */
+  reminderMinutes: number;
+  timeEstimate?: number | null;
+}
+
 interface CreateTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   users: any[];
-  onCreate: (taskData: {
-    name: string;
-    description: string;
-    assigneeId: string;
-    priority: string;
-    dueDate: string;
-    timeEstimate?: number | null;
-  }) => Promise<void>;
+  onCreate: (taskData: NewTaskData) => Promise<void>;
   /** Prefills the form each time the modal opens (e.g. from a voice note). */
-  initialValues?: { name?: string; description?: string; assigneeId?: string; dueDate?: string };
+  initialValues?: { name?: string; description?: string; assigneeId?: string; dueDate?: string; dueTime?: string };
 }
 
 export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
@@ -587,8 +588,16 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   const [assigneeId, setAssigneeId] = useState('');
   const [priority, setPriority] = useState('medium');
   const [dueDate, setDueDate] = useState('');
+  const [dueTime, setDueTime] = useState('');
+  const [reminderMinutes, setReminderMinutes] = useState(0);
   const [timeEstimate, setTimeEstimate] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Picking a due time for the first time suggests the usual reminder
+  const handleDueTimeChange = (value: string) => {
+    if (value && !dueTime && reminderMinutes === 0) setReminderMinutes(DEFAULT_REMINDER_MINUTES);
+    setDueTime(value);
+  };
 
   useEffect(() => {
     if (isOpen && initialValues) {
@@ -596,6 +605,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       setDescription(initialValues.description ?? '');
       setAssigneeId(initialValues.assigneeId ?? '');
       setDueDate(initialValues.dueDate ?? '');
+      setDueTime(initialValues.dueTime ?? '');
+      setReminderMinutes(initialValues.dueTime ? DEFAULT_REMINDER_MINUTES : 0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -612,6 +623,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         assigneeId,
         priority,
         dueDate,
+        dueTime,
+        reminderMinutes,
         timeEstimate: timeEstimate === '' ? null : Math.floor(Number(timeEstimate)),
       });
       // Reset form
@@ -620,6 +633,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       setAssigneeId('');
       setPriority('medium');
       setDueDate('');
+      setDueTime('');
+      setReminderMinutes(0);
       setTimeEstimate('');
       onClose();
     } catch (err) {
@@ -737,6 +752,15 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                     />
                   </div>
                 </div>
+
+                {/* Due time + reminder */}
+                <DueReminderFields
+                  dueDate={dueDate}
+                  dueTime={dueTime}
+                  reminderMinutes={reminderMinutes}
+                  onDueTimeChange={handleDueTimeChange}
+                  onReminderChange={setReminderMinutes}
+                />
 
                 {/* Time Estimate */}
                 <div className="space-y-1.5">

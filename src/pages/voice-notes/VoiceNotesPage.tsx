@@ -9,7 +9,8 @@ import { usePermissions } from '../../features/auth/usePermissions';
 import { PERMISSIONS } from '../../features/auth/permission.constants';
 import { useToast } from '../../components/ui/Toast';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
-import { CreateTaskModal } from '../tasks/TasksPage';
+import { CreateTaskModal, type NewTaskData } from '../tasks/TasksPage';
+import { dueReminderFields } from '../../components/tasks/DueReminderFields';
 import { VoiceNoteCard } from './VoiceNoteCard';
 import { useVoiceNotesList, VOICE_NOTES_KEY } from './useVoiceNotes';
 
@@ -99,14 +100,7 @@ export const VoiceNotesPage: React.FC = () => {
     if (ok) removeNote.mutate(note);
   };
 
-  const handleCreateTask = async (taskData: {
-    name: string;
-    description: string;
-    assigneeId: string;
-    priority: string;
-    dueDate: string;
-    timeEstimate?: number | null;
-  }) => {
+  const handleCreateTask = async (taskData: NewTaskData) => {
     const note = taskSource;
     if (!note) return;
 
@@ -125,6 +119,7 @@ export const VoiceNotesPage: React.FC = () => {
         customFields: {
           priority: taskData.priority as 'low' | 'medium' | 'high' | 'critical',
           dueDate: taskData.dueDate || undefined,
+          ...dueReminderFields(taskData.dueDate, taskData.dueTime, taskData.reminderMinutes),
           storyPoints: 0,
           subtasks: [],
           createdFrom: 'sidebar',
@@ -161,6 +156,7 @@ export const VoiceNotesPage: React.FC = () => {
             name: taskSource.taskTitle || deriveTaskName(taskSource),
             description: taskSource.englishText || taskSource.originalTranscript || '',
             dueDate: taskSource.dueDate || '',
+            dueTime: taskSource.dueDate ? taskSource.dueTime || '' : '',
             // The proposed doer, or the only likely employee
             assigneeId: taskSource.proposedAssigneeId
               || (taskSource.assigneeCandidates?.length === 1 ? taskSource.assigneeCandidates[0].id : ''),

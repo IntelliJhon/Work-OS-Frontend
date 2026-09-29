@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Trash2, Plus, MessageSquare, Clock, CheckSquare, Save, Loader2 } from 'lucide-react';
 import { DatePickerInput } from '../ui/DatePickerInput';
+import { DueReminderFields, DEFAULT_REMINDER_MINUTES, dueReminderFields } from './DueReminderFields';
 import type { Task } from '../../services/api/tasks.api';
 import type { Project, Sprint, Phase } from '../../services/api/projects';
 import type { User } from '../../services/api/users';
@@ -69,6 +70,8 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   const [sprintId, setSprintId] = useState('');
   const [priority, setPriority] = useState('medium');
   const [dueDate, setDueDate] = useState('');
+  const [dueTime, setDueTime] = useState('');
+  const [reminderMinutes, setReminderMinutes] = useState(0);
   const [phaseId, setPhaseId] = useState('');
   const [localTimeEstimate, setLocalTimeEstimate] = useState('');
 
@@ -93,6 +96,8 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
       setSprintId(task.sprintId || '');
       setPriority(task.customFields?.priority || 'medium');
       setDueDate(task.customFields?.dueDate || '');
+      setDueTime(task.customFields?.dueTime || '');
+      setReminderMinutes(task.customFields?.reminderMinutes || 0);
       setPhaseId(task.customFields?.phaseId || '');
       setSubtasks(task.customFields?.subtasks || []);
       setLocalTimeEstimate(
@@ -131,6 +136,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
           ...task.customFields,
           priority: priority as any,
           dueDate: dueDate || undefined,
+          ...dueReminderFields(dueDate, dueTime, reminderMinutes),
           phaseId: phaseId || undefined,
           subtasks,
         },
@@ -372,6 +378,23 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                 disabled={!canEditFull}
                 onChange={(val) => { setDueDate(val); markDirty(); }}
                 placeholder="No due date set"
+              />
+            </div>
+
+            {/* Due time + reminder */}
+            <div className="col-span-2">
+              <DueReminderFields
+                dueDate={dueDate}
+                dueTime={dueTime}
+                reminderMinutes={reminderMinutes}
+                disabled={!canEditFull}
+                onDueTimeChange={(value) => {
+                  // Picking a due time for the first time suggests the usual reminder
+                  if (value && !dueTime && reminderMinutes === 0) setReminderMinutes(DEFAULT_REMINDER_MINUTES);
+                  setDueTime(value);
+                  markDirty();
+                }}
+                onReminderChange={(minutes) => { setReminderMinutes(minutes); markDirty(); }}
               />
             </div>
           </div>

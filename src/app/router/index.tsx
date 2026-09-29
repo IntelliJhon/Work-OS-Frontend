@@ -30,6 +30,7 @@ const VoiceNotesPage = lazy(() => import('../../pages/voice-notes/VoiceNotesPage
 const WhatsAppBotsPage = lazy(() => import('../../pages/platform/WhatsAppBotsPage'));
 const AcceptInvite = lazy(() => import('../../pages/auth/AcceptInvite'));
 const TasksPage = lazy(() => import('../../pages/tasks/TasksPage').then(m => ({ default: m.TasksPage })));
+const CalendarPage = lazy(() => import('../../pages/calendar/CalendarPage'));
 const ManagementReviewView = lazy(() => import('../../pages/management/ManagementReviewView'));
 const ClientsList = lazy(() => import('../../pages/clients/ClientsList'));
 const EmployeesPage = lazy(() => import('../../pages/employees/EmployeesPage'));
@@ -111,6 +112,9 @@ export const AppRouter: React.FC = () => {
 
               {/* Placeholders for secondary navigation */}
               <Route path="/dashboard/tasks" element={<TasksPage />} />
+              <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.TASK_READ]} />}>
+                <Route path="/calendar" element={<CalendarPage />} />
+              </Route>
               <Route
                 path="/dashboard/sprints"
                 element={<Navigate to="/dashboard/activities" replace />}
