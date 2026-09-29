@@ -14,7 +14,7 @@ import { PERMISSIONS } from '../../features/auth/permission.constants';
 import { notificationsApi } from '../../services/api/notifications';
 import { projectsApi } from '../../services/api/projects';
 import type { Project } from '../../services/api/projects';
-import { clientsApi } from '../../services/api/clients.api';
+import { isLeadsndealsTenant } from '../../features/auth/company';
 import { useQuery } from '@tanstack/react-query';
 import { AlertSoundManager } from '../../components/notifications/AlertSoundManager';
 import { RealtimeAlertToast, triggerRealtimeToast } from '../../components/notifications/RealtimeAlertToast';
@@ -176,19 +176,8 @@ export const DashboardLayout: React.FC = () => {
   };
 
 
-  const { data: clientsInfo } = useQuery({
-    queryKey: ['clients-info'],
-    queryFn: clientsApi.list,
-    enabled: !!user,
-    staleTime: 300000,
-  });
-
-  const LEADSNDEALS_TENANT_ID = 'aee1faf8-27d5-4f5d-9b14-9246abbd0eec';
-  const isLeadsndealsTenant =
-    user?.tenantId === LEADSNDEALS_TENANT_ID ||
-    user?.tenantId === 'leadsndeals' ||
-    clientsInfo?.slug === 'leadsndeals' ||
-    clientsInfo?.isOurCompany === true;
+  // Clients and Complaints: LeadsNDeals workspace only, matched on the workspace id (the API enforces it too)
+  const showCompanyTools = isLeadsndealsTenant(user?.tenantId);
 
   const { can } = usePermissions();
   const { data: platformMe } = useQuery({ queryKey: ['platform', 'me'], queryFn: platformApi.me, staleTime: 300000 });
@@ -208,7 +197,7 @@ export const DashboardLayout: React.FC = () => {
   ];
 
   const filteredItems = navItems.filter((item) => {
-    if ((item.name === 'Clients' || item.name === 'Complaints') && !isLeadsndealsTenant) {
+    if ((item.name === 'Clients' || item.name === 'Complaints') && !showCompanyTools) {
       return false;
     }
     if ('platformOnly' in item && item.platformOnly) {

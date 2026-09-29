@@ -1,4 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuthStore } from '../../store/authStore';
+import { isLeadsndealsTenant } from '../../features/auth/company';
 import { complaintsApi } from '../../services/api/complaints';
 import type { Complaint } from '../../services/api/complaints';
 import { useSocket } from '../../services/socket/socket-context';
@@ -833,4 +836,10 @@ export const ComplaintsPage: React.FC = () => {
   );
 };
 
-export default ComplaintsPage;
+/** Complaints is an internal tool of the LeadsNDeals workspace only (the API enforces it too). */
+const ComplaintsRoute: React.FC = () => {
+  const user = useAuthStore((state) => state.user);
+  return isLeadsndealsTenant(user?.tenantId) ? <ComplaintsPage /> : <Navigate to="/dashboard" replace />;
+};
+
+export default ComplaintsRoute;

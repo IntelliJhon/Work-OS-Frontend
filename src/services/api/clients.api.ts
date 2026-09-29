@@ -213,6 +213,42 @@ export const clientsApi = {
     return data;
   },
 
+  /**
+   * Opens or downloads a stored document. The API needs the login token, which a plain link in a new
+   * tab would not send, so the file (or its signed link, via ?as=link) is fetched here first.
+   */
+  openClientDocument: async (clientId: string, doc: ClientDocument, mode: 'view' | 'download'): Promise<void> => {
+    // Open the tab now, while the click still counts as a user action (popup blockers)
+    const tab = mode === 'view' ? window.open('', '_blank') : null;
+    try {
+      const { data } = await apiClient.get<Blob>(`/clients/${clientId}/documents/${doc.id}/${mode}`, {
+        params: { as: 'link' },
+        responseType: 'blob',
+      });
+      let href: string;
+      if (data.type.includes('application/json')) {
+        href = JSON.parse(await data.text()).url;
+      } else {
+        href = URL.createObjectURL(data);
+        setTimeout(() => URL.revokeObjectURL(href), 60_000);
+      }
+      if (tab) {
+        tab.location.href = href;
+        return;
+      }
+      const link = document.createElement('a');
+      link.href = href;
+      link.download = doc.fileName;
+      link.rel = 'noopener';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      tab?.close();
+      throw err;
+    }
+  },
+
   getOnboardingList: async (): Promise<GetOnboardingClientsResponse> => {
     const { data } = await apiClient.get<GetOnboardingClientsResponse>('/clients/onboarding');
     return data;

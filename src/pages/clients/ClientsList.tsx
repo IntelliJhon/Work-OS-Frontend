@@ -9,7 +9,9 @@ import {
   type ClientDocument,
   type EnquiryClient,
 } from '../../services/api/clients.api';
+import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import { isLeadsndealsTenant } from '../../features/auth/company';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { useToast } from '../../components/ui/Toast';
 import {
@@ -1761,6 +1763,17 @@ const ClientDocumentsPopover: React.FC<ClientDocsPopoverProps> = ({
     }
   });
 
+  // External links open directly; stored files go through the API, which needs the login token
+  const isExternalLink = (doc: ClientDocument) => doc.fileUrl.startsWith('http') && !doc.fileUrl.includes('cloudinary');
+
+  const handleOpenDoc = async (doc: ClientDocument, mode: 'view' | 'download') => {
+    try {
+      await clientsApi.openClientDocument(clientId, doc, mode);
+    } catch (err: any) {
+      toast.error(err?.response?.status === 404 ? 'Document not found' : 'Could not open the document.');
+    }
+  };
+
   const handleDeleteDoc = async (doc: ClientDocument) => {
     const ok = await confirm({
       title: 'Remove Document',
@@ -1947,11 +1960,12 @@ const ClientDocumentsPopover: React.FC<ClientDocsPopoverProps> = ({
 
                       <div className="flex items-center space-x-1 shrink-0">
                         <a
-                          href={
-                            doc.fileUrl.startsWith('http') && !doc.fileUrl.includes('cloudinary')
-                              ? doc.fileUrl
-                              : `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/clients/${clientId}/documents/${doc.id}/view`
-                          }
+                          href={isExternalLink(doc) ? doc.fileUrl : '#'}
+                          onClick={(e) => {
+                            if (isExternalLink(doc)) return;
+                            e.preventDefault();
+                            handleOpenDoc(doc, 'view');
+                          }}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/30 dark:hover:bg-purple-950/60 text-purple-700 hover:text-purple-800 dark:text-purple-300 dark:hover:text-purple-200 transition text-[11px] font-bold flex items-center gap-1 border border-purple-200/60 dark:border-purple-800/40"
@@ -1962,11 +1976,12 @@ const ClientDocumentsPopover: React.FC<ClientDocsPopoverProps> = ({
                         </a>
 
                         <a
-                          href={
-                            doc.fileUrl.startsWith('http') && !doc.fileUrl.includes('cloudinary')
-                              ? doc.fileUrl
-                              : `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/clients/${clientId}/documents/${doc.id}/download`
-                          }
+                          href={isExternalLink(doc) ? doc.fileUrl : '#'}
+                          onClick={(e) => {
+                            if (isExternalLink(doc)) return;
+                            e.preventDefault();
+                            handleOpenDoc(doc, 'download');
+                          }}
                           target="_blank"
                           rel="noopener noreferrer"
                           download={doc.fileName}
@@ -2670,4 +2685,10 @@ const SingleEnquiryModal: React.FC<SingleEnquiryModalProps> = ({
   );
 };
 
-export default ClientsList;
+/** Clients is an internal tool of the LeadsNDeals workspace only (the API enforces it too). */
+const ClientsRoute: React.FC = () => {
+  const user = useAuthStore((state) => state.user);
+  return isLeadsndealsTenant(user?.tenantId) ? <ClientsList /> : <Navigate to="/dashboard" replace />;
+};
+
+export default ClientsRoute;
