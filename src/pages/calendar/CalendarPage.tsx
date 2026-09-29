@@ -33,7 +33,22 @@ const formatTime = (hhmm: string) => {
   return new Date(2000, 0, 1, h, m).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 };
 
-const reminderLabel = (minutes?: number) => REMINDER_OPTIONS.find((o) => o.value === minutes)?.label;
+/** "30 min before", "2 hours before", or "45 min before" for other gaps */
+const minutesLabel = (minutes: number) =>
+  REMINDER_OPTIONS.find((o) => o.value === minutes)?.label.toLowerCase() ??
+  (minutes % 60 === 0 ? `${minutes / 60} hours before` : `${minutes} min before`);
+
+/**
+ * The reminder the server actually scheduled (which can differ from the choice: if the chosen time had
+ * already passed, it goes 30 min before the due time, or not at all), or null when none was chosen.
+ */
+const reminderText = (t: Task): string | null => {
+  if (!t.customFields?.dueTime || !t.customFields?.reminderMinutes) return null;
+  if (t.reminderSentAt) return 'Reminder sent';
+  if (!t.remindAt || !t.dueAt) return 'No reminder (due too soon)';
+  const minutes = Math.round((new Date(t.dueAt).getTime() - new Date(t.remindAt).getTime()) / 60_000);
+  return `Reminder ${minutesLabel(minutes)}`;
+};
 
 /** The 6 weeks (Monday first) shown for a month */
 const monthGrid = (month: Date): Date[] => {
@@ -224,10 +239,10 @@ export const CalendarPage: React.FC = () => {
                       {isOverdue(t, selectedDay) && <span className="text-rose-400">Overdue</span>}
                     </div>
                     <p className="text-xs text-foreground font-medium">{t.name}</p>
-                    {t.customFields?.dueTime && reminderLabel(t.customFields.reminderMinutes) && (
+                    {reminderText(t) && (
                       <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
                         <BellRing className="w-3 h-3" />
-                        Reminder {reminderLabel(t.customFields.reminderMinutes)?.toLowerCase()}
+                        {reminderText(t)}
                       </p>
                     )}
                   </li>

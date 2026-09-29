@@ -19,6 +19,9 @@ export interface Task {
   taskNumber?: number | null;
   /** Exact due moment (from the due date and time), set by the server */
   dueAt?: string | null;
+  /** When the assignee is reminded (may be 30 min before the due time if the chosen time had passed); null = none */
+  remindAt?: string | null;
+  reminderSentAt?: string | null;
   customFields?: {
     context?: string;
     category?: string;
