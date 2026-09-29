@@ -57,9 +57,18 @@ export interface VoiceNoteEvent {
   status: VoiceNoteStatus;
 }
 
+export interface VoiceNumber {
+  /** +919876543210 */
+  phone: string;
+  verifiedAt: string;
+  /** The member the number belongs to (work sent from it is "from" them) */
+  userName: string | null;
+}
+
 export interface VoiceSettings {
-  phone: string | null;
-  verifiedAt: string | null;
+  /** Every verified number of the workspace, oldest first */
+  numbers: VoiceNumber[];
+  maxNumbers: number;
   pending: {
     phone: string;
     expiresAt: string;
@@ -84,8 +93,8 @@ export const voiceNotesApi = {
     return data.data;
   },
 
-  removeNumber: async (): Promise<VoiceSettings> => {
-    const { data } = await apiClient.delete<{ data: VoiceSettings }>('/voice-notes/settings');
+  removeNumber: async (phone: string): Promise<VoiceSettings> => {
+    const { data } = await apiClient.delete<{ data: VoiceSettings }>(`/voice-notes/settings/numbers/${encodeURIComponent(phone.replace(/^\+/, ''))}`);
     return data.data;
   },
 
