@@ -33,7 +33,7 @@ export interface AttendanceSettings {
 }
 
 export interface CheckInResult {
-  code: 'recorded' | 'disabled' | 'day_off' | 'holiday' | 'too_early';
+  code: 'recorded' | 'disabled' | 'not_started' | 'day_off' | 'holiday' | 'too_early';
   created: boolean;
   day: string;
   record?: AttendanceRecord;
