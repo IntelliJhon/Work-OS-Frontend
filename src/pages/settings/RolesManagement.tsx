@@ -26,6 +26,8 @@ const PERMISSION_KEYS = [
   { key: 'workspace.voice.manage', group: 'Administration', label: 'Manage Voice Number', desc: 'Register and verify the WhatsApp number allowed to send voice notes.' },
   { key: 'voice_notes.read', group: 'Voice Notes', label: 'Read Voice Notes', desc: 'Access to view the voice notes inbox and transcripts.' },
   { key: 'voice_notes.update', group: 'Voice Notes', label: 'Process Voice Notes', desc: 'Allows converting voice notes to tasks, dismissing and restoring them.' },
+  { key: 'attendance.read', group: 'Attendance', label: 'View Attendance', desc: "See everyone's daily attendance, monthly totals and holidays." },
+  { key: 'attendance.manage', group: 'Attendance', label: 'Manage Attendance', desc: 'Correct entries, set leave and holidays, and change the attendance rules.' },
 ];
 
 export const RolesManagement: React.FC = () => {

@@ -8,6 +8,7 @@ import { queryClient } from './services/api/queryClient';
 import { ConfirmProvider } from './components/ui/ConfirmDialog';
 import { ToastProvider } from './components/ui/Toast';
 import { ScreenProtection } from './components/security/ScreenProtection';
+import { AttendanceCheckIn } from './components/attendance/AttendanceCheckIn';
 
 export const App: React.FC = () => {
   return (
@@ -19,6 +20,7 @@ export const App: React.FC = () => {
               <ToastProvider>
                 <AppRouter />
                 <ScreenProtection />
+                <AttendanceCheckIn />
               </ToastProvider>
             </ConfirmProvider>
           </SocketProvider>

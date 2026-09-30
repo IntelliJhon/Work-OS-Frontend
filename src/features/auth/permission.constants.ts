@@ -16,6 +16,8 @@ export const PERMISSIONS = {
   WORKSPACE_VOICE_MANAGE: 'workspace.voice.manage',
   VOICE_NOTES_READ: 'voice_notes.read',
   VOICE_NOTES_UPDATE: 'voice_notes.update',
+  ATTENDANCE_READ: 'attendance.read',
+  ATTENDANCE_MANAGE: 'attendance.manage',
 } as const;
 
 export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];

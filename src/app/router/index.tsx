@@ -31,6 +31,7 @@ const WhatsAppBotsPage = lazy(() => import('../../pages/platform/WhatsAppBotsPag
 const AcceptInvite = lazy(() => import('../../pages/auth/AcceptInvite'));
 const TasksPage = lazy(() => import('../../pages/tasks/TasksPage').then(m => ({ default: m.TasksPage })));
 const CalendarPage = lazy(() => import('../../pages/calendar/CalendarPage'));
+const AttendancePage = lazy(() => import('../../pages/attendance/AttendancePage'));
 const ManagementReviewView = lazy(() => import('../../pages/management/ManagementReviewView'));
 const ClientsList = lazy(() => import('../../pages/clients/ClientsList'));
 const EmployeesPage = lazy(() => import('../../pages/employees/EmployeesPage'));
@@ -115,6 +116,8 @@ export const AppRouter: React.FC = () => {
               <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.TASK_READ]} />}>
                 <Route path="/calendar" element={<CalendarPage />} />
               </Route>
+              {/* Everyone: admins and PMs see the team, others their own history */}
+              <Route path="/attendance" element={<AttendancePage />} />
               <Route
                 path="/dashboard/sprints"
                 element={<Navigate to="/dashboard/activities" replace />}
