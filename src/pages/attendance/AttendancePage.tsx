@@ -556,6 +556,28 @@ const MyAttendance: React.FC = () => {
 
 // ─── Page ───────────────────────────────────────────────────────────────────────
 
+/** '09:35' → '9:35 am', '12:00' → '12:00 noon' */
+const clockLabel = (hhmm: string) => {
+  const [h, m] = hhmm.split(':').map(Number);
+  if (h === 12 && m === 0) return '12:00 noon';
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
+};
+
+/** The workspace's rules in one line (employees get them with their own month) */
+const RulesSummary: React.FC<{ canRead: boolean }> = ({ canRead }) => {
+  const month = todayKey().slice(0, 7);
+  const settingsQuery = useQuery({ queryKey: ['attendance', 'settings'], queryFn: attendanceApi.settings, enabled: canRead });
+  const meQuery = useQuery({ queryKey: ['attendance', 'me', month], queryFn: () => attendanceApi.me(month), enabled: !canRead });
+  const s = canRead ? settingsQuery.data : meQuery.data?.settings;
+  if (!s) return null;
+  return (
+    <p className="text-xs text-muted-foreground mt-1 font-light">
+      The first check-in of the day counts: before {clockLabel(s.earlyBefore)} Present · Early, until {clockLabel(s.lateAfter)} Present, later
+      Late. No check-in by {clockLabel(s.absentAfter)} is Absent.
+    </p>
+  );
+};
+
 type Tab = 'today' | 'month' | 'holidays' | 'settings';
 const TABS: { key: Tab; label: string }[] = [
   { key: 'today', label: 'Today' },
@@ -578,9 +600,7 @@ export const AttendancePage: React.FC = () => {
         </span>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Attendance</h1>
-          <p className="text-xs text-muted-foreground mt-1 font-light">
-            The first check-in of the day counts: before 9:30 am Present · Early, until 9:35 am Present, later Late. No check-in by 12:00 noon is Absent.
-          </p>
+          <RulesSummary canRead={canRead} />
         </div>
       </div>
 
