@@ -274,7 +274,7 @@ export const MembersManagement: React.FC = () => {
   const handleRemoveMember = async (userId: string, userEmail: string) => {
     const ok = await confirm({
       title: 'Remove Member',
-      message: `Are you sure you want to remove ${userEmail} from this workspace?`,
+      message: `Remove ${userEmail}? They are signed out and can no longer use this workspace. Their past work and history stay. You can invite them again later.`,
       confirmLabel: 'Remove Member',
       cancelLabel: 'Cancel',
       variant: 'danger',
