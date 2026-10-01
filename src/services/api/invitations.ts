@@ -3,12 +3,18 @@ import { apiClient } from './client';
 export interface Invitation {
   id: string;
   email: string;
+  /** WhatsApp number the link was sent to */
+  phone?: string | null;
   roleId: string;
   roleName?: string;
   expiresAt: string;
   acceptedAt: string | null;
   revokedAt: string | null;
   createdAt: string;
+  /** Only on create / resend: whether the WhatsApp message went out */
+  whatsapp?: { sent: boolean; error?: string };
+  /** Only on create */
+  token?: string;
 }
 
 export interface VerifyInvitationResponse {
@@ -24,7 +30,7 @@ export interface VerifyInvitationResponse {
 }
 
 export const invitationsApi = {
-  create: async (invitation: { email: string; roleId: string; phone?: string | null }): Promise<Invitation> => {
+  create: async (invitation: { email: string; roleId: string; phone: string }): Promise<Invitation> => {
     const { data } = await apiClient.post<Invitation>('/invitations', invitation);
     return data;
   },

@@ -49,6 +49,9 @@ export const MembersManagement: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [generatedInviteUrl, setGeneratedInviteUrl] = useState('');
+  // Where the invitation went and whether WhatsApp delivered it
+  const [inviteResult, setInviteResult] = useState<{ phone: string; sent: boolean } | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   // debounce search input
   useEffect(() => {
@@ -190,22 +193,19 @@ export const MembersManagement: React.FC = () => {
     setErrorMsg('');
     setSuccessMsg('');
     setGeneratedInviteUrl('');
-    if (!inviteEmail || !inviteRoleId) {
-      setErrorMsg('Please select a role and enter a valid email.');
+    setInviteResult(null);
+    setLinkCopied(false);
+    if (!inviteEmail || !inviteRoleId || !invitePhone.trim()) {
+      setErrorMsg('Enter the email, the WhatsApp number and a role.');
       return;
     }
 
     setSubmittingInvite(true);
     try {
-      const response = await invitationsApi.create({ email: inviteEmail, roleId: inviteRoleId, phone: invitePhone.trim() || null });
-      const token = (response as unknown as { token?: string }).token;
-      if (token) {
-        const inviteUrl = `${window.location.origin}/invite/accept/${token}`;
-        setGeneratedInviteUrl(inviteUrl);
-      } else {
-        setSuccessMsg(`Invitation successfully sent to ${inviteEmail}.`);
-        setTimeout(() => setShowInviteModal(false), 2000);
-      }
+      const response = await invitationsApi.create({ email: inviteEmail, roleId: inviteRoleId, phone: invitePhone.trim() });
+      setInviteResult({ phone: response.phone || invitePhone.trim(), sent: !!response.whatsapp?.sent });
+      // The link stays available as a backup (e.g. the WhatsApp template isn't approved yet)
+      if (response.token) setGeneratedInviteUrl(`${window.location.origin}/invite/accept/${response.token}`);
 
       const newInvite = response as Invitation;
       if (newInvite?.id) {
@@ -227,7 +227,8 @@ export const MembersManagement: React.FC = () => {
     setSuccessMsg('');
     try {
       const updatedInvite = await invitationsApi.resend(id);
-      setSuccessMsg(`Resent invitation to ${email}.`);
+      if (updatedInvite.whatsapp?.sent) setSuccessMsg(`Invitation sent again on WhatsApp to ${email}.`);
+      else setErrorMsg(`The invitation for ${email} was renewed, but WhatsApp couldn't deliver it${updatedInvite.phone ? '' : ' (no WhatsApp number on it)'}. Revoke it and invite again with a WhatsApp number.`);
       queryClient.setQueryData<Invitation[]>(INVITATIONS_QUERY_KEY, (old) =>
         old ? old.map((invite) => (invite.id === updatedInvite.id ? updatedInvite : invite)) : old,
       );
@@ -546,7 +547,10 @@ export const MembersManagement: React.FC = () => {
 
                     return (
                       <tr key={invite.id} className="hover:bg-white/2 transition-colors">
-                        <td className="px-6 py-4.5 font-medium text-slate-900 dark:text-white">{invite.email}</td>
+                        <td className="px-6 py-4.5 font-medium text-slate-900 dark:text-white">
+                          {invite.email}
+                          {invite.phone && <span className="block text-[11px] font-normal text-muted-foreground">WhatsApp +{invite.phone}</span>}
+                        </td>
                         <td className="px-6 py-4.5 font-medium text-slate-900 dark:text-white">{invite.roleName || 'Member'}</td>
                         <td className="px-6 py-4.5">
                           <div className="flex items-center space-x-3.5">
@@ -568,7 +572,7 @@ export const MembersManagement: React.FC = () => {
                                 <button
                                   onClick={() => handleResendInvite(invite.id, invite.email)}
                                   className="p-2 text-slate-500 dark:text-zinc-500 hover:text-blue-400 rounded-lg hover:bg-blue-500/10 border border-transparent hover:border-blue-500/20 transition-all"
-                                  title="Resend Invite Token"
+                                  title="Send the invitation again on WhatsApp"
                                 >
                                   <RefreshCw className="w-3.5 h-3.5" />
                                 </button>
@@ -613,21 +617,28 @@ export const MembersManagement: React.FC = () => {
               <div>
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">Invite New Member</h3>
                 <p className="text-xs text-muted-foreground font-light mt-0.5">
-                  Send a secure tenant-scoped invitation token.
+                  They get a WhatsApp message with a link to set up their account.
                 </p>
               </div>
             </div>
 
-            {generatedInviteUrl ? (
+            {inviteResult ? (
               <div className="space-y-4">
-                <div className="flex items-center space-x-2.5 p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 text-xs font-light">
-                  <Check className="w-4 h-4 shrink-0" />
-                  <span>Invitation created successfully! Copy the URL below to register the new member.</span>
-                </div>
+                {inviteResult.sent ? (
+                  <div className="flex items-start gap-2.5 p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs">
+                    <Check className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>Invitation sent on WhatsApp to <strong>+{inviteResult.phone}</strong>. The link works for 48 hours.</span>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2.5 p-3 rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs">
+                    <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>The invitation was created, but WhatsApp couldn't deliver it to +{inviteResult.phone}. Copy the link below and send it yourself.</span>
+                  </div>
+                )}
                 
-                <div className="space-y-1.5">
+                {generatedInviteUrl && <div className="space-y-1.5">
                   <label className="block text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
-                    Invitation Registration URL
+                    {inviteResult.sent ? 'Invitation link (backup)' : 'Invitation link'}
                   </label>
                   <div className="flex gap-2">
                     <input
@@ -639,20 +650,19 @@ export const MembersManagement: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => {
-                        navigator.clipboard.writeText(generatedInviteUrl);
-                        alert('Link copied to clipboard!');
+                        navigator.clipboard.writeText(generatedInviteUrl).then(() => setLinkCopied(true)).catch(() => undefined);
                       }}
                       className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shrink-0 transition"
                     >
-                      Copy
+                      {linkCopied ? 'Copied' : 'Copy'}
                     </button>
                   </div>
-                </div>
+                </div>}
 
                 <div className="flex justify-end pt-3">
                   <button
                     type="button"
-                    onClick={() => { setShowInviteModal(false); setGeneratedInviteUrl(''); }}
+                    onClick={() => { setShowInviteModal(false); setGeneratedInviteUrl(''); setInviteResult(null); }}
                     className="px-4 py-2.5 rounded-xl bg-slate-100/60 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 hover:bg-slate-200/60 dark:hover:bg-white/10 text-slate-750 dark:text-white text-xs font-semibold transition"
                   >
                     Close
@@ -702,12 +712,14 @@ export const MembersManagement: React.FC = () => {
 
                 <div>
                   <label className="block text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-2">
-                    WhatsApp Number <span className="normal-case font-light tracking-normal">(optional, for work notifications)</span>
+                    WhatsApp Number
                   </label>
                   <div className="relative">
                     <MessageCircle className="absolute left-3.5 top-3 w-4 h-4 text-slate-500 dark:text-zinc-500" />
                     <input
                       type="tel"
+                      required
+                      autoComplete="tel"
                       placeholder="+91 98765 43210"
                       maxLength={25}
                       value={invitePhone}
@@ -720,7 +732,7 @@ export const MembersManagement: React.FC = () => {
                 <div className="flex items-center space-x-2.5 p-3 rounded-lg border border-yellow-500/10 bg-yellow-500/5 text-yellow-400/90 text-[10px] leading-relaxed font-light">
                   <ShieldAlert className="w-4 h-4 shrink-0" />
                   <span>
-                    The recipient will receive an onboarding token to set up their name and password securely. The link expires in 48 hours.
+                    We send the invitation link to this WhatsApp number. They open it to set their name and password; it works for 48 hours. The number is also used for their work notifications.
                   </span>
                 </div>
 
@@ -737,7 +749,7 @@ export const MembersManagement: React.FC = () => {
                     disabled={submittingInvite}
                     className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-xs font-semibold shadow-lg hover:shadow-blue-500/10 transition"
                   >
-                    {submittingInvite ? 'Sending...' : 'Send Onboarding Invite'}
+                    {submittingInvite ? 'Sending…' : 'Send invite on WhatsApp'}
                   </button>
                 </div>
               </form>
