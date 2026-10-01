@@ -18,6 +18,20 @@ import {
   ChevronLeft, ChevronRight, X, Clock, Check, AlertCircle, ShieldAlert, MessageCircle
 } from 'lucide-react';
 
+// Invite form checks (the server checks again)
+const EMAIL_RE = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)*\.[a-z]{2,}$/i;
+const emailProblem = (value: string) =>
+  !value.trim() ? 'Enter their email address.' : EMAIL_RE.test(value.trim()) ? '' : 'Enter a full email address, e.g. name@company.com';
+/** 10-digit Indian mobile, or a full number with country code (8–15 digits) */
+const phoneProblem = (value: string) => {
+  const digits = value.replace(/\D/g, '').replace(/^00/, '');
+  if (!digits) return 'Enter their WhatsApp number.';
+  if (digits.length === 10 || (digits.length === 11 && digits.startsWith('0'))) return '';
+  if (value.trim().startsWith('+') && digits.length >= 8 && digits.length <= 15) return '';
+  if (digits.length >= 11 && digits.length <= 15) return '';
+  return 'Enter a 10-digit mobile number, or the full number with country code (e.g. +971 50 123 4567).';
+};
+
 export const MembersManagement: React.FC = () => {
   const { user: currentUser } = useAuthStore();
   const { can } = usePermissions();
@@ -46,6 +60,8 @@ export const MembersManagement: React.FC = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRoleId, setInviteRoleId] = useState('');
   const [invitePhone, setInvitePhone] = useState('');
+  // Show field errors once a field was left or the form was submitted
+  const [inviteTouched, setInviteTouched] = useState({ email: false, phone: false, role: false });
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [generatedInviteUrl, setGeneratedInviteUrl] = useState('');
@@ -195,14 +211,12 @@ export const MembersManagement: React.FC = () => {
     setGeneratedInviteUrl('');
     setInviteResult(null);
     setLinkCopied(false);
-    if (!inviteEmail || !inviteRoleId || !invitePhone.trim()) {
-      setErrorMsg('Enter the email, the WhatsApp number and a role.');
-      return;
-    }
+    setInviteTouched({ email: true, phone: true, role: true });
+    if (emailProblem(inviteEmail) || phoneProblem(invitePhone) || !inviteRoleId) return;
 
     setSubmittingInvite(true);
     try {
-      const response = await invitationsApi.create({ email: inviteEmail, roleId: inviteRoleId, phone: invitePhone.trim() });
+      const response = await invitationsApi.create({ email: inviteEmail.trim().toLowerCase(), roleId: inviteRoleId, phone: invitePhone.trim() });
       setInviteResult({ phone: response.phone || invitePhone.trim(), sent: !!response.whatsapp?.sent });
       // The link stays available as a backup (e.g. the WhatsApp template isn't approved yet)
       if (response.token) setGeneratedInviteUrl(`${window.location.origin}/invite/accept/${response.token}`);
@@ -213,6 +227,7 @@ export const MembersManagement: React.FC = () => {
       }
 
       setInviteEmail('');
+      setInviteTouched({ email: false, phone: false, role: false });
       setInviteRoleId('');
       setInvitePhone('');
     } catch (err: unknown) {
@@ -670,22 +685,30 @@ export const MembersManagement: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleInviteSubmit} className="space-y-4">
+              <form onSubmit={handleInviteSubmit} noValidate className="space-y-4">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-2">
+                  <label htmlFor="invite-email" className="block text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-2">
                     Recipient Email
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-500 dark:text-zinc-500" />
                     <input
+                      id="invite-email"
                       type="email"
                       required
+                      autoComplete="off"
                       placeholder="name@company.com"
                       value={inviteEmail}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInviteEmail(e.target.value)}
-                      className="w-full bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-border/80 rounded-xl pl-10 pr-4 py-2.5 text-xs font-light text-slate-900 dark:text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition"
+                      onBlur={() => setInviteTouched((t) => ({ ...t, email: true }))}
+                      aria-invalid={inviteTouched.email && !!emailProblem(inviteEmail)}
+                      aria-describedby="invite-email-error"
+                      className={`w-full bg-white dark:bg-zinc-900/60 border ${inviteTouched.email && emailProblem(inviteEmail) ? 'border-red-500/60 focus:border-red-500' : 'border-slate-200 dark:border-border/80 focus:border-blue-500/50'} rounded-xl pl-10 pr-4 py-2.5 text-xs font-light text-slate-900 dark:text-white placeholder-zinc-500 focus:outline-none transition`}
                     />
                   </div>
+                  {inviteTouched.email && emailProblem(inviteEmail) && (
+                    <p id="invite-email-error" className="mt-1.5 text-[11px] text-red-500">{emailProblem(inviteEmail)}</p>
+                  )}
                 </div>
 
                 <div>
@@ -708,25 +731,34 @@ export const MembersManagement: React.FC = () => {
                       ))}
                     </select>
                   </div>
+                  {inviteTouched.role && !inviteRoleId && <p className="mt-1.5 text-[11px] text-red-500">Choose a role.</p>}
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-2">
+                  <label htmlFor="invite-phone" className="block text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-2">
                     WhatsApp Number
                   </label>
                   <div className="relative">
                     <MessageCircle className="absolute left-3.5 top-3 w-4 h-4 text-slate-500 dark:text-zinc-500" />
                     <input
+                      id="invite-phone"
                       type="tel"
                       required
                       autoComplete="tel"
+                      inputMode="tel"
                       placeholder="+91 98765 43210"
                       maxLength={25}
                       value={invitePhone}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInvitePhone(e.target.value.replace(/[^\d+\s-]/g, ''))}
-                      className="w-full bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-border/80 rounded-xl pl-10 pr-4 py-2.5 text-xs font-light text-slate-900 dark:text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition"
+                      onBlur={() => setInviteTouched((t) => ({ ...t, phone: true }))}
+                      aria-invalid={inviteTouched.phone && !!phoneProblem(invitePhone)}
+                      aria-describedby="invite-phone-error"
+                      className={`w-full bg-white dark:bg-zinc-900/60 border ${inviteTouched.phone && phoneProblem(invitePhone) ? 'border-red-500/60 focus:border-red-500' : 'border-slate-200 dark:border-border/80 focus:border-blue-500/50'} rounded-xl pl-10 pr-4 py-2.5 text-xs font-light text-slate-900 dark:text-white placeholder-zinc-500 focus:outline-none transition`}
                     />
                   </div>
+                  {inviteTouched.phone && phoneProblem(invitePhone) && (
+                    <p id="invite-phone-error" className="mt-1.5 text-[11px] text-red-500">{phoneProblem(invitePhone)}</p>
+                  )}
                 </div>
 
                 <div className="flex items-center space-x-2.5 p-3 rounded-lg border border-yellow-500/10 bg-yellow-500/5 text-yellow-400/90 text-[10px] leading-relaxed font-light">
