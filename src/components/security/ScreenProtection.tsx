@@ -11,6 +11,9 @@ import { useAuthStore } from '../../store/authStore';
 // PrintScreen is captured by Windows before the page hears the key: the page then goes black with a
 // warning and overwrites the clipboard, so the image usually can't be pasted.
 
+// Off unless the build sets VITE_SCREEN_PROTECTION=on (switched off on request during development, 2026-10-01)
+const ENABLED = import.meta.env.VITE_SCREEN_PROTECTION === 'on';
+
 const platform = typeof navigator !== 'undefined' ? navigator.userAgent : '';
 const isWindows = /Windows/i.test(platform);
 const isMac = /Macintosh|Mac OS X/i.test(platform);
@@ -35,7 +38,9 @@ const clearClipboard = () => {
 // 'screenshot': PrintScreen was pressed (stays until the user clicks)
 type Mode = 'away' | 'screenshot' | null;
 
-export const ScreenProtection: React.FC = () => {
+export const ScreenProtection: React.FC = () => (ENABLED ? <ActiveScreenProtection /> : null);
+
+const ActiveScreenProtection: React.FC = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [mode, setMode] = useState<Mode>(() => (typeof document !== 'undefined' && !document.hasFocus() ? 'away' : null));
 
