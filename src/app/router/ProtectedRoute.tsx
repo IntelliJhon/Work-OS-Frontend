@@ -1,8 +1,9 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { usePermissions } from '../../features/auth/usePermissions';
 import type { Permission } from '../../features/auth/permission.constants';
+import { rememberAfterLogin } from '../../features/auth/afterLogin';
 
 export interface ProtectedRouteProps {
   requiredPermissions?: Permission[];
@@ -15,6 +16,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { isAuthenticated, authInitialized } = useAuthStore();
   const { can, role } = usePermissions();
+  const location = useLocation();
 
   if (!authInitialized) {
     return (
@@ -31,6 +33,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!isAuthenticated) {
+    // Come back here after signing in
+    rememberAfterLogin(location.pathname + location.search);
     return <Navigate to="/login" replace />;
   }
 

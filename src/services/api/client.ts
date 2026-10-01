@@ -2,6 +2,7 @@ import axios from 'axios';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../../store/authStore';
 import { getRefreshToken, setRefreshToken, removeRefreshToken } from '../../utils/cookies';
+import { rememberAfterLogin } from '../../features/auth/afterLogin';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -110,7 +111,8 @@ apiClient.interceptors.response.use(
         useAuthStore.getState().logout();
         removeRefreshToken();
         
-        // Force redirect to login page
+        // Force redirect to login page, coming back here afterwards
+        rememberAfterLogin(window.location.pathname + window.location.search);
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }

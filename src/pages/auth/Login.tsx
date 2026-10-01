@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
+import { takeAfterLogin } from '../../features/auth/afterLogin';
 import { useAuthStore } from '../../store/authStore';
 import { apiClient } from '../../services/api/client';
 import { ShieldAlert, ArrowRight } from 'lucide-react';
@@ -79,8 +80,9 @@ export const Login: React.FC = () => {
 
         if (currentProgress >= 100) {
           clearInterval(interval);
+          const target = takeAfterLogin();
           loginStore(user, accessToken, refreshToken);
-          navigate('/dashboard');
+          navigate(target, { replace: true });
         }
       }, 25);
 

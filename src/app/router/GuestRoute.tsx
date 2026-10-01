@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import { peekAfterLogin } from '../../features/auth/afterLogin';
 
 export const GuestRoute: React.FC = () => {
   const { isAuthenticated, authInitialized } = useAuthStore();
@@ -19,5 +20,5 @@ export const GuestRoute: React.FC = () => {
     );
   }
 
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Outlet />;
+  return isAuthenticated ? <Navigate to={peekAfterLogin()} replace /> : <Outlet />;
 };
