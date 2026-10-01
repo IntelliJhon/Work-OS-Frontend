@@ -56,7 +56,7 @@ export const TasksPage: React.FC = () => {
   // Dialog & Active State management
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any | null>(null);
-  const [isActivityFeedOpen, setIsActivityFeedOpen] = useState(true);
+  const [isActivityFeedOpen, setIsActivityFeedOpen] = useState(false); // opened with the Activity Feed button
 
   // Filters State
   const [search, setSearch] = useState('');
