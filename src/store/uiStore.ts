@@ -11,7 +11,8 @@ interface UIState {
 
 export const useUIStore = create<UIState>((set) => ({
   sidebarOpen: true,
-  theme: (localStorage.getItem('theme') as 'light' | 'dark') || 'dark',
+  // Light unless the person switched to dark (the choice is saved when they switch)
+  theme: (localStorage.getItem('theme') as 'light' | 'dark') || 'light',
 
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
   
