@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { CheckCircle2, Clock, AlertTriangle, MapPinOff } from 'lucide-react';
+import { CheckCircle2, Clock, AlertTriangle, MapPin, MapPinOff } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { apiClient } from '../../services/api/client';
 import { getRefreshToken } from '../../utils/cookies';
@@ -13,6 +13,9 @@ import { attendanceApi, formatCheckInTime, type AttendanceRecord, type CheckInLo
 
 const TIME_ZONE = 'Asia/Kolkata';
 const RETRY_MS = 5 * 60_000;
+// The browser's own timeout doesn't run while its "Allow location?" prompt is unanswered, so check in
+// without a location after this long and add the location if it comes later
+const LOCATION_WAIT_MS = 10_000;
 
 const todayKey = () => new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 
@@ -53,20 +56,36 @@ const markSettled = (userId: string) => {
   }
 };
 
+const timeout = (ms: number) => new Promise<null>((resolve) => setTimeout(() => resolve(null), ms));
+
 export const AttendanceCheckIn: React.FC = () => {
   const { isAuthenticated, user, logout } = useAuthStore();
   const [shown, setShown] = useState<AttendanceRecord | null>(null);
+  const [locationPending, setLocationPending] = useState(false);
   const inFlight = useRef(false);
 
   const tryCheckIn = useCallback(async () => {
     if (!user || inFlight.current || isSettled(user.id)) return;
     inFlight.current = true;
     try {
-      const location = await getLocation();
-      const result = await attendanceApi.checkIn(location);
+      const locating = getLocation();
+      const location = await Promise.race([locating, timeout(LOCATION_WAIT_MS)]);
+      const result = await attendanceApi.checkIn(location ?? { locationStatus: 'unavailable' });
       if (result.code === 'too_early') return; // check-in opens later today; try again then
       markSettled(user.id);
-      if (result.created && result.record) setShown(result.record);
+      if (!result.created || !result.record) return;
+      setShown(result.record);
+      if (location) return;
+      // Still waiting for the location prompt: add the location to this check-in once it's allowed
+      setLocationPending(true);
+      locating
+        .then(async (late) => {
+          if (late.locationStatus !== 'ok') return;
+          const updated = await attendanceApi.checkIn(late);
+          if (updated.record) setShown((s) => (s && s.id === updated.record!.id ? updated.record! : s));
+        })
+        .catch(() => undefined)
+        .finally(() => setLocationPending(false));
     } catch {
       // Offline or server busy: the next attempt retries
     } finally {
@@ -124,7 +143,13 @@ export const AttendanceCheckIn: React.FC = () => {
           <p className="text-sm text-muted-foreground">{detail}</p>
           {absent && <p className="text-xs text-muted-foreground">You checked in after 12:00 noon.</p>}
         </div>
-        {shown.locationStatus !== 'ok' && (
+        {shown.locationStatus !== 'ok' && locationPending && (
+          <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+            <MapPin className="w-3.5 h-3.5" />
+            Allow location in your browser to share it with your admin.
+          </p>
+        )}
+        {shown.locationStatus !== 'ok' && !locationPending && (
           <p className="flex items-center justify-center gap-1.5 text-[11px] text-amber-400">
             <MapPinOff className="w-3.5 h-3.5" />
             Location was not shared. Your admin sees "No location" for today.
