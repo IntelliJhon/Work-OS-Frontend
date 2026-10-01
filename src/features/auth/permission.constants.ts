@@ -18,6 +18,7 @@ export const PERMISSIONS = {
   VOICE_NOTES_UPDATE: 'voice_notes.update',
   ATTENDANCE_READ: 'attendance.read',
   ATTENDANCE_MANAGE: 'attendance.manage',
+  LEAVE_APPROVE: 'leave.approve',
 } as const;
 
 export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];

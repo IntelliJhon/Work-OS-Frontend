@@ -27,6 +27,7 @@ import {
   CheckSquare,
   CalendarDays,
   CalendarCheck,
+  Plane,
   Bell,
   Settings,
   LogOut,
@@ -195,6 +196,7 @@ export const DashboardLayout: React.FC = () => {
     { name: 'Tasks', path: '/dashboard/tasks', icon: CheckSquare, permission: PERMISSIONS.TASK_READ },
     { name: 'Calendar', path: '/calendar', icon: CalendarDays, permission: PERMISSIONS.TASK_READ },
     { name: 'Attendance', path: '/attendance', icon: CalendarCheck },
+    { name: 'Leave', path: '/leave', icon: Plane },
     { name: 'Voice Notes', path: '/voice-notes', icon: Mic, permission: PERMISSIONS.VOICE_NOTES_READ },
     { name: 'Settings', path: '/settings/members', icon: Settings, permission: PERMISSIONS.WORKSPACE_MEMBERS_READ },
     { name: 'WhatsApp Bots', path: '/platform/whatsapp-bots', icon: Bot, platformOnly: true },
@@ -256,6 +258,9 @@ export const DashboardLayout: React.FC = () => {
       const proj = projectsList.find((p) => p.gates?.some((gt) => gt.id === id)) || 
                    (parsed?.projectId ? projectsList.find(p => p.id === parsed.projectId) : null);
       if (proj) return `/projects/${proj.id}/gates`;
+    }
+    if (type === 'leave') {
+      return alert.type === 'leave_request' ? '/leave?tab=approvals' : '/leave';
     }
     if (type === 'task') {
       const createdFrom = parsed?.createdFrom;

@@ -127,8 +127,13 @@ export const AttendanceCheckIn: React.FC = () => {
 
   const late = shown.status === 'late';
   const absent = shown.status === 'absent';
-  const title = absent ? 'Marked as absent' : late ? 'Marked as late' : 'Marked as present';
-  const detail = [shown.early ? 'Early' : null, `Checked in at ${formatCheckInTime(shown.checkInAt)}`].filter(Boolean).join(' · ');
+  const halfLeave = shown.status === 'leave' && shown.leaveHalf;
+  const title = absent ? 'Marked as absent' : late ? 'Marked as late' : halfLeave ? 'Checked in' : 'Marked as present';
+  const detail = [
+    halfLeave ? `Half-day leave (${shown.leaveHalf} half)` : null,
+    shown.early ? 'Early' : null,
+    `Checked in at ${formatCheckInTime(shown.checkInAt)}`,
+  ].filter(Boolean).join(' · ');
   const Icon = absent ? AlertTriangle : late ? Clock : CheckCircle2;
   const tone = absent ? 'text-red-400 bg-red-500/10 border-red-500/20' : late ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
 

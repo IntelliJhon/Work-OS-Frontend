@@ -72,6 +72,10 @@ export const RealtimeAlertToast: React.FC = () => {
     }
 
     const type = toast.entityType.toLowerCase();
+    if (type === 'leave') {
+      navigate(toast.type === 'leave_request' ? '/leave?tab=approvals' : '/leave');
+      return;
+    }
     const parsed = parseMetadata(toast.metadata);
     const projectId = parsed?.projectId;
 

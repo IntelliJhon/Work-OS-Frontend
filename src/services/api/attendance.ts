@@ -17,6 +17,8 @@ export interface AttendanceRecord {
   /** ok | denied | unavailable; null for an admin's entry */
   locationStatus: string | null;
   note: string | null;
+  /** Half a day of leave: first | second */
+  leaveHalf: string | null;
   correctedBy: string | null;
   correctedAt: string | null;
 }
@@ -52,7 +54,7 @@ export interface MonthPerson {
   userId: string;
   name: string;
   totals: { present: number; early: number; late: number; absent: number; leave: number };
-  days: { day: string; state: DayState; early: boolean; checkInAt: string | null; locationStatus: string | null }[];
+  days: { day: string; state: DayState; early: boolean; checkInAt: string | null; locationStatus: string | null; leaveHalf: string | null }[];
 }
 
 export interface MonthView {
@@ -125,14 +127,14 @@ export const attendanceApi = {
 export const formatCheckInTime = (iso: string | null) =>
   iso ? new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' }) : '';
 
-/** The day's label, e.g. "Present · Early · 9:10 am" */
-export function stateLabel(state: DayState, early: boolean, checkInAt: string | null): string {
+/** The day's label, e.g. "Present · Early · 9:10 am" or "Half-day leave (first half) · 1:40 pm" */
+export function stateLabel(state: DayState, early: boolean, checkInAt: string | null, leaveHalf: string | null = null): string {
   const time = formatCheckInTime(checkInAt);
   switch (state) {
     case 'present': return ['Present', early ? 'Early' : null, time || null].filter(Boolean).join(' · ');
     case 'late': return ['Late', time || null].filter(Boolean).join(' · ');
     case 'absent': return 'Absent';
-    case 'leave': return 'On leave';
+    case 'leave': return leaveHalf ? [`Half-day leave (${leaveHalf} half)`, time || null].filter(Boolean).join(' · ') : 'On leave';
     case 'holiday': return 'Holiday';
     case 'day_off': return 'Day off';
     case 'not_checked_in': return 'Not checked in yet';

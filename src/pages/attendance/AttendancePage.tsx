@@ -39,15 +39,15 @@ const STATE_TONES: Record<DayState, string> = {
   not_counted: 'bg-muted text-muted-foreground border-border',
 };
 
-const StatusBadge: React.FC<{ state: DayState; early?: boolean; checkInAt?: string | null }> = ({ state, early = false, checkInAt = null }) => (
+const StatusBadge: React.FC<{ state: DayState; early?: boolean; checkInAt?: string | null; leaveHalf?: string | null }> = ({ state, early = false, checkInAt = null, leaveHalf = null }) => (
   <span className={`inline-flex items-center px-2 py-0.5 rounded-lg border text-[11px] font-bold whitespace-nowrap ${STATE_TONES[state]}`}>
-    {stateLabel(state, early, checkInAt)}
+    {stateLabel(state, early, checkInAt, leaveHalf)}
   </span>
 );
 
 /** Short code for one day in the month grid and the Excel sheet */
-const dayCode = (state: DayState, early: boolean) =>
-  ({ present: early ? 'E' : 'P', late: 'L', absent: 'A', leave: 'LV', holiday: 'H', day_off: '·', not_checked_in: '…', not_counted: '' } as Record<DayState, string>)[state];
+const dayCode = (state: DayState, early: boolean, leaveHalf: string | null = null) =>
+  ({ present: early ? 'E' : 'P', late: 'L', absent: 'A', leave: leaveHalf ? 'HL' : 'LV', holiday: 'H', day_off: '·', not_checked_in: '…', not_counted: '' } as Record<DayState, string>)[state];
 
 const LocationCell: React.FC<{ record: AttendanceRecord | null }> = ({ record }) => {
   if (!record || !record.checkInAt) return <span className="text-muted-foreground">—</span>;
@@ -260,7 +260,7 @@ const TodayTab: React.FC<{ canManage: boolean }> = ({ canManage }) => {
                       <p className="font-bold text-foreground">{p.name}</p>
                       <p className="text-[10px] text-muted-foreground">{p.email}</p>
                     </td>
-                    <td className="px-4 py-3"><StatusBadge state={p.state} early={p.record?.early} checkInAt={p.record?.checkInAt} /></td>
+                    <td className="px-4 py-3"><StatusBadge state={p.state} early={p.record?.early} checkInAt={p.record?.checkInAt} leaveHalf={p.record?.leaveHalf} /></td>
                     <td className="px-4 py-3"><LocationCell record={p.record} /></td>
                     <td className="px-4 py-3 text-muted-foreground max-w-[220px]">
                       {p.record?.note ? <span title={p.record.note}>{p.record.correctedAt ? 'Edited: ' : ''}{p.record.note}</span> : '—'}
@@ -300,7 +300,7 @@ function exportMonth(view: MonthView) {
     const row: Record<string, string> = { Member: p.name };
     for (const d of p.days) {
       const time = d.checkInAt ? ` ${formatCheckInTime(d.checkInAt)}` : '';
-      row[d.day.slice(8)] = `${dayCode(d.state, d.early)}${time}`.trim();
+      row[d.day.slice(8)] = `${dayCode(d.state, d.early, d.leaveHalf)}${time}`.trim();
     }
     return row;
   });
@@ -308,7 +308,7 @@ function exportMonth(view: MonthView) {
   XLSX.utils.book_append_sheet(book, XLSX.utils.json_to_sheet(summary), 'Summary');
   XLSX.utils.book_append_sheet(book, XLSX.utils.json_to_sheet(daily), 'Daily');
   XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet([
-    ['Code', 'Meaning'], ['E', 'Present, early'], ['P', 'Present'], ['L', 'Late'], ['A', 'Absent'], ['LV', 'On leave'], ['H', 'Holiday'], ['·', 'Day off'],
+    ['Code', 'Meaning'], ['E', 'Present, early'], ['P', 'Present'], ['L', 'Late'], ['A', 'Absent'], ['LV', 'On leave'], ['HL', 'Half-day leave'], ['H', 'Holiday'], ['·', 'Day off'],
   ]), 'Legend');
   XLSX.writeFile(book, `attendance-${view.month}.xlsx`);
 }
@@ -339,10 +339,10 @@ const MonthGrid: React.FC<{ view: MonthView }> = ({ view }) => (
             {p.days.map((d) => (
               <td key={d.day} className="px-0.5 py-2">
                 <span
-                  title={`${d.day}: ${stateLabel(d.state, d.early, d.checkInAt)}`}
+                  title={`${d.day}: ${stateLabel(d.state, d.early, d.checkInAt, d.leaveHalf)}`}
                   className={`block w-6 h-6 leading-6 text-center rounded-md border text-[9px] font-bold ${STATE_TONES[d.state]}`}
                 >
-                  {dayCode(d.state, d.early)}
+                  {dayCode(d.state, d.early, d.leaveHalf)}
                 </span>
               </td>
             ))}
@@ -373,7 +373,7 @@ const MonthTab: React.FC = () => {
         </button>
       </div>
       {isLoading ? <Loading /> : isError || !data ? <ErrorBox error={error} fallback="Could not load the month." /> : <MonthGrid view={data} />}
-      <p className="text-[10px] text-muted-foreground">E = present early · P = present · L = late · A = absent · LV = on leave · H = holiday · · = day off. Hover a day for the check-in time.</p>
+      <p className="text-[10px] text-muted-foreground">E = present early · P = present · L = late · A = absent · LV = on leave · HL = half-day leave · H = holiday · · = day off. Hover a day for the check-in time.</p>
     </div>
   );
 };
@@ -544,7 +544,7 @@ const MyAttendance: React.FC = () => {
                 <span className="text-foreground font-bold">
                   {new Date(`${d.day}T00:00:00Z`).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })}
                 </span>
-                <StatusBadge state={d.state} early={d.early} checkInAt={d.checkInAt} />
+                <StatusBadge state={d.state} early={d.early} checkInAt={d.checkInAt} leaveHalf={d.leaveHalf} />
               </div>
             ))}
           </div>

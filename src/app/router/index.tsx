@@ -32,6 +32,7 @@ const AcceptInvite = lazy(() => import('../../pages/auth/AcceptInvite'));
 const TasksPage = lazy(() => import('../../pages/tasks/TasksPage').then(m => ({ default: m.TasksPage })));
 const CalendarPage = lazy(() => import('../../pages/calendar/CalendarPage'));
 const AttendancePage = lazy(() => import('../../pages/attendance/AttendancePage'));
+const LeavePage = lazy(() => import('../../pages/leave/LeavePage'));
 const ManagementReviewView = lazy(() => import('../../pages/management/ManagementReviewView'));
 const ClientsList = lazy(() => import('../../pages/clients/ClientsList'));
 const EmployeesPage = lazy(() => import('../../pages/employees/EmployeesPage'));
@@ -118,6 +119,8 @@ export const AppRouter: React.FC = () => {
               </Route>
               {/* Everyone: admins and PMs see the team, others their own history */}
               <Route path="/attendance" element={<AttendancePage />} />
+              {/* Everyone applies; approvers see their requests (checked by the API) */}
+              <Route path="/leave" element={<LeavePage />} />
               <Route
                 path="/dashboard/sprints"
                 element={<Navigate to="/dashboard/activities" replace />}
