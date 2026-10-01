@@ -15,7 +15,7 @@ import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { MemberPhoneField } from './members/MemberPhoneField';
 import {
   Users, Mail, UserPlus, RefreshCw, Trash2, Shield, Search,
-  ChevronLeft, ChevronRight, X, Clock, Check, AlertCircle, ShieldAlert, MessageCircle
+  ChevronLeft, ChevronRight, X, Clock, Check, AlertCircle, ShieldAlert, MessageCircle, Ban
 } from 'lucide-react';
 
 // Invite form checks (the server checks again)
@@ -249,6 +249,26 @@ export const MembersManagement: React.FC = () => {
       );
     } catch (err: unknown) {
       setErrorMsg(getApiErrorMessage(err, 'Failed to resend invite'));
+    }
+  };
+
+  const handleRemoveInvite = async (id: string, email: string) => {
+    const ok = await confirm({
+      title: 'Remove invitation',
+      message: `Remove the invitation for ${email} from this list?`,
+      confirmLabel: 'Remove',
+      cancelLabel: 'Cancel',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      await invitationsApi.remove(id);
+      queryClient.setQueryData<Invitation[]>(INVITATIONS_QUERY_KEY, (old) => old?.filter((invite) => invite.id !== id));
+      setSuccessMsg(`Removed the invitation for ${email}.`);
+    } catch (err: unknown) {
+      setErrorMsg(getApiErrorMessage(err, 'Could not remove the invitation'));
     }
   };
 
@@ -596,11 +616,34 @@ export const MembersManagement: React.FC = () => {
                                 <button
                                   onClick={() => handleRevokeInvite(invite.id, invite.email)}
                                   className="p-2 text-slate-500 dark:text-zinc-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all"
-                                  title="Revoke Invite Token"
+                                  title="Revoke: the link stops working"
+                                  aria-label={`Revoke the invitation for ${invite.email}`}
+                                >
+                                  <Ban className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              {isExpired && can(PERMISSIONS.WORKSPACE_MEMBERS_INVITE) && (
+                                <button
+                                  onClick={() => handleRemoveInvite(invite.id, invite.email)}
+                                  className="p-2 text-slate-500 dark:text-zinc-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all"
+                                  title="Remove from the list"
+                                  aria-label={`Remove the invitation for ${invite.email}`}
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               )}
+                            </div>
+                          )}
+                          {isRevoked && !isAccepted && can(PERMISSIONS.WORKSPACE_MEMBERS_INVITE) && (
+                            <div className="flex items-center justify-end">
+                              <button
+                                onClick={() => handleRemoveInvite(invite.id, invite.email)}
+                                className="p-2 text-slate-500 dark:text-zinc-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all"
+                                title="Remove from the list"
+                                aria-label={`Remove the invitation for ${invite.email}`}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
                           )}
                         </td>

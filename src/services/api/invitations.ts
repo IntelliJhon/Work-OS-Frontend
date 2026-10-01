@@ -40,6 +40,11 @@ export const invitationsApi = {
     return data;
   },
 
+  /** Only revoked or expired invitations */
+  remove: async (id: string): Promise<void> => {
+    await apiClient.delete(`/invitations/${id}`);
+  },
+
   resend: async (id: string): Promise<Invitation> => {
     const { data } = await apiClient.post<Invitation>(`/invitations/${id}/resend`);
     return data;
