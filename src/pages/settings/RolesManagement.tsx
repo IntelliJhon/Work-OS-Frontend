@@ -1,67 +1,124 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSocket } from '../../services/socket/socket-context';
 import { rolesApi } from '../../services/api/roles';
 import type { Role } from '../../services/api/roles';
 import { usePermissions } from '../../features/auth/usePermissions';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
-import { 
-  Shield, Check, X, ShieldAlert, Plus, Save, AlertCircle, Info, Trash
-} from 'lucide-react';
+import { useToast } from '../../components/ui/Toast';
+import { Shield, ShieldCheck, Plus, Save, Trash2, X, Loader2, Users } from 'lucide-react';
 
-const PERMISSION_KEYS = [
-  { key: 'admin', group: 'System', label: 'Bypass / Global Admin', desc: 'Full root access to all tenant resources. Overrides other rules.' },
-  { key: 'project.create', group: 'Projects', label: 'Create Projects', desc: 'Permission to provision new projects & quality gates.' },
-  { key: 'project.read', group: 'Projects', label: 'Read Projects', desc: 'Permission to view details, sprint backlogs and sprints.' },
-  { key: 'project.manage', group: 'Projects', label: 'Manage Projects', desc: 'Allows updating project settings, phases, gates configuration.' },
-  { key: 'task.create', group: 'Tasks', label: 'Create Tasks', desc: 'Enables creating sprint task cards.' },
-  { key: 'task.read', group: 'Tasks', label: 'Read Tasks', desc: 'Enables reading tasks and work backlogs.' },
-  { key: 'task.update', group: 'Tasks', label: 'Update Tasks', desc: 'Allows moving cards, commenting, updating descriptions.' },
-  { key: 'workspace.members.read', group: 'Administration', label: 'Read Members', desc: 'Access to view workspace team list and invites.' },
-  { key: 'workspace.members.invite', group: 'Administration', label: 'Invite Members', desc: 'Access to send new onboarding invitations.' },
-  { key: 'workspace.members.update', group: 'Administration', label: 'Modify Roles', desc: 'Allows updating members role assignments.' },
-  { key: 'workspace.members', group: 'Administration', label: 'Remove Members', desc: 'Allows removing team members from workspace.' },
-  { key: 'workspace.roles.read', group: 'Administration', label: 'Read Roles', desc: 'Access to view RBAC configurations and roles.' },
-  { key: 'workspace.roles.update', group: 'Administration', label: 'Modify Roles Settings', desc: 'Access to change permission matrices.' },
-  { key: 'workspace.security.read', group: 'Administration', label: 'Read Security Logs', desc: 'Access to view system audit logs ledger.' },
-  { key: 'workspace.voice.manage', group: 'Administration', label: 'Manage Voice Number', desc: 'Register and verify the WhatsApp number allowed to send voice notes.' },
-  { key: 'voice_notes.read', group: 'Voice Notes', label: 'Read Voice Notes', desc: 'Access to view the voice notes inbox and transcripts.' },
-  { key: 'voice_notes.update', group: 'Voice Notes', label: 'Process Voice Notes', desc: 'Allows converting voice notes to tasks, dismissing and restoring them.' },
-  { key: 'attendance.use', group: 'Attendance', label: 'Use Attendance', desc: 'Checks in and is counted in attendance; sees their own month.' },
-  { key: 'attendance.read', group: 'Attendance', label: 'View Attendance', desc: "See everyone's daily attendance, monthly totals and holidays." },
-  { key: 'attendance.manage', group: 'Attendance', label: 'Manage Attendance', desc: 'Correct entries, set leave and holidays, and change the attendance rules.' },
-  { key: 'leave.use', group: 'Leave', label: 'Apply for Leave', desc: 'Applies for leave and sees their own requests.' },
-  { key: 'leave.approve', group: 'Leave', label: 'Approve Leave', desc: "First approval of employees' leave when nobody is set as their Reports to (Admins give the final approval)." },
+// What each permission lets a role do, grouped the way the app is organised
+const PERMISSION_GROUPS: { group: string; items: { key: string; label: string; desc: string }[] }[] = [
+  {
+    group: 'Tasks',
+    items: [
+      { key: 'task.read', label: 'See tasks', desc: 'Open the Tasks page and the Calendar.' },
+      { key: 'task.create', label: 'Create tasks', desc: 'Add new tasks.' },
+      { key: 'task.update', label: 'Update tasks', desc: 'Change status, comment and edit details.' },
+    ],
+  },
+  {
+    group: 'Projects',
+    items: [
+      { key: 'project.read', label: 'See projects', desc: 'Open projects, their phases and sprints.' },
+      { key: 'project.create', label: 'Create projects', desc: 'Start new projects.' },
+      { key: 'project.manage', label: 'Manage projects', desc: 'Change project settings, phases and quality gates.' },
+    ],
+  },
+  {
+    group: 'Attendance',
+    items: [
+      { key: 'attendance.use', label: 'Uses attendance', desc: 'Checks in each day, is counted, and sees their own month.' },
+      { key: 'attendance.read', label: "See everyone's attendance", desc: 'Daily list, monthly totals and holidays.' },
+      { key: 'attendance.manage', label: 'Manage attendance', desc: 'Correct entries, set leave and holidays, change the rules.' },
+    ],
+  },
+  {
+    group: 'Leave',
+    items: [
+      { key: 'leave.use', label: 'Apply for leave', desc: 'Applies for leave and sees their own requests.' },
+      { key: 'leave.approve', label: 'Approve leave (first step)', desc: "Approves employees' leave when nobody is set as their Reports to. Admins give the final approval." },
+    ],
+  },
+  {
+    group: 'Voice Notes',
+    items: [
+      { key: 'voice_notes.read', label: 'See voice notes', desc: 'Open the voice notes inbox and transcripts.' },
+      { key: 'voice_notes.update', label: 'Handle voice notes', desc: 'Turn voice notes into tasks, dismiss and restore them.' },
+    ],
+  },
+  {
+    group: 'Workspace',
+    items: [
+      { key: 'workspace.members.read', label: 'See members', desc: 'Open the member list and invitations.' },
+      { key: 'workspace.members.invite', label: 'Invite members', desc: 'Send invitations to join the workspace.' },
+      { key: 'workspace.members.update', label: "Change members' roles", desc: 'Give members a different role.' },
+      { key: 'workspace.members', label: 'Remove members', desc: 'Remove people from the workspace.' },
+      { key: 'workspace.roles.read', label: 'See roles', desc: 'Open this page.' },
+      { key: 'workspace.roles.update', label: 'Edit roles', desc: 'Create roles and change what they can do.' },
+      { key: 'workspace.security.read', label: 'See the security log', desc: 'Who changed what, and when.' },
+      { key: 'workspace.voice.manage', label: 'Manage WhatsApp numbers', desc: 'Add and verify the numbers that can send voice notes.' },
+    ],
+  },
 ];
+
+// Roles every workspace starts with (they can be edited, not deleted)
+const BUILT_IN = ['admin', 'tenant admin', 'project manager', 'scrum master', 'developer', 'viewer', 'member', 'guest'];
+
+const isAdminRole = (r: Role) => r.name.toLowerCase() === 'admin' || r.permissions?.admin === true;
+const kindOf = (r: Role): 'admin' | 'built-in' | 'custom' =>
+  isAdminRole(r) ? 'admin' : BUILT_IN.includes(r.name.toLowerCase()) ? 'built-in' : 'custom';
+
+const KIND_STYLES = {
+  admin: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 border-indigo-500/20',
+  'built-in': 'bg-slate-500/10 text-slate-600 dark:text-slate-300 border-slate-500/20',
+  custom: 'bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/20',
+};
+const KIND_LABELS = { admin: 'Full access', 'built-in': 'Built-in', custom: 'Custom' };
+
+const apiError = (err: any, fallback: string) => err?.response?.data?.error || fallback;
+const inputClass =
+  'w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 disabled:opacity-60';
+
+const Switch: React.FC<{ on: boolean; disabled?: boolean; label: string; onChange: () => void }> = ({ on, disabled, label, onChange }) => (
+  <button
+    type="button" role="switch" aria-checked={on} aria-label={label} disabled={disabled} onClick={onChange}
+    className={`relative w-9 h-5 rounded-full transition-colors shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+      on ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-zinc-700'
+    }`}
+  >
+    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${on ? 'left-[18px]' : 'left-0.5'}`} />
+  </button>
+);
 
 export const RolesManagement: React.FC = () => {
   const { socket } = useSocket();
   const { can } = usePermissions();
   const confirm = useConfirm();
+  const { toast } = useToast();
+  // toast is a new object on every render; keep loadRoles stable
+  const toastRef = React.useRef(toast);
+  toastRef.current = toast;
+  const canEdit = can('workspace.roles.update' as any);
+
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-
-  // Selected Role to Edit details
+  const [saving, setSaving] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  
-  // Custom Role Creator State
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleDesc, setNewRoleDesc] = useState('');
 
-  // Load roles
   const loadRoles = React.useCallback(async () => {
     setLoading(true);
     try {
       const data = await rolesApi.list();
       setRoles(data || []);
       if (data && data.length > 0) {
-        // Set selected to first role by default or keep previous selection matched by id
-        setSelectedRole(prev => data.find(r => r.id === prev?.id) || data[0]);
+        setSelectedRole((prev) => data.find((r) => r.id === prev?.id) || data[0]);
       }
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.error || 'Failed to fetch roles');
+      toastRef.current.error(apiError(err, 'Could not load roles.'), 'Roles');
     } finally {
       setLoading(false);
     }
@@ -73,10 +130,7 @@ export const RolesManagement: React.FC = () => {
 
   useEffect(() => {
     if (!socket) return;
-    const handleRoleUpdate = () => {
-      loadRoles();
-    };
-
+    const handleRoleUpdate = () => loadRoles();
     socket.on('role_updated', handleRoleUpdate);
     socket.on('role_deleted', handleRoleUpdate);
     socket.on('role_created', handleRoleUpdate);
@@ -87,364 +141,259 @@ export const RolesManagement: React.FC = () => {
     };
   }, [loadRoles, socket]);
 
-  // Update a permission state in memory for selected role
-  const handlePermissionToggle = (permissionKey: string) => {
-    if (!selectedRole) return;
-    
-    // Safety check: Cannot modify Admin role permissions
-    if (selectedRole.name.toLowerCase() === 'admin' || selectedRole.permissions['admin'] === true) {
-      setErrorMsg('The Admin role has absolute permissions. You cannot customize its permission matrix.');
-      return;
+  // Unsaved edits: the selected role compared with the saved one
+  const saved = roles.find((r) => r.id === selectedRole?.id);
+  const dirty = useMemo(() => {
+    if (!selectedRole || !saved) return false;
+    if ((selectedRole.description || '') !== (saved.description || '')) return true;
+    const keys = new Set([...Object.keys(selectedRole.permissions), ...Object.keys(saved.permissions)]);
+    return [...keys].some((k) => !!selectedRole.permissions[k] !== !!saved.permissions[k]);
+  }, [selectedRole, saved]);
+
+  const selectRole = async (r: Role) => {
+    if (r.id === selectedRole?.id) return;
+    if (dirty) {
+      const ok = await confirm({
+        title: 'Discard changes?',
+        message: `Your changes to ${selectedRole?.name} haven't been saved.`,
+        confirmLabel: 'Discard',
+        cancelLabel: 'Keep editing',
+        variant: 'warning',
+      });
+      if (!ok) return;
     }
-
-    if (!can('workspace.roles.update' as any)) {
-      setErrorMsg('You do not have permission to modify role configurations.');
-      return;
-    }
-
-    setErrorMsg('');
-    setSuccessMsg('');
-
-    const updatedPermissions = {
-      ...selectedRole.permissions,
-      [permissionKey]: !selectedRole.permissions[permissionKey]
-    };
-
-    setSelectedRole({
-      ...selectedRole,
-      permissions: updatedPermissions
-    });
+    setSelectedRole(r);
   };
 
-  // Save changes
+  const togglePermission = (key: string) => {
+    if (!selectedRole || isAdminRole(selectedRole) || !canEdit) return;
+    setSelectedRole({ ...selectedRole, permissions: { ...selectedRole.permissions, [key]: !selectedRole.permissions[key] } });
+  };
+
   const handleSaveChanges = async () => {
     if (!selectedRole) return;
-    setErrorMsg('');
-    setSuccessMsg('');
-
+    setSaving(true);
     try {
-      await rolesApi.update(selectedRole.id, {
-        description: selectedRole.description,
-        permissions: selectedRole.permissions
-      });
-      setSuccessMsg(`Role matrix updated successfully for ${selectedRole.name}.`);
-      loadRoles();
+      await rolesApi.update(selectedRole.id, { description: selectedRole.description, permissions: selectedRole.permissions });
+      toast.success(`${selectedRole.name} saved. Members get the change the next time they open Work OS.`, 'Roles');
+      await loadRoles();
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.error || 'Failed to save changes');
+      toast.error(apiError(err, 'Could not save the role.'), 'Roles');
+    } finally {
+      setSaving(false);
     }
   };
 
-  // Create role
   const handleCreateRoleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg('');
-    setSuccessMsg('');
-
-    if (!newRoleName) {
-      setErrorMsg('Role name is required.');
-      return;
-    }
-
+    if (!newRoleName.trim()) return;
     try {
       const created = await rolesApi.create({
-        name: newRoleName,
-        description: newRoleDesc,
-        permissions: { 'project.read': true, 'attendance.use': true, 'leave.use': true } // default safe starting permissions
+        name: newRoleName.trim(),
+        description: newRoleDesc.trim(),
+        permissions: { 'project.read': true, 'attendance.use': true, 'leave.use': true }, // a safe start
       });
-      setSuccessMsg(`Role ${created.name} created successfully.`);
+      toast.success(`${created.name} created. Choose what it can do, then save.`, 'Roles');
       setNewRoleName('');
       setNewRoleDesc('');
       setShowCreateModal(false);
-      loadRoles();
+      await loadRoles();
+      setSelectedRole(created);
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.error || 'Failed to create role');
+      toast.error(apiError(err, 'Could not create the role.'), 'Roles');
     }
   };
 
-  // Delete role
-  const handleDeleteRole = async (id: string, name: string) => {
-    const isSpecial = ['admin', 'project manager', 'member', 'guest'].includes(name.toLowerCase());
-    if (isSpecial) {
-      setErrorMsg('System default roles cannot be deleted.');
-      return;
-    }
-
+  const handleDeleteRole = async (r: Role) => {
     const ok = await confirm({
-      title: 'Delete Custom Role',
-      message: `Are you sure you want to delete the custom role: ${name}? Users mapped to this role will lose their custom configurations.`,
-      confirmLabel: 'Delete Role',
+      title: `Delete ${r.name}?`,
+      message: 'This role will be removed from the workspace.',
+      confirmLabel: 'Delete role',
       cancelLabel: 'Cancel',
       variant: 'danger',
     });
     if (!ok) return;
-    setErrorMsg('');
-    setSuccessMsg('');
-
     try {
-      await rolesApi.delete(id);
-      setSuccessMsg(`Successfully deleted role ${name}.`);
+      await rolesApi.delete(r.id);
+      toast.success(`${r.name} deleted.`, 'Roles');
       loadRoles();
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.error || 'Failed to delete role');
+      toast.error(apiError(err, 'Could not delete the role.'), 'Roles');
     }
   };
 
+  const selectedIsAdmin = selectedRole ? isAdminRole(selectedRole) : false;
+
   return (
-    <div className="space-y-6">
-      {/* Messages */}
-      {errorMsg && (
-        <div className="flex items-center space-x-2.5 p-4 rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 text-xs animate-scale-in">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{errorMsg}</span>
-        </div>
-      )}
-      {successMsg && (
-        <div className="flex items-center space-x-2.5 p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 text-xs animate-scale-in">
-          <Check className="w-4 h-4 shrink-0" />
-          <span>{successMsg}</span>
-        </div>
-      )}
-
-      {/* Main Grid: Left List, Right Matrix */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        
-        {/* Left Side: Role Profiles Selector */}
-        <div className="glass-panel rounded-2xl p-6 border border-border bg-card/40 glow-primary h-fit">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center space-x-2">
-              <Shield className="w-5 h-5 text-blue-400" />
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Roles Profiles</h3>
-            </div>
-            {can('workspace.roles.update' as any) && (
-              <button
-                onClick={() => { setErrorMsg(''); setSuccessMsg(''); setShowCreateModal(true); }}
-                className="p-2 rounded-lg bg-slate-100/60 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 text-white hover:bg-slate-200/60 dark:bg-white/10 hover:text-blue-400 transition"
-                title="Create Custom Role"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            )}
+    <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] gap-6 items-start">
+      {/* Roles */}
+      <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2 px-1">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-blue-500" />
+            <h2 className="text-sm font-bold text-foreground">Roles</h2>
           </div>
-
-          <div className="space-y-2">
-            {loading ? (
-              <p className="text-xs text-muted-foreground italic py-4">Loading roles...</p>
-            ) : (
-              roles.map((r) => {
-                const isActive = selectedRole?.id === r.id;
-                const isSystem = ['admin', 'project manager', 'member', 'guest'].includes(r.name.toLowerCase());
-                
-                return (
-                  <div
-                    key={r.id}
-                    onClick={() => { setErrorMsg(''); setSuccessMsg(''); setSelectedRole(r); }}
-                    className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
-                      isActive
-                        ? 'bg-blue-600/10 border-blue-500/30 text-blue-400 glow-primary'
-                        : 'border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-zinc-900/20 hover:bg-zinc-900/40 text-slate-600 dark:text-zinc-400'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className={`text-xs font-bold ${isActive ? 'text-white' : 'text-zinc-200'}`}>{r.name}</p>
-                        <p className="text-[10px] text-muted-foreground font-light leading-relaxed mt-0.5 max-w-[200px]">
-                          {r.description || 'No description provided.'}
-                        </p>
-                      </div>
-                      
-                      <span className="text-[9px] bg-slate-100/60 dark:bg-white/5 px-2 py-0.5 rounded text-slate-600 dark:text-zinc-400 border border-slate-100 dark:border-white/5 font-mono">
-                        {r.userCount || 0} Users
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 dark:border-white/5">
-                      <span className={`text-[8px] font-black uppercase tracking-widest font-mono ${isSystem ? 'text-indigo-400' : 'text-amber-400'}`}>
-                        {isSystem ? 'system role' : 'custom role'}
-                      </span>
-
-                      {!isSystem && can('workspace.roles.update' as any) && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleDeleteRole(r.id, r.name); }}
-                          className="p-1 text-slate-500 dark:text-zinc-500 hover:text-red-400 rounded hover:bg-red-500/10 transition"
-                          title="Delete Role"
-                        >
-                          <Trash className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-
-        {/* Right Side: Matrix Editor */}
-        <div className="xl:col-span-2 glass-panel rounded-2xl p-6 border border-border bg-card/40 glow-primary">
-          {selectedRole ? (
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
-                    <span>Permission Matrix: {selectedRole.name}</span>
-                  </h3>
-                  <p className="text-xs text-muted-foreground font-light mt-0.5">
-                    Customize permissions policies for this profile tag.
-                  </p>
-                </div>
-                
-                {can('workspace.roles.update' as any) && (
-                  <button
-                    onClick={handleSaveChanges}
-                    className="flex items-center space-x-1.5 px-4.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-lg hover:shadow-blue-500/10 transition active:scale-95 shrink-0"
-                  >
-                    <Save className="w-4 h-4" />
-                    <span>Save Matrix Config</span>
-                  </button>
-                )}
-              </div>
-
-              {/* Role Info input */}
-              <div className="bg-zinc-900/40 p-4 rounded-xl border border-slate-100 dark:border-white/5 space-y-3">
-                <div className="flex items-center space-x-2 text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
-                  <Info className="w-4 h-4 text-blue-400" />
-                  <span>Role Description</span>
-                </div>
-                <textarea
-                  value={selectedRole.description || ''}
-                  onChange={(e) => setSelectedRole({ ...selectedRole, description: e.target.value })}
-                  placeholder="Enter details about when to assign this role..."
-                  rows={2}
-                  disabled={['admin', 'project manager', 'member', 'guest'].includes(selectedRole.name.toLowerCase()) || !can('workspace.roles.update' as any)}
-                  className="w-full bg-zinc-950/60 border border-border/80 rounded-xl px-4 py-2.5 text-xs font-light text-white focus:outline-none focus:border-blue-500/50 transition resize-none disabled:opacity-50"
-                />
-              </div>
-
-              {/* Matrix Table */}
-              <div className="border border-border/40 rounded-xl overflow-hidden bg-slate-50/50 dark:bg-zinc-900/20">
-                <table className="w-full border-collapse text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-border/60 bg-white/2 text-slate-600 dark:text-zinc-400 font-bold uppercase tracking-wider text-[10px]">
-                      <th className="px-6 py-4 w-1/3">Permission Key</th>
-                      <th className="px-6 py-4 w-12 text-center font-bold">Policy Status</th>
-                      <th className="px-6 py-4">Action Rules Description</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/30">
-                    {PERMISSION_KEYS.map((perm) => {
-                      const hasAccess = selectedRole.permissions[perm.key] === true || selectedRole.permissions['admin'] === true;
-                      const isSystemAdmin = selectedRole.name.toLowerCase() === 'admin';
-
-                      return (
-                        <tr key={perm.key} className="hover:bg-white/2 transition-colors">
-                          <td className="px-6 py-4">
-                            <span className="font-semibold text-slate-900 dark:text-white">{perm.label}</span>
-                            <span className="block font-mono text-[9px] text-slate-500 dark:text-zinc-500 mt-0.5">{perm.key}</span>
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <button
-                              type="button"
-                              onClick={() => handlePermissionToggle(perm.key)}
-                              disabled={isSystemAdmin || !can('workspace.roles.update' as any)}
-                              className={`w-9 h-6.5 rounded-lg border flex items-center justify-center transition-all ${
-                                hasAccess
-                                  ? 'bg-emerald-500/10 border-emerald-500/35 text-emerald-400 glow-primary'
-                                  : 'bg-white dark:bg-zinc-900/60 border-slate-100 dark:border-white/5 text-zinc-600'
-                              } disabled:opacity-50 disabled:cursor-not-allowed`}
-                            >
-                              {hasAccess ? (
-                                <Check className="w-4 h-4 animate-scale-in" />
-                              ) : (
-                                <X className="w-3.5 h-3.5" />
-                              )}
-                            </button>
-                          </td>
-                          <td className="px-6 py-4">
-                            <p className="text-[11px] text-slate-600 dark:text-zinc-400 font-light leading-relaxed">{perm.desc}</p>
-                            {isSystemAdmin && (
-                              <span className="inline-flex items-center space-x-1 text-[8px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold uppercase tracking-widest px-1.5 py-0.5 rounded mt-1.5">
-                                <ShieldAlert className="w-2.5 h-2.5 shrink-0" />
-                                <span>Locked admin policy</span>
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground italic">No role profiles selected.</p>
+          {canEdit && (
+            <button
+              type="button" onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border text-xs font-semibold text-foreground hover:bg-muted cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" /> New role
+            </button>
           )}
         </div>
+
+        {loading && !roles.length ? (
+          <div className="flex justify-center p-6"><Loader2 className="w-4 h-4 animate-spin text-blue-500" /></div>
+        ) : (
+          <div className="space-y-1.5">
+            {roles.map((r) => {
+              const active = selectedRole?.id === r.id;
+              const kind = kindOf(r);
+              const deletable = canEdit && kind === 'custom' && !(r.userCount ?? 0);
+              return (
+                <div
+                  key={r.id}
+                  role="button" tabIndex={0} aria-pressed={active}
+                  onClick={() => selectRole(r)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectRole(r); } }}
+                  className={`group rounded-xl border px-3 py-2.5 cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 ${
+                    active ? 'border-blue-500/40 bg-blue-500/10' : 'border-transparent hover:bg-muted'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className={`text-sm font-semibold truncate ${active ? 'text-blue-600 dark:text-blue-300' : 'text-foreground'}`}>{r.name}</p>
+                    <span className="flex items-center gap-1 text-[11px] text-muted-foreground shrink-0">
+                      <Users className="w-3 h-3" /> {r.userCount ?? 0}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 mt-1">
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md border ${KIND_STYLES[kind]}`}>{KIND_LABELS[kind]}</span>
+                    {deletable && (
+                      <button
+                        type="button" aria-label={`Delete ${r.name}`}
+                        onClick={(e) => { e.stopPropagation(); handleDeleteRole(r); }}
+                        className="p-1 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 opacity-60 group-hover:opacity-100 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  {r.description && <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{r.description}</p>}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Role Creator Modal Popover */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-md glass-panel-heavy rounded-2xl p-6 shadow-2xl border border-border/80 bg-zinc-950 glow-primary relative animate-scale-in">
-            <button
-              onClick={() => setShowCreateModal(false)}
-              className="absolute top-4 right-4 p-1 rounded-lg text-slate-500 dark:text-zinc-500 hover:text-white hover:bg-slate-100/60 dark:bg-white/5 transition"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center">
-                <Plus className="w-5 h-5 text-blue-400" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">Create Custom Role</h3>
-                <p className="text-xs text-muted-foreground font-light mt-0.5">
-                  Define a new workspace access profile tag.
+      {/* What the selected role can do */}
+      <div className="rounded-2xl border border-border bg-card">
+        {!selectedRole ? (
+          <p className="p-6 text-xs text-muted-foreground">Choose a role.</p>
+        ) : (
+          <>
+            <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 p-5 border-b border-border bg-card rounded-t-2xl">
+              <div className="min-w-0">
+                <h2 className="text-base font-bold text-foreground truncate">{selectedRole.name}</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {selectedRole.userCount ?? 0} member{(selectedRole.userCount ?? 0) === 1 ? '' : 's'} · what people with this role can do
                 </p>
               </div>
+              {canEdit && !selectedIsAdmin && (
+                <div className="flex items-center gap-3">
+                  {dirty && <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">Unsaved changes</span>}
+                  <button
+                    type="button" onClick={handleSaveChanges} disabled={!dirty || saving}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Save changes
+                  </button>
+                </div>
+              )}
             </div>
 
-            <form onSubmit={handleCreateRoleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-2">
-                  Role Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Lead Quality Assurance"
-                  value={newRoleName}
-                  onChange={(e) => setNewRoleName(e.target.value)}
-                  className="w-full bg-white dark:bg-zinc-900/60 border border-border/80 rounded-xl px-4 py-2.5 text-xs font-light text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition"
-                />
-              </div>
+            <div className="p-5 space-y-6">
+              {selectedIsAdmin && (
+                <div className="flex items-start gap-3 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4">
+                  <ShieldCheck className="w-5 h-5 text-indigo-500 shrink-0" />
+                  <p className="text-xs text-foreground">
+                    <span className="font-semibold">This role has full access.</span>{' '}
+                    <span className="text-muted-foreground">Admins can do everything in the workspace, so these switches can't be changed.</span>
+                  </p>
+                </div>
+              )}
 
-              <div>
-                <label className="block text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-2">
-                  Description / Context
-                </label>
+              <div className="space-y-1.5">
+                <label htmlFor="role-description" className="text-xs font-semibold text-foreground">Description</label>
                 <textarea
-                  placeholder="Briefly state when this role should be assigned..."
-                  value={newRoleDesc}
-                  onChange={(e) => setNewRoleDesc(e.target.value)}
-                  rows={3}
-                  className="w-full bg-white dark:bg-zinc-900/60 border border-border/80 rounded-xl px-4 py-2.5 text-xs font-light text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition resize-none"
+                  id="role-description" rows={2}
+                  value={selectedRole.description || ''}
+                  onChange={(e) => setSelectedRole({ ...selectedRole, description: e.target.value })}
+                  placeholder="When should someone get this role? e.g. Sales staff who make calls"
+                  disabled={selectedIsAdmin || !canEdit}
+                  className={`${inputClass} resize-none`}
                 />
               </div>
 
-              <div className="flex justify-end space-x-3 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-100/60 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 hover:bg-slate-200/60 dark:bg-white/10 text-white text-xs font-semibold transition"
-                >
+              {PERMISSION_GROUPS.map(({ group, items }) => (
+                <section key={group} aria-labelledby={`perm-${group}`}>
+                  <h3 id={`perm-${group}`} className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">{group}</h3>
+                  <div className="rounded-xl border border-border divide-y divide-border">
+                    {items.map((perm) => {
+                      const on = selectedIsAdmin || selectedRole.permissions[perm.key] === true;
+                      return (
+                        <div key={perm.key} className="flex items-center justify-between gap-4 px-4 py-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground">{perm.label}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{perm.desc}</p>
+                          </div>
+                          <Switch
+                            on={on} label={perm.label} disabled={selectedIsAdmin || !canEdit}
+                            onChange={() => togglePermission(perm.key)}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/70 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="new-role-title">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card shadow-2xl">
+            <div className="flex items-center justify-between p-5 border-b border-border">
+              <h3 id="new-role-title" className="text-sm font-bold text-foreground">New role</h3>
+              <button type="button" onClick={() => setShowCreateModal(false)} aria-label="Close" className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateRoleSubmit} className="p-5 space-y-4">
+              <div className="space-y-1.5">
+                <label htmlFor="new-role-name" className="text-xs font-semibold text-foreground">Name</label>
+                <input
+                  id="new-role-name" required autoFocus value={newRoleName} maxLength={100}
+                  onChange={(e) => setNewRoleName(e.target.value)} placeholder="e.g. Telecaller" className={inputClass}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="new-role-desc" className="text-xs font-semibold text-foreground">Description (optional)</label>
+                <textarea
+                  id="new-role-desc" rows={3} value={newRoleDesc} onChange={(e) => setNewRoleDesc(e.target.value)}
+                  placeholder="When should someone get this role?" className={`${inputClass} resize-none`}
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground">It starts with: see projects, uses attendance, apply for leave. You can change this next.</p>
+              <div className="flex justify-end gap-2 pt-1">
+                <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2 rounded-xl border border-border text-xs font-semibold text-foreground hover:bg-muted cursor-pointer">
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-lg hover:shadow-blue-500/10 transition"
-                >
-                  Create Profile
+                <button type="submit" disabled={!newRoleName.trim()} className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold disabled:opacity-50 cursor-pointer">
+                  Create role
                 </button>
               </div>
             </form>
