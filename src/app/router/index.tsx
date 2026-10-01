@@ -28,6 +28,7 @@ const SecurityActivityCenter = lazy(() => import('../../pages/settings/SecurityA
 const VoiceNotesSettings = lazy(() => import('../../pages/settings/voice/VoiceNotesSettings'));
 const VoiceNotesPage = lazy(() => import('../../pages/voice-notes/VoiceNotesPage'));
 const WhatsAppBotsPage = lazy(() => import('../../pages/platform/WhatsAppBotsPage'));
+const WorkspacesPage = lazy(() => import('../../pages/platform/WorkspacesPage'));
 const AcceptInvite = lazy(() => import('../../pages/auth/AcceptInvite'));
 const TasksPage = lazy(() => import('../../pages/tasks/TasksPage').then(m => ({ default: m.TasksPage })));
 const CalendarPage = lazy(() => import('../../pages/calendar/CalendarPage'));
@@ -111,6 +112,7 @@ export const AppRouter: React.FC = () => {
               </Route>
               {/* Platform admins only (checked by the page and the API) */}
               <Route path="/platform/whatsapp-bots" element={<WhatsAppBotsPage />} />
+              <Route path="/platform/workspaces" element={<WorkspacesPage />} />
 
               {/* Placeholders for secondary navigation */}
               <Route path="/dashboard/tasks" element={<TasksPage />} />

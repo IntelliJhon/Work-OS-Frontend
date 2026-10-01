@@ -26,8 +26,11 @@ const PERMISSION_KEYS = [
   { key: 'workspace.voice.manage', group: 'Administration', label: 'Manage Voice Number', desc: 'Register and verify the WhatsApp number allowed to send voice notes.' },
   { key: 'voice_notes.read', group: 'Voice Notes', label: 'Read Voice Notes', desc: 'Access to view the voice notes inbox and transcripts.' },
   { key: 'voice_notes.update', group: 'Voice Notes', label: 'Process Voice Notes', desc: 'Allows converting voice notes to tasks, dismissing and restoring them.' },
+  { key: 'attendance.use', group: 'Attendance', label: 'Use Attendance', desc: 'Checks in and is counted in attendance; sees their own month.' },
   { key: 'attendance.read', group: 'Attendance', label: 'View Attendance', desc: "See everyone's daily attendance, monthly totals and holidays." },
   { key: 'attendance.manage', group: 'Attendance', label: 'Manage Attendance', desc: 'Correct entries, set leave and holidays, and change the attendance rules.' },
+  { key: 'leave.use', group: 'Leave', label: 'Apply for Leave', desc: 'Applies for leave and sees their own requests.' },
+  { key: 'leave.approve', group: 'Leave', label: 'Approve Leave', desc: "First approval of employees' leave when nobody is set as their Reports to (Admins give the final approval)." },
 ];
 
 export const RolesManagement: React.FC = () => {
@@ -146,7 +149,7 @@ export const RolesManagement: React.FC = () => {
       const created = await rolesApi.create({
         name: newRoleName,
         description: newRoleDesc,
-        permissions: { 'project.read': true } // default safe starting permission
+        permissions: { 'project.read': true, 'attendance.use': true, 'leave.use': true } // default safe starting permissions
       });
       setSuccessMsg(`Role ${created.name} created successfully.`);
       setNewRoleName('');

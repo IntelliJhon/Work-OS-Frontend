@@ -21,6 +21,8 @@ import { RealtimeAlertToast, triggerRealtimeToast } from '../../components/notif
 import { NotificationDrawer } from '../../components/notifications/NotificationDrawer';
 import { VoiceNotesNavBadge } from '../../pages/voice-notes/VoiceNotesNavBadge';
 import { platformApi } from '../../services/api/platform';
+import { useSections, type Section } from '../../services/api/workspace';
+import { SectionGate } from '../../components/security/SectionGate';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -28,6 +30,7 @@ import {
   CalendarDays,
   CalendarCheck,
   Plane,
+  Building2,
   Bell,
   Settings,
   LogOut,
@@ -184,27 +187,36 @@ export const DashboardLayout: React.FC = () => {
 
   const { can } = usePermissions();
   const { data: platformMe } = useQuery({ queryKey: ['platform', 'me'], queryFn: platformApi.me, staleTime: 300000 });
+  // Sections the workspace has (switched by a platform admin); roles still decide who sees them
+  const { isOn } = useSections();
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Projects', path: '/projects', icon: FolderKanban },
+    { name: 'Projects', path: '/projects', icon: FolderKanban, permission: PERMISSIONS.PROJECT_READ, section: 'projects' as Section },
     { name: 'Employees', path: '/employees', icon: UserCheck },
     { name: 'Complaints', path: '/complaints', icon: MessageSquareWarning },
     { name: 'Clients', path: '/clients', icon: Users },
     { name: 'Management Review', path: '/dashboard/management-review', icon: ShieldAlert, permission: PERMISSIONS.WORKSPACE_MEMBERS_READ },
     { name: 'Alerts Center', path: '/notifications', icon: Bell },
-    { name: 'Tasks', path: '/dashboard/tasks', icon: CheckSquare, permission: PERMISSIONS.TASK_READ },
-    { name: 'Calendar', path: '/calendar', icon: CalendarDays, permission: PERMISSIONS.TASK_READ },
-    { name: 'Attendance', path: '/attendance', icon: CalendarCheck },
-    { name: 'Leave', path: '/leave', icon: Plane },
-    { name: 'Voice Notes', path: '/voice-notes', icon: Mic, permission: PERMISSIONS.VOICE_NOTES_READ },
+    { name: 'Tasks', path: '/dashboard/tasks', icon: CheckSquare, permission: PERMISSIONS.TASK_READ, section: 'tasks' as Section },
+    { name: 'Calendar', path: '/calendar', icon: CalendarDays, permission: PERMISSIONS.TASK_READ, section: 'calendar' as Section },
+    { name: 'Attendance', path: '/attendance', icon: CalendarCheck, anyPermission: [PERMISSIONS.ATTENDANCE_USE, PERMISSIONS.ATTENDANCE_READ], section: 'attendance' as Section },
+    { name: 'Leave', path: '/leave', icon: Plane, anyPermission: [PERMISSIONS.LEAVE_USE, PERMISSIONS.LEAVE_APPROVE], section: 'leave' as Section },
+    { name: 'Voice Notes', path: '/voice-notes', icon: Mic, permission: PERMISSIONS.VOICE_NOTES_READ, section: 'voice_notes' as Section },
     { name: 'Settings', path: '/settings/members', icon: Settings, permission: PERMISSIONS.WORKSPACE_MEMBERS_READ },
     { name: 'WhatsApp Bots', path: '/platform/whatsapp-bots', icon: Bot, platformOnly: true },
+    { name: 'Workspaces', path: '/platform/workspaces', icon: Building2, platformOnly: true },
   ];
 
   const filteredItems = navItems.filter((item) => {
     if ((item.name === 'Clients' || item.name === 'Complaints') && !showCompanyTools) {
       return false;
+    }
+    if ('section' in item && item.section && !isOn(item.section)) {
+      return false;
+    }
+    if ('anyPermission' in item && item.anyPermission) {
+      return item.anyPermission.some((p) => can(p));
     }
     if ('platformOnly' in item && item.platformOnly) {
       return platformMe?.isPlatformAdmin === true;
@@ -487,7 +499,9 @@ export const DashboardLayout: React.FC = () => {
               transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
               className="h-full"
             >
-              <Outlet />
+              <SectionGate>
+                <Outlet />
+              </SectionGate>
             </motion.div>
           </AnimatePresence>
         </main>

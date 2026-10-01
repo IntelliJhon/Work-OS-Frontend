@@ -18,6 +18,8 @@ export const PERMISSIONS = {
   VOICE_NOTES_UPDATE: 'voice_notes.update',
   ATTENDANCE_READ: 'attendance.read',
   ATTENDANCE_MANAGE: 'attendance.manage',
+  ATTENDANCE_USE: 'attendance.use',
+  LEAVE_USE: 'leave.use',
   LEAVE_APPROVE: 'leave.approve',
 } as const;
 

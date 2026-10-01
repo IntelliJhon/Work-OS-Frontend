@@ -149,6 +149,8 @@ const ApplyForm: React.FC<{ onApplied: () => void }> = ({ onApplied }) => {
 };
 
 const MyLeave: React.FC = () => {
+  const { can } = usePermissions();
+  const canApply = can(PERMISSIONS.LEAVE_USE);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const confirm = useConfirm();
@@ -166,7 +168,9 @@ const MyLeave: React.FC = () => {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] items-start">
-      <ApplyForm onApplied={refresh} />
+      {canApply ? <ApplyForm onApplied={refresh} /> : (
+        <p className={`${panelClass} p-5 text-xs text-muted-foreground`}>Your role doesn't apply for leave in Work OS.</p>
+      )}
       <div className="space-y-3">
         <h2 className="text-sm font-bold text-foreground">My requests</h2>
         {isLoading ? <Loading /> : isError ? <ErrorBox error={error} fallback="Could not load your leave." /> : data.length === 0 ? (
