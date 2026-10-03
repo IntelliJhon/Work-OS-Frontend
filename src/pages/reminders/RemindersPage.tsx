@@ -38,6 +38,25 @@ const labelClass = 'text-xs font-semibold text-foreground';
 const primaryButton = 'flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold disabled:opacity-50 cursor-pointer';
 const secondaryButton = 'flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-border text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 cursor-pointer';
 const MAX_FILES = 5;
+
+/** The first few due dates of a repeating reminder (same rules as the server: the 31st falls back to the month's last day) */
+function upcomingDates(dueDate: string, repeat: ReminderRepeat, everyN: number, unit: 'day' | 'week' | 'month', count = 4): string[] {
+  if (!dueDate || repeat === 'once' || (repeat === 'custom' && !(everyN >= 1))) return [];
+  const [y0, m0, d0] = dueDate.split('-').map(Number);
+  const out: string[] = [];
+  for (let i = 0; i < count; i++) {
+    let date: Date;
+    const months = repeat === 'monthly' ? i : repeat === 'yearly' ? 12 * i : unit === 'month' ? everyN * i : 0;
+    if (repeat === 'custom' && unit !== 'month') {
+      date = new Date(Date.UTC(y0, m0 - 1, d0 + i * everyN * (unit === 'week' ? 7 : 1)));
+    } else {
+      const lastDay = new Date(Date.UTC(y0, m0 - 1 + months + 1, 0)).getUTCDate();
+      date = new Date(Date.UTC(y0, m0 - 1 + months, Math.min(d0, lastDay)));
+    }
+    out.push(date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' }));
+  }
+  return out;
+}
 const MAX_BYTES = 10 * 1024 * 1024;
 
 const StatusBadge: React.FC<{ r: Reminder }> = ({ r }) => {
@@ -156,8 +175,8 @@ const ReminderForm: React.FC<{ initial?: Reminder; onClose: () => void; onSaved:
           {repeat === 'custom' && (
             <div className="flex items-center gap-2 pt-1">
               <span className="text-sm text-foreground">Every</span>
-              <input aria-label="Repeat every" inputMode="numeric" value={everyN} onChange={(e) => setEveryN(e.target.value.replace(/\D/g, ''))} className={`${inputClass} w-20`} />
-              <select aria-label="Unit" value={everyUnit} onChange={(e) => setEveryUnit(e.target.value as 'day' | 'week' | 'month')} className={`${inputClass} w-32 [&>option]:bg-background`}>
+              <input aria-label="Repeat every" inputMode="numeric" value={everyN} onChange={(e) => setEveryN(e.target.value.replace(/\D/g, ''))} className={`${inputClass} !w-20 text-center`} placeholder="3" />
+              <select aria-label="Unit" value={everyUnit} onChange={(e) => setEveryUnit(e.target.value as 'day' | 'week' | 'month')} className={`${inputClass} !w-32 [&>option]:bg-background`}>
                 <option value="day">days</option>
                 <option value="week">weeks</option>
                 <option value="month">months</option>
@@ -165,6 +184,12 @@ const ReminderForm: React.FC<{ initial?: Reminder; onClose: () => void; onSaved:
             </div>
           )}
           {err('everyN')}
+          {(() => {
+            const dates = upcomingDates(dueDate, repeat, Number(everyN), everyUnit);
+            if (repeat === 'once') return <p className="text-[11px] text-muted-foreground">Happens once, on the due date.</p>;
+            if (!dates.length) return <p className="text-[11px] text-muted-foreground">{dueDate ? 'Enter how often it repeats.' : 'Choose the due date to see the dates it repeats on.'}</p>;
+            return <p className="text-[11px] text-muted-foreground">Due on {dates.join(', ')}, and so on. The next one is created when the current one is marked done.</p>;
+          })()}
         </div>
         <div className="space-y-1.5">
           <label htmlFor="rem-notes" className={labelClass}>Notes (optional)</label>
