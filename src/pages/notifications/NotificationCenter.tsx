@@ -40,7 +40,7 @@ function categoryOf(n: NotificationPayloadEnriched): Category {
   const entity = (n.entityType || '').toLowerCase();
   const title = (n.title || '').toLowerCase();
   if (entity === 'leave' || type.startsWith('leave')) return 'leave';
-  if (type.includes('reminder') || title.startsWith('reminder')) return 'reminders';
+  if (entity === 'reminder' || type.includes('reminder') || title.startsWith('reminder')) return 'reminders';
   if (entity === 'task') return 'tasks';
   if (entity === 'gate' || title.includes('gate') || title.includes('approv') || title.includes('reject')) return 'approvals';
   if (['phase', 'sprint', 'activity', 'project'].includes(entity)) return 'projects';
@@ -108,6 +108,7 @@ export const NotificationCenter: React.FC = () => {
   // Where a notification leads
   const resolveDeepLinkPath = (alert: NotificationPayloadEnriched): string | null => {
     if (alert.entityType === 'leave') return alert.type === 'leave_request' ? '/leave?tab=approvals' : '/leave';
+    if (alert.entityType === 'reminder' && alert.entityId) return `/reminders/${alert.entityId}`;
     if (!alert.entityType || !alert.entityId) {
       if (projects.length > 0) {
         return `/projects/${projects[0].id}/scopes`;

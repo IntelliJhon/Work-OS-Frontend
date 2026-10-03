@@ -31,6 +31,7 @@ import {
   CalendarCheck,
   Plane,
   Building2,
+  BellRing,
   Bell,
   Settings,
   LogOut,
@@ -202,6 +203,7 @@ export const DashboardLayout: React.FC = () => {
     { name: 'Calendar', path: '/calendar', icon: CalendarDays, permission: PERMISSIONS.TASK_READ, section: 'calendar' as Section },
     { name: 'Attendance', path: '/attendance', icon: CalendarCheck, anyPermission: [PERMISSIONS.ATTENDANCE_USE, PERMISSIONS.ATTENDANCE_READ], section: 'attendance' as Section },
     { name: 'Leave', path: '/leave', icon: Plane, anyPermission: [PERMISSIONS.LEAVE_USE, PERMISSIONS.LEAVE_APPROVE], section: 'leave' as Section },
+    { name: 'Reminders', path: '/reminders', icon: BellRing, section: 'reminders' as Section },
     { name: 'Voice Notes', path: '/voice-notes', icon: Mic, permission: PERMISSIONS.VOICE_NOTES_READ, section: 'voice_notes' as Section },
     { name: 'Settings', path: '/settings/members', icon: Settings, permission: PERMISSIONS.WORKSPACE_MEMBERS_READ },
     { name: 'WhatsApp Bots', path: '/platform/whatsapp-bots', icon: Bot, platformOnly: true },
@@ -273,6 +275,9 @@ export const DashboardLayout: React.FC = () => {
     }
     if (type === 'leave') {
       return alert.type === 'leave_request' ? '/leave?tab=approvals' : '/leave';
+    }
+    if (type === 'reminder') {
+      return `/reminders/${alert.entityId}`;
     }
     if (type === 'task') {
       const createdFrom = parsed?.createdFrom;

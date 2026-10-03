@@ -72,6 +72,10 @@ export const RealtimeAlertToast: React.FC = () => {
     }
 
     const type = toast.entityType.toLowerCase();
+    if (type === 'reminder') {
+      navigate(`/reminders/${toast.entityId}`);
+      return;
+    }
     if (type === 'leave') {
       navigate(toast.type === 'leave_request' ? '/leave?tab=approvals' : '/leave');
       return;

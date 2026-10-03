@@ -34,6 +34,7 @@ const TasksPage = lazy(() => import('../../pages/tasks/TasksPage').then(m => ({ 
 const CalendarPage = lazy(() => import('../../pages/calendar/CalendarPage'));
 const AttendancePage = lazy(() => import('../../pages/attendance/AttendancePage'));
 const LeavePage = lazy(() => import('../../pages/leave/LeavePage'));
+const RemindersPage = lazy(() => import('../../pages/reminders/RemindersPage'));
 const ManagementReviewView = lazy(() => import('../../pages/management/ManagementReviewView'));
 const ClientsList = lazy(() => import('../../pages/clients/ClientsList'));
 const EmployeesPage = lazy(() => import('../../pages/employees/EmployeesPage'));
@@ -123,6 +124,9 @@ export const AppRouter: React.FC = () => {
               <Route path="/attendance" element={<AttendancePage />} />
               {/* Everyone applies; approvers see their requests (checked by the API) */}
               <Route path="/leave" element={<LeavePage />} />
+              {/* Bills and renewals: own reminders; Admins see everyone's (checked by the API) */}
+              <Route path="/reminders" element={<RemindersPage />} />
+              <Route path="/reminders/:id" element={<RemindersPage />} />
               <Route
                 path="/dashboard/sprints"
                 element={<Navigate to="/dashboard/activities" replace />}
