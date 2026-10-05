@@ -59,6 +59,8 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   const isAssignee = task?.assigneeId === user?.id;
 
   const canUpdate = isFullAccess || isAssignee;
+  // Status: only the assignee (same rule as the server); anyone allowed when nobody is assigned
+  const canChangeStatus = isAssignee || (!task?.assigneeId && canUpdate);
   const canEditFull = isFullAccess;
   const canDelete = isFullAccess;
 
@@ -288,7 +290,8 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Status</label>
               <select
                 value={status}
-                disabled={!canUpdate}
+                disabled={!canChangeStatus}
+                title={canChangeStatus ? undefined : "Only the assigned person can change the status"}
                 onChange={(e) => { setStatus(e.target.value); markDirty(); }}
                 className="w-full px-3 py-2 glass-input text-foreground text-xs rounded-xl focus:outline-none [&>option]:bg-background [&>option]:text-foreground"
               >
@@ -298,6 +301,9 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                 <option value="done">Done</option>
                 <option value="blocked">Blocked</option>
               </select>
+              {!canChangeStatus && canUpdate && (
+                <p className="text-[10px] text-muted-foreground">Only the assigned person can change the status. Reassign it if someone else should do it.</p>
+              )}
             </div>
 
             {task.projectId && (

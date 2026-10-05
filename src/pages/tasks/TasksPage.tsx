@@ -247,7 +247,8 @@ export const TasksPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to move task status', err);
-      alert('Failed to update task status.');
+      refetchTasks();
+      alert((err as any)?.response?.data?.message || 'Failed to update task status.');
     }
   };
 

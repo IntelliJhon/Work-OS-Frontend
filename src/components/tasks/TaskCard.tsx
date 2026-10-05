@@ -36,7 +36,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   // Same rule as the backend: the Admin role or the admin permission (e.g. "Tenant Admin"), project managers, the project's PM
   const isFullAccess = user?.role === 'Admin' || hasPermission(user?.permissions, PERMISSIONS.ADMIN) || user?.role === 'Project Manager' || project?.pmId === user?.id;
   const isAssignee = task.assigneeId === user?.id;
-  const canDrag = isFullAccess || isAssignee;
+  // Moving a card changes its status: only the assignee (or anyone allowed, if nobody is assigned)
+  const canDrag = isAssignee || (!task.assigneeId && isFullAccess);
 
   const priority = task.customFields?.priority || 'medium';
   const dueDate = task.customFields?.dueDate;
