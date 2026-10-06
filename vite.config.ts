@@ -10,5 +10,11 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    // Session calls (login, refresh, logout) go through the dev server's own address, like the Vercel rewrites
+    // in production, so the HttpOnly session cookie is first-party.
+    proxy: {
+      '/api': 'http://localhost:5000',
+    },
+  },
 })
-

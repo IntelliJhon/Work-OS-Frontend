@@ -1,37 +1,33 @@
 import Cookies from 'js-cookie';
 
-const REFRESH_TOKEN_KEY = 'refreshToken';
+// The refresh token is kept by the server in an HttpOnly cookie that scripts cannot read.
+// The app only remembers *that* a session exists, so it knows whether to try restoring it on load.
+const SESSION_HINT_KEY = 'workos_session';
+const LEGACY_KEY = 'refreshToken';
 
-export const getRefreshToken = (): string | undefined => {
-  const cookieVal = Cookies.get(REFRESH_TOKEN_KEY);
-  if (cookieVal) return cookieVal;
-
-  if (typeof window !== 'undefined' && window.localStorage) {
-    const localVal = localStorage.getItem(REFRESH_TOKEN_KEY);
-    if (localVal) return localVal;
-  }
-  return undefined;
-};
-
-export const setRefreshToken = (token: string): void => {
-  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
-
-  // Cookie storage with dynamic secure flag
-  Cookies.set(REFRESH_TOKEN_KEY, token, {
-    secure: isHttps,
-    sameSite: isHttps ? 'strict' : 'lax',
-    expires: 7, // 7 days
-  });
-
-  // LocalStorage fallback for local development / localhost HTTP
-  if (typeof window !== 'undefined' && window.localStorage) {
-    localStorage.setItem(REFRESH_TOKEN_KEY, token);
+const storage = (): Storage | null => {
+  try {
+    return typeof window !== 'undefined' ? window.localStorage : null;
+  } catch {
+    return null;
   }
 };
 
-export const removeRefreshToken = (): void => {
-  Cookies.remove(REFRESH_TOKEN_KEY);
-  if (typeof window !== 'undefined' && window.localStorage) {
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-  }
+export const hasSessionHint = (): boolean => storage()?.getItem(SESSION_HINT_KEY) === '1' || !!Cookies.get(LEGACY_KEY) || !!storage()?.getItem(LEGACY_KEY);
+
+export const markSession = (): void => {
+  storage()?.setItem(SESSION_HINT_KEY, '1');
+};
+
+export const clearSession = (): void => {
+  storage()?.removeItem(SESSION_HINT_KEY);
+  takeLegacyRefreshToken();
+};
+
+/** A refresh token saved by an older version of the app (readable storage); returned once and then deleted. */
+export const takeLegacyRefreshToken = (): string | undefined => {
+  const token = Cookies.get(LEGACY_KEY) || storage()?.getItem(LEGACY_KEY) || undefined;
+  Cookies.remove(LEGACY_KEY);
+  storage()?.removeItem(LEGACY_KEY);
+  return token;
 };

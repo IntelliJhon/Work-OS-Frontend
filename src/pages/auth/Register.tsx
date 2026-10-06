@@ -69,7 +69,7 @@ export const Register: React.FC = () => {
         password: data.password,
       });
 
-      const { tenant, user, accessToken, refreshToken } = response.data;
+      const { tenant, user, accessToken } = response.data;
       
       // Inject tenantId inside the user object before storing it
       const userProfile = {
@@ -77,7 +77,7 @@ export const Register: React.FC = () => {
         tenantId: tenant.id,
       };
 
-      loginStore(userProfile, accessToken, refreshToken);
+      loginStore(userProfile, accessToken);
       navigate('/dashboard');
     } catch (err: any) {
       console.error('[Register] Onboarding failed', err);

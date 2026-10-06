@@ -53,7 +53,7 @@ export const Login: React.FC = () => {
         password: data.password,
       });
 
-      const { accessToken, refreshToken, user } = response.data;
+      const { accessToken, user } = response.data;
 
       // Launch the premium visual transition
       setIsTransitioning(true);
@@ -81,7 +81,7 @@ export const Login: React.FC = () => {
         if (currentProgress >= 100) {
           clearInterval(interval);
           const target = takeAfterLogin();
-          loginStore(user, accessToken, refreshToken);
+          loginStore(user, accessToken);
           navigate(target, { replace: true });
         }
       }, 25);

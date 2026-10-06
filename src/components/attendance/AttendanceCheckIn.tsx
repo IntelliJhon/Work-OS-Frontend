@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { CheckCircle2, Clock, AlertTriangle, MapPin, MapPinOff } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { apiClient } from '../../services/api/client';
-import { getRefreshToken } from '../../utils/cookies';
 import { attendanceApi, formatCheckInTime, type AttendanceRecord, type CheckInLocation } from '../../services/api/attendance';
 
 // ─── Daily check-in + midnight logout ─────────────────────────────────────────
@@ -111,8 +110,7 @@ export const AttendanceCheckIn: React.FC = () => {
     if (!isAuthenticated) return;
     const timer = setTimeout(async () => {
       try {
-        const refreshToken = getRefreshToken();
-        if (refreshToken) await apiClient.post('/auth/logout', { refreshToken });
+        await apiClient.post('/auth/logout', {});
       } catch {
         // The session ends on the server anyway
       } finally {

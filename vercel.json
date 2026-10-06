@@ -1,5 +1,8 @@
 {
   "rewrites": [
+    { "source": "/api/auth/:path*", "destination": "https://work-os-backend-gk2i.onrender.com/api/auth/:path*" },
+    { "source": "/api/invitations/accept", "destination": "https://work-os-backend-gk2i.onrender.com/api/invitations/accept" },
+    { "source": "/api/tenants/create", "destination": "https://work-os-backend-gk2i.onrender.com/api/tenants/create" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

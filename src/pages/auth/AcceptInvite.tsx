@@ -85,8 +85,8 @@ export const AcceptInvite: React.FC = () => {
         lastName: data.lastName.trim(),
       });
 
-      const { accessToken, refreshToken, user } = response;
-      loginStore(user, accessToken, refreshToken);
+      const { accessToken, user } = response;
+      loginStore(user, accessToken);
       navigate('/dashboard');
     } catch (err) {
       console.error('[AcceptInvite] Error during onboarding acceptance', err);

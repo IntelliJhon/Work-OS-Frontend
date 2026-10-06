@@ -1,56 +1,22 @@
 import React, { useEffect } from 'react';
-import axios from 'axios';
 import { useAuthStore } from '../../store/authStore';
-import { getRefreshToken } from '../../utils/cookies';
-
-// Single-flight promise to prevent concurrent refreshes from double-submitting the refresh token
-let activeRefreshPromise: Promise<{ user: any; accessToken: string; refreshToken: string }> | null = null;
-
-const performSilentRefresh = async (refreshToken: string): Promise<{ user: any; accessToken: string; refreshToken: string }> => {
-  if (activeRefreshPromise) {
-    return activeRefreshPromise;
-  }
-
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-  activeRefreshPromise = (async () => {
-    try {
-      // Call refresh endpoint to get new access token
-      const response = await axios.post(`${API_URL}/auth/refresh`, {
-        refreshToken,
-      });
-
-      const { accessToken: newAccessToken, refreshToken: newRefreshToken, user } = response.data;
-
-      return {
-        user,
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken || refreshToken
-      };
-    } catch (err) {
-      activeRefreshPromise = null; // Clear so subsequent attempts can retry if needed
-      throw err;
-    }
-  })();
-
-  return activeRefreshPromise;
-};
+import { hasSessionHint } from '../../utils/cookies';
+import { refreshSession } from '../../services/api/client';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { login, logout, setAuthInitialized, setAuthLoading, authLoading } = useAuthStore();
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const refreshToken = getRefreshToken();
-      if (!refreshToken) {
+      if (!hasSessionHint()) {
         setAuthInitialized(true);
         setAuthLoading(false);
         return;
       }
 
       try {
-        const { user, accessToken, refreshToken: finalRefreshToken } = await performSilentRefresh(refreshToken);
-        login(user, accessToken, finalRefreshToken);
+        const { user, accessToken } = await refreshSession();
+        login(user, accessToken);
       } catch (err) {
         console.error('[AuthProvider] Failed to restore session:', err);
         logout(); // sets authInitialized = true, authLoading = false

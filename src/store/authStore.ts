@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getRefreshToken, setRefreshToken, removeRefreshToken } from '../utils/cookies';
+import { hasSessionHint, markSession, clearSession } from '../utils/cookies';
 
 export interface UserProfile {
   id: string;
@@ -19,7 +19,8 @@ interface AuthState {
   isLoading: boolean;
   authInitialized: boolean;
   authLoading: boolean;
-  login: (user: UserProfile, accessToken: string, refreshToken: string) => void;
+  // The refresh token is set by the server as an HttpOnly cookie; only the access token is kept here (in memory)
+  login: (user: UserProfile, accessToken: string) => void;
   logout: () => void;
   setUser: (user: UserProfile) => void;
   setAccessToken: (token: string | null) => void;
@@ -34,12 +35,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   isLoading: false,
   authInitialized: false,
-  authLoading: !!getRefreshToken(),
+  authLoading: hasSessionHint(),
 
   setUser: (user) => set({ user }),
 
-  login: (user, accessToken, refreshToken) => {
-    setRefreshToken(refreshToken);
+  login: (user, accessToken) => {
+    markSession();
     set({
       user,
       accessToken,
@@ -51,7 +52,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: () => {
-    removeRefreshToken();
+    clearSession();
     set({
       user: null,
       accessToken: null,

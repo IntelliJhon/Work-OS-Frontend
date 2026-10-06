@@ -1,10 +1,36 @@
 import axios from 'axios';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../../store/authStore';
-import { getRefreshToken, setRefreshToken, removeRefreshToken } from '../../utils/cookies';
+import type { UserProfile } from '../../store/authStore';
+import { hasSessionHint, clearSession, takeLegacyRefreshToken } from '../../utils/cookies';
 import { rememberAfterLogin } from '../../features/auth/afterLogin';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Calls that set or use the session cookie go through this site's own address (Vercel rewrite / Vite proxy),
+// so the HttpOnly cookie is first-party and never readable by page scripts.
+export const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || '/api';
+const SESSION_PATHS = /^\/?(auth\/|invitations\/accept$|tenants\/create$)/;
+
+export interface SessionResult {
+  accessToken: string;
+  user: UserProfile;
+}
+
+let activeRefresh: Promise<SessionResult> | null = null;
+
+/** Gets a new access token using the session cookie. Concurrent callers share one request. */
+export const refreshSession = (): Promise<SessionResult> => {
+  if (!activeRefresh) {
+    const legacy = takeLegacyRefreshToken();
+    activeRefresh = axios
+      .post(`${AUTH_API_URL}/auth/refresh`, legacy ? { refreshToken: legacy } : {}, { withCredentials: true })
+      .then((res) => res.data as SessionResult)
+      .finally(() => {
+        activeRefresh = null;
+      });
+  }
+  return activeRefresh;
+};
 
 export const apiClient = axios.create({
   baseURL: API_URL,
@@ -35,6 +61,10 @@ const processQueue = (error: unknown, token: string | null = null) => {
 // Request Interceptor: Inject Access Token
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    if (config.url && SESSION_PATHS.test(config.url)) {
+      config.baseURL = AUTH_API_URL;
+      config.withCredentials = true;
+    }
     const token = useAuthStore.getState().accessToken;
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -58,11 +88,10 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // A wrong password on the login form is a 401 too; that must not trigger a session refresh
+    if (error.response?.status === 401 && !originalRequest._retry && !SESSION_PATHS.test(originalRequest.url ?? '')) {
       originalRequest._retry = true;
-      const refreshToken = getRefreshToken();
-
-      if (!refreshToken) {
+      if (!hasSessionHint()) {
         useAuthStore.getState().logout();
         return Promise.reject(error);
       }
@@ -83,20 +112,12 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const response = await axios.post(`${API_URL}/auth/refresh`, {
-          refreshToken,
-        });
+        const { accessToken, user } = await refreshSession();
 
-        const { accessToken, refreshToken: newRefreshToken, user } = response.data;
-
-        // Update state and cookie
         if (user) {
           useAuthStore.getState().setUser(user);
         }
         useAuthStore.getState().setAccessToken(accessToken);
-        if (newRefreshToken) {
-          setRefreshToken(newRefreshToken);
-        }
 
         isRefreshing = false;
         processQueue(null, accessToken);
@@ -109,8 +130,8 @@ apiClient.interceptors.response.use(
         isRefreshing = false;
         processQueue(refreshError, null);
         useAuthStore.getState().logout();
-        removeRefreshToken();
-        
+        clearSession();
+
         // Force redirect to login page, coming back here afterwards
         rememberAfterLogin(window.location.pathname + window.location.search);
         window.location.href = '/login';
