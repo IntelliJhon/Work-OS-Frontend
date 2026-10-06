@@ -7,7 +7,6 @@ import { useUIStore } from '../../store/uiStore';
 import { useSocket } from '../../services/socket/socket-context';
 import { useSocketEvent } from '../../services/socket/socket-events';
 import type { NotificationPayload } from '../../services/socket/socket-events';
-import { getRefreshToken } from '../../utils/cookies';
 import { apiClient } from '../../services/api/client';
 import { usePermissions } from '../../features/auth/usePermissions';
 import { PERMISSIONS } from '../../features/auth/permission.constants';
@@ -169,10 +168,7 @@ export const DashboardLayout: React.FC = () => {
         // Execute actual log out and navigate
         (async () => {
           try {
-            const refreshToken = getRefreshToken();
-            if (refreshToken) {
-              await apiClient.post('/auth/logout', { refreshToken });
-            }
+            await apiClient.post('/auth/logout', {});
           } catch (err) {
             console.error('[DashboardLayout] Logout API call failed', err);
           } finally {
