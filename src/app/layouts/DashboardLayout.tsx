@@ -20,6 +20,7 @@ import { AlertSoundManager } from '../../components/notifications/AlertSoundMana
 import { RealtimeAlertToast, triggerRealtimeToast } from '../../components/notifications/RealtimeAlertToast';
 import { NotificationDrawer } from '../../components/notifications/NotificationDrawer';
 import { VoiceNotesNavBadge } from '../../pages/voice-notes/VoiceNotesNavBadge';
+import { GroupsNavBadge } from '../../pages/groups/GroupsNavBadge';
 import { platformApi } from '../../services/api/platform';
 import { useSections, type Section } from '../../services/api/workspace';
 import { SectionGate } from '../../components/security/SectionGate';
@@ -32,6 +33,7 @@ import {
   Plane,
   Building2,
   BellRing,
+  MessagesSquare,
   Bell,
   Settings,
   LogOut,
@@ -204,6 +206,7 @@ export const DashboardLayout: React.FC = () => {
     { name: 'Attendance', path: '/attendance', icon: CalendarCheck, anyPermission: [PERMISSIONS.ATTENDANCE_USE, PERMISSIONS.ATTENDANCE_READ], section: 'attendance' as Section },
     { name: 'Leave', path: '/leave', icon: Plane, anyPermission: [PERMISSIONS.LEAVE_USE, PERMISSIONS.LEAVE_APPROVE], section: 'leave' as Section },
     { name: 'Reminders', path: '/reminders', icon: BellRing, section: 'reminders' as Section },
+    { name: 'Groups', path: '/groups', icon: MessagesSquare, section: 'groups' as Section },
     { name: 'Voice Notes', path: '/voice-notes', icon: Mic, permission: PERMISSIONS.VOICE_NOTES_READ, section: 'voice_notes' as Section },
     { name: 'Settings', path: '/settings/members', icon: Settings, permission: PERMISSIONS.WORKSPACE_MEMBERS_READ },
     { name: 'WhatsApp Bots', path: '/platform/whatsapp-bots', icon: Bot, platformOnly: true },
@@ -278,6 +281,9 @@ export const DashboardLayout: React.FC = () => {
     }
     if (type === 'reminder') {
       return `/reminders/${alert.entityId}`;
+    }
+    if (type === 'group') {
+      return `/groups/${alert.entityId}`;
     }
     if (type === 'task') {
       const createdFrom = parsed?.createdFrom;
@@ -404,6 +410,7 @@ export const DashboardLayout: React.FC = () => {
                 <Icon className="w-5 h-5" />
                 <span>{item.name}</span>
                 {item.path === '/voice-notes' && <VoiceNotesNavBadge />}
+                {item.path === '/groups' && <GroupsNavBadge />}
               </Link>
             );
           })}

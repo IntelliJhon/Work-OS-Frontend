@@ -109,6 +109,7 @@ export const NotificationCenter: React.FC = () => {
   const resolveDeepLinkPath = (alert: NotificationPayloadEnriched): string | null => {
     if (alert.entityType === 'leave') return alert.type === 'leave_request' ? '/leave?tab=approvals' : '/leave';
     if (alert.entityType === 'reminder' && alert.entityId) return `/reminders/${alert.entityId}`;
+    if (alert.entityType === 'group' && alert.entityId) return `/groups/${alert.entityId}`;
     if (!alert.entityType || !alert.entityId) {
       if (projects.length > 0) {
         return `/projects/${projects[0].id}/scopes`;

@@ -41,6 +41,12 @@ const PERMISSION_GROUPS: { group: string; items: { key: string; label: string; d
     ],
   },
   {
+    group: 'Groups',
+    items: [
+      { key: 'groups.create', label: 'Create groups', desc: 'Create group chats and add members (Admins always can).' },
+    ],
+  },
+  {
     group: 'Voice Notes',
     items: [
       { key: 'voice_notes.read', label: 'See voice notes', desc: 'Open the voice notes inbox and transcripts.' },

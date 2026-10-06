@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { apiClient } from './client';
 import { useAuthStore } from '../../store/authStore';
 
-export type Section = 'projects' | 'tasks' | 'calendar' | 'attendance' | 'leave' | 'voice_notes' | 'reminders';
+export type Section = 'projects' | 'tasks' | 'calendar' | 'attendance' | 'leave' | 'voice_notes' | 'reminders' | 'groups';
 export type Sections = Record<Section, boolean>;
 
 export const SECTION_LABELS: Record<Section, string> = {
@@ -13,6 +13,7 @@ export const SECTION_LABELS: Record<Section, string> = {
   leave: 'Leave',
   voice_notes: 'Voice Notes',
   reminders: 'Reminders',
+  groups: 'Groups',
 };
 
 /** Which pages belong to a section (path prefixes) */
@@ -29,6 +30,7 @@ export const SECTION_PATHS: [string, Section][] = [
   ['/voice-notes', 'voice_notes'],
   ['/settings/voice-notes', 'voice_notes'],
   ['/reminders', 'reminders'],
+  ['/groups', 'groups'],
 ];
 
 export const sectionOfPath = (path: string): Section | null =>

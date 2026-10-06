@@ -72,6 +72,10 @@ export const RealtimeAlertToast: React.FC = () => {
     }
 
     const type = toast.entityType.toLowerCase();
+    if (type === 'group') {
+      navigate(`/groups/${toast.entityId}`);
+      return;
+    }
     if (type === 'reminder') {
       navigate(`/reminders/${toast.entityId}`);
       return;

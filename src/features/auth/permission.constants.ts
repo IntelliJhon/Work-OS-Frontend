@@ -21,6 +21,7 @@ export const PERMISSIONS = {
   ATTENDANCE_USE: 'attendance.use',
   LEAVE_USE: 'leave.use',
   LEAVE_APPROVE: 'leave.approve',
+  GROUPS_CREATE: 'groups.create',
 } as const;
 
 export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
