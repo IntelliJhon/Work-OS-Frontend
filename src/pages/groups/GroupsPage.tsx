@@ -2,8 +2,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  ArrowLeft, FileText, Image as ImageIcon, Info, Loader2, LogOut, MessagesSquare, Paperclip, Plus, Search, Send, Shield, Trash2, UserPlus, X,
+  ArrowLeft, CheckCheck, CornerUpLeft, FileText, Image as ImageIcon, Info, ListChecks, Loader2, LogOut, MessagesSquare, Paperclip, Pin, PinOff, Plus, Search, Send, Shield, Sparkles, Trash2, UserPlus, X,
 } from 'lucide-react';
+import { CreateTaskModal, PinnedModal, SearchModal, SummaryModal } from './GroupTools';
 import { useAuthStore } from '../../store/authStore';
 import { useToast } from '../../components/ui/Toast';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
@@ -279,10 +280,21 @@ const Chat: React.FC<{ groupId: string; onBack: () => void }> = ({ groupId, onBa
   const [files, setFiles] = useState<File[]>([]);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [showInfo, setShowInfo] = useState(false);
+  const [tool, setTool] = useState<'summary' | 'search' | 'pinned' | null>(null);
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+  const [taskFrom, setTaskFrom] = useState<ChatMessage | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const { data: group, error: groupError } = useQuery({ queryKey: ['groups', 'detail', groupId], queryFn: () => groupsApi.get(groupId), retry: false });
+  const { data: pinned = [] } = useQuery({ queryKey: ['groups', 'pinned', groupId], queryFn: () => groupsApi.pinned(groupId) });
+  // Someone read the group: "Seen by" changes. Pins changed: refresh the pinned bar.
+  useSocketEvent<{ groupId: string }>('group_read', ({ groupId: gid }) => { if (gid === groupId) queryClient.invalidateQueries({ queryKey: ['groups', 'detail', groupId] }); });
+  useSocketEvent<{ groupId: string }>('group_pins', ({ groupId: gid }) => {
+    if (gid !== groupId) return;
+    queryClient.invalidateQueries({ queryKey: ['groups', 'pinned', groupId] });
+    groupsApi.messages(groupId).then((r) => setMessages((prev) => prev.map((m) => r.messages.find((x) => x.id === m.id) ?? m))).catch(() => undefined);
+  });
 
   const scrollToEnd = () => requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }));
   const markRead = useCallback(() => {
@@ -337,11 +349,11 @@ const Chat: React.FC<{ groupId: string; onBack: () => void }> = ({ groupId, onBa
     mutationFn: () => {
       const body = text.trim();
       const used = mentions.filter((m) => body.includes(`@${m.name}`)).map((m) => m.id);
-      return groupsApi.send(groupId, body, used, files);
+      return groupsApi.send(groupId, body, used, files, replyTo?.id ?? null);
     },
     onSuccess: (m) => {
       setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
-      setText(''); setFiles([]); setMentions([]);
+      setText(''); setFiles([]); setMentions([]); setReplyTo(null);
       scrollToEnd();
       queryClient.invalidateQueries({ queryKey: ['groups', 'list'] });
       textRef.current?.focus();
@@ -400,8 +412,22 @@ const Chat: React.FC<{ groupId: string; onBack: () => void }> = ({ groupId, onBa
           <p className="text-sm font-bold text-foreground truncate">{group?.name ?? '…'}</p>
           <p className="text-[11px] text-muted-foreground truncate">{group ? group.members.map((m) => (m.id === me?.id ? 'You' : m.name.split(' ')[0])).join(', ') : ''}</p>
         </button>
+        <button type="button" onClick={() => setTool('summary')} aria-label="Summary" title="Summary"
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400 text-xs font-semibold hover:bg-violet-500/20 cursor-pointer">
+          <Sparkles className="w-4 h-4" /><span className="hidden sm:inline">Summary</span>
+        </button>
+        <button type="button" onClick={() => setTool('search')} aria-label="Search messages" title="Search" className="p-2 rounded-lg text-muted-foreground hover:bg-muted cursor-pointer"><Search className="w-4 h-4" /></button>
         <button type="button" onClick={() => setShowInfo(true)} aria-label="Group info" className="p-2 rounded-lg text-muted-foreground hover:bg-muted cursor-pointer"><Info className="w-4 h-4" /></button>
       </header>
+      {pinned.length > 0 && (
+        <button type="button" onClick={() => setTool('pinned')} className="flex items-center gap-2 px-4 py-2 border-b border-border bg-amber-500/5 text-left cursor-pointer hover:bg-amber-500/10">
+          <Pin className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+          <span className="min-w-0 flex-1 text-xs text-foreground truncate">
+            <span className="font-semibold">{pinned[0].senderName}:</span> {pinned[0].body || (pinned[0].attachments[0] ? `📎 ${pinned[0].attachments[0].name}` : '')}
+          </span>
+          {pinned.length > 1 && <span className="text-[10px] text-muted-foreground shrink-0">+{pinned.length - 1} more</span>}
+        </button>
+      )}
 
       <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-1 bg-muted/30" aria-live="polite">
         {loading ? (
@@ -427,30 +453,64 @@ const Chat: React.FC<{ groupId: string; onBack: () => void }> = ({ groupId, onBa
                   {newDay && (
                     <div className="flex justify-center py-2"><span className="px-3 py-1 rounded-full bg-card border border-border text-[11px] text-muted-foreground">{dayLabel(m.createdAt)}</span></div>
                   )}
-                  <div className={`group flex ${mine ? 'justify-end' : 'justify-start'} ${grouped ? '' : 'pt-1.5'}`}>
+                  <div id={`msg-${m.id}`} className={`group flex ${mine ? 'justify-end' : 'justify-start'} ${grouped ? '' : 'pt-1.5'}`}>
                     <div className={`relative max-w-[85%] sm:max-w-[70%] rounded-2xl px-3 py-2 shadow-sm ${mine ? 'bg-blue-600 text-white rounded-br-md' : 'bg-card text-foreground border border-border rounded-bl-md'}`}>
                       {!mine && !grouped && <p className={`text-xs font-bold mb-0.5 ${COLORS[hash(m.senderName) % COLORS.length]}`}>{m.senderName}</p>}
                       {m.deleted ? (
                         <p className={`text-sm italic ${mine ? 'text-white/70' : 'text-muted-foreground'}`}>This message was deleted</p>
                       ) : (
                         <div className="space-y-1.5">
+                          {m.replyTo && (
+                            <button type="button"
+                              onClick={() => document.getElementById(`msg-${m.replyTo!.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                              className={`block w-full text-left rounded-lg border-l-4 px-2 py-1 text-xs cursor-pointer ${mine ? 'bg-white/15 border-white/60' : 'bg-muted border-blue-500'}`}>
+                              <span className="block font-semibold truncate">{m.replyTo.deleted ? 'Deleted message' : m.replyTo.senderName}</span>
+                              <span className={`block truncate ${mine ? 'text-white/80' : 'text-muted-foreground'}`}>{m.replyTo.deleted ? '' : m.replyTo.body || (m.replyTo.attachmentName ? `📎 ${m.replyTo.attachmentName}` : '')}</span>
+                            </button>
+                          )}
                           {m.attachments.map((a) => <Attachment key={a.uploadId} groupId={groupId} a={a} mine={mine} />)}
                           {m.body && <p className="text-sm whitespace-pre-wrap break-words"><MessageText text={m.body} mentionNames={memberNames} mine={mine} /></p>}
                         </div>
                       )}
-                      <p className={`text-[10px] text-right mt-0.5 ${mine ? 'text-white/70' : 'text-muted-foreground'}`}>
+                      <p className={`flex items-center justify-end gap-1 text-[10px] mt-0.5 ${mine ? 'text-white/70' : 'text-muted-foreground'}`}>
+                        {m.pinnedAt && <Pin className="w-3 h-3" aria-label="Pinned" />}
                         {new Date(m.createdAt).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}
+                        {mine && !m.deleted && group && (() => {
+                          const others = group.members.filter((x) => x.id !== me?.id);
+                          const seen = others.filter((x) => new Date(x.lastReadAt).getTime() >= new Date(m.createdAt).getTime());
+                          return (
+                            <span className="flex items-center gap-0.5" title={seen.length ? `Seen by ${seen.map((x) => x.name).join(', ')}` : 'Not seen yet'}>
+                              <CheckCheck className={`w-3.5 h-3.5 ${seen.length === others.length && others.length ? 'text-sky-200' : ''}`} />
+                              {others.length > 0 && <span>{seen.length === others.length ? 'Seen' : `Seen by ${seen.length}/${others.length}`}</span>}
+                            </span>
+                          );
+                        })()}
                       </p>
-                      {canDelete && (
-                        <button type="button" aria-label="Delete message"
+                      {!m.deleted && (
+                        <div className={`absolute -top-3 ${mine ? 'left-0 -translate-x-1/2' : 'right-0 translate-x-1/2'} flex items-center gap-0.5 rounded-full bg-card border border-border shadow-sm px-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100`}>
+                          <button type="button" aria-label="Reply" title="Reply" onClick={() => { setReplyTo(m); textRef.current?.focus(); }} className="p-1 rounded-full text-muted-foreground hover:text-foreground cursor-pointer"><CornerUpLeft className="w-3.5 h-3.5" /></button>
+                          <button type="button" aria-label="Create task" title="Create task" onClick={() => setTaskFrom(m)} className="p-1 rounded-full text-muted-foreground hover:text-foreground cursor-pointer"><ListChecks className="w-3.5 h-3.5" /></button>
+                          {group?.canManage && (
+                            <button type="button" aria-label={m.pinnedAt ? 'Unpin' : 'Pin'} title={m.pinnedAt ? 'Unpin' : 'Pin'}
+                              onClick={() => (m.pinnedAt ? groupsApi.unpin(groupId, m.id) : groupsApi.pin(groupId, m.id))
+                                .then(() => { setMessages((prev) => prev.map((x) => (x.id === m.id ? { ...x, pinnedAt: x.pinnedAt ? null : new Date().toISOString() } : x))); queryClient.invalidateQueries({ queryKey: ['groups', 'pinned', groupId] }); })
+                                .catch((err) => toast.error(apiError(err, 'Could not change the pin.'), 'Groups'))}
+                              className="p-1 rounded-full text-muted-foreground hover:text-foreground cursor-pointer">
+                              {m.pinnedAt ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button type="button" aria-label="Delete message" title="Delete"
                           onClick={async () => {
                             if (await confirm({ title: 'Delete this message?', message: 'It will show as "This message was deleted" for everyone.', confirmLabel: 'Delete', cancelLabel: 'Cancel', variant: 'danger' })) {
                               groupsApi.deleteMessage(groupId, m.id).catch((err) => toast.error(apiError(err, 'Could not delete it.'), 'Groups'));
                             }
                           }}
-                          className={`absolute -top-2 ${mine ? '-left-2' : '-right-2'} p-1 rounded-full bg-card border border-border text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 focus:opacity-100 cursor-pointer`}>
-                          <Trash2 className="w-3 h-3" />
-                        </button>
+                              className="p-1 rounded-full text-muted-foreground hover:text-red-500 cursor-pointer">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -472,6 +532,16 @@ const Chat: React.FC<{ groupId: string; onBack: () => void }> = ({ groupId, onBa
               </li>
             ))}
           </ul>
+        )}
+        {replyTo && (
+          <div className="flex items-center gap-2 rounded-xl border-l-4 border-blue-500 bg-muted px-3 py-1.5">
+            <CornerUpLeft className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+            <span className="min-w-0 flex-1 text-xs">
+              <span className="block font-semibold text-foreground truncate">Replying to {replyTo.senderId === me?.id ? 'yourself' : replyTo.senderName}</span>
+              <span className="block text-muted-foreground truncate">{replyTo.body || (replyTo.attachments[0] ? `📎 ${replyTo.attachments[0].name}` : '')}</span>
+            </span>
+            <button type="button" onClick={() => setReplyTo(null)} aria-label="Cancel reply" className="p-1 rounded text-muted-foreground hover:text-foreground cursor-pointer"><X className="w-3.5 h-3.5" /></button>
+          </div>
         )}
         {files.length > 0 && (
           <ul className="flex flex-wrap gap-2">
@@ -513,6 +583,13 @@ const Chat: React.FC<{ groupId: string; onBack: () => void }> = ({ groupId, onBa
         </div>
       </form>
 
+      {tool === 'summary' && group && <SummaryModal group={group} onClose={() => setTool(null)} />}
+      {tool === 'search' && group && <SearchModal group={group} onClose={() => setTool(null)} />}
+      {tool === 'pinned' && group && <PinnedModal group={group} onClose={() => setTool(null)} />}
+      {taskFrom && group && (
+        <CreateTaskModal group={group} messageId={taskFrom.id} initialName={taskFrom.body ?? taskFrom.attachments.map((a) => a.name).join(', ')}
+          initialAssigneeId={taskFrom.mentions[0] ?? null} onClose={() => setTaskFrom(null)} />
+      )}
       {showInfo && group && <GroupInfo group={group} onClose={() => setShowInfo(false)} onLeft={() => { setShowInfo(false); navigate('/groups'); }} />}
     </div>
   );

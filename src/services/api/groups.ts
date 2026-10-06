@@ -16,6 +16,9 @@ export interface ChatMessage {
   mentions: string[];
   attachments: ChatAttachment[];
   deleted: boolean;
+  pinnedAt: string | null;
+  /** The message this one replies to (a short preview) */
+  replyTo: { id: string; senderName: string; body: string | null; attachmentName: string | null; deleted: boolean } | null;
   createdAt: string;
 }
 
@@ -39,7 +42,27 @@ export interface GroupDetail {
   createdAt: string;
   myRole: 'admin' | 'member';
   canManage: boolean;
-  members: { id: string; name: string; role: 'admin' | 'member'; joinedAt: string }[];
+  members: { id: string; name: string; role: 'admin' | 'member'; joinedAt: string; lastReadAt: string }[];
+}
+
+export interface GroupChatSummary {
+  groupId: string;
+  fromDay: string;
+  toDay: string;
+  /** No messages in those days */
+  empty: boolean;
+  messageCount: number;
+  content: {
+    keyPoints: string[];
+    decisions: string[];
+    actionItems: { text: string; person: string | null; personId: string | null; due: string | null }[];
+    openQuestions: string[];
+  } | null;
+  createdAt: string | null;
+  /** A saved summary was reused (no new messages since) */
+  cached: boolean;
+  /** Only the first 1,500 messages were read */
+  truncated?: boolean;
 }
 
 export const groupsApi = {
@@ -59,10 +82,11 @@ export const groupsApi = {
     (await apiClient.put<{ data: GroupDetail }>(`/groups/${id}/members/${userId}/role`, { role })).data.data,
   messages: async (id: string, before?: string) =>
     (await apiClient.get<{ data: { messages: ChatMessage[]; more: boolean } }>(`/groups/${id}/messages`, { params: before ? { before } : {} })).data.data,
-  send: async (id: string, body: string, mentions: string[], files: File[]): Promise<ChatMessage> => {
-    if (!files.length) return (await apiClient.post<{ data: ChatMessage }>(`/groups/${id}/messages`, { body, mentions })).data.data;
+  send: async (id: string, body: string, mentions: string[], files: File[], replyToId: string | null = null): Promise<ChatMessage> => {
+    if (!files.length) return (await apiClient.post<{ data: ChatMessage }>(`/groups/${id}/messages`, { body, mentions, replyToId })).data.data;
     const form = new FormData();
     form.append('body', body);
+    if (replyToId) form.append('replyToId', replyToId);
     form.append('mentions', JSON.stringify(mentions));
     files.forEach((f) => form.append('files', f));
     return (await apiClient.post<{ data: ChatMessage }>(`/groups/${id}/messages`, form, { headers: { 'Content-Type': 'multipart/form-data' } })).data.data;
@@ -71,6 +95,15 @@ export const groupsApi = {
   markRead: async (id: string) => (await apiClient.post(`/groups/${id}/read`)).data,
   fileUrl: async (id: string, uploadId: string): Promise<string> =>
     (await apiClient.get<{ data: { url: string } }>(`/groups/${id}/files/${uploadId}`)).data.data.url,
+  pinned: async (id: string): Promise<ChatMessage[]> => (await apiClient.get<{ data: ChatMessage[] }>(`/groups/${id}/pinned`)).data.data,
+  pin: async (id: string, messageId: string) => (await apiClient.post(`/groups/${id}/messages/${messageId}/pin`)).data,
+  unpin: async (id: string, messageId: string) => (await apiClient.delete(`/groups/${id}/messages/${messageId}/pin`)).data,
+  search: async (id: string, q: string): Promise<ChatMessage[]> =>
+    (await apiClient.get<{ data: ChatMessage[] }>(`/groups/${id}/search`, { params: { q } })).data.data,
+  createTask: async (id: string, input: { messageId?: string | null; name: string; assigneeId: string; dueDate?: string | null }) =>
+    (await apiClient.post<{ data: { id: string; workId: string | null; name: string; assigneeName: string } }>(`/groups/${id}/tasks`, input)).data.data,
+  summary: async (id: string, from: string, to: string, refresh = false): Promise<GroupChatSummary> =>
+    (await apiClient.post<{ data: GroupChatSummary }>(`/groups/${id}/summary`, { from, to, refresh })).data.data,
 };
 
 export const fileSize = (bytes: number) =>
