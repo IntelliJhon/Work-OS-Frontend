@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  AlertTriangle, ArchiveRestore, Archive, ArrowLeft, Building2, CalendarDays, FileText, Hash, Image as ImageIcon, Loader2, Mail, MapPin,
+  AlertTriangle, ArchiveRestore, Archive, ArrowLeft, Building2, FolderKanban, CalendarDays, FileText, Hash, Image as ImageIcon, Loader2, Mail, MapPin,
   MessageCircle, Paperclip, Pencil, Phone, Plus, Search, StickyNote, Tag, Trash2, Upload, User, X,
 } from 'lucide-react';
 import { useToast } from '../../components/ui/Toast';
@@ -442,6 +442,37 @@ const DocumentsPanel: React.FC<{ clientId: string; canManage: boolean }> = ({ cl
   );
 };
 
+const ProjectsPanel: React.FC<{ clientId: string }> = ({ clientId }) => {
+  const { data: projects = [], isLoading } = useQuery({ queryKey: ['workspace-clients', 'projects', clientId], queryFn: () => workspaceClientsApi.projects(clientId) });
+  return (
+    <section aria-label="Projects" className="rounded-2xl border border-border bg-card p-5 space-y-3">
+      <h2 className="text-sm font-bold text-foreground flex items-center gap-2"><FolderKanban className="w-4 h-4 text-blue-500" /> Projects <span className="text-xs font-semibold text-muted-foreground">{projects.length}</span></h2>
+      {isLoading ? (
+        <div className="flex justify-center p-4"><Loader2 className="w-4 h-4 animate-spin text-blue-500" /></div>
+      ) : projects.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No projects for this client yet. Choose this client when you create a project.</p>
+      ) : (
+        <ul className="divide-y divide-border -mx-1">
+          {projects.map((p) => {
+            const total = p.openTasks + p.doneTasks;
+            return (
+              <li key={p.id}>
+                <Link to={`/projects/${p.id}`} className="flex items-center gap-3 px-1 py-2.5 rounded-lg hover:bg-muted/60">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground truncate">{p.name}</p>
+                    <p className="text-[11px] text-muted-foreground">{total ? `${p.doneTasks}/${total} tasks done` : 'No tasks yet'}{p.pmName ? ` · PM ${p.pmName}` : ''}</p>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-lg border text-[11px] font-semibold capitalize ${p.status === 'completed' ? STATUS_TONES.active : p.status === 'archived' ? STATUS_TONES.former : 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20'}`}>{p.status}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+};
+
 const Detail: React.FC<{ icon: React.ElementType; label: string; children: React.ReactNode }> = ({ icon: Icon, label, children }) => (
   <div className="flex gap-3">
     <Icon className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
@@ -525,6 +556,7 @@ const ClientProfile: React.FC<{ id: string }> = ({ id }) => {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] gap-5 items-start">
+        <div className="space-y-5">
         <section aria-label="Client details" className="rounded-2xl border border-border bg-card p-5 space-y-4">
           <Detail icon={Phone} label="WhatsApp"><a href={`https://wa.me/${c.phone}`} target="_blank" rel="noreferrer" className="hover:underline">{formatPhone(c.phone)}</a></Detail>
           {c.contactPerson && <Detail icon={User} label="Contact person">{c.contactPerson}</Detail>}
@@ -549,6 +581,9 @@ const ClientProfile: React.FC<{ id: string }> = ({ id }) => {
             </button>
           )}
         </section>
+
+        <ProjectsPanel clientId={c.id} />
+        </div>
 
         <section aria-label="Notes and documents" className="rounded-2xl border border-border bg-card p-5 space-y-4">
           <div role="tablist" aria-label="Client tabs" className="inline-flex rounded-xl border border-border p-1 bg-background">

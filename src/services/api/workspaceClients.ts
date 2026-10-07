@@ -72,6 +72,16 @@ export interface ClientDocument {
   uploadedBy: string | null;
 }
 
+export interface ClientProject {
+  id: string;
+  name: string;
+  status: string;
+  pmName: string | null;
+  createdAt: string;
+  openTasks: number;
+  doneTasks: number;
+}
+
 export interface ClientFilter {
   q?: string;
   status?: ClientStatus | 'archived' | '';
@@ -98,6 +108,7 @@ export const workspaceClientsApi = {
   archive: async (id: string) => (await apiClient.delete(`${base}/${id}`)).data,
   restore: async (id: string) => (await apiClient.post<{ data: ClientDetail }>(`${base}/${id}/restore`)).data.data,
 
+  projects: async (id: string) => (await apiClient.get<{ data: ClientProject[] }>(`${base}/${id}/projects`)).data.data,
   activity: async (id: string, before?: string) =>
     (await apiClient.get<{ data: { items: ClientActivity[]; hasMore: boolean } }>(`${base}/${id}/activity`, { params: before ? { before } : {} })).data.data,
   addNote: async (id: string, body: string) => (await apiClient.post<{ data: ClientActivity }>(`${base}/${id}/notes`, { body })).data.data,
