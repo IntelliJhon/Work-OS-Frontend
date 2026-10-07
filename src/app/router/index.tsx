@@ -36,7 +36,6 @@ const AttendancePage = lazy(() => import('../../pages/attendance/AttendancePage'
 const LeavePage = lazy(() => import('../../pages/leave/LeavePage'));
 const RemindersPage = lazy(() => import('../../pages/reminders/RemindersPage'));
 const GroupsPage = lazy(() => import('../../pages/groups/GroupsPage'));
-const ManagementReviewView = lazy(() => import('../../pages/management/ManagementReviewView'));
 const WorkspaceClientsPage = lazy(() => import('../../pages/workspace-clients/WorkspaceClientsPage'));
 const OnboardedClients = lazy(() => import('../../pages/clients/ClientsList'));
 const EmployeesPage = lazy(() => import('../../pages/employees/EmployeesPage'));
@@ -107,11 +106,6 @@ export const AppRouter: React.FC = () => {
               <Route path="/onboarded-clients" element={<OnboardedClients />} />
               <Route path="/employees" element={<EmployeesPage />} />
               <Route path="/complaints" element={<ComplaintsPage />} />
-
-              {/* Management Review & Admin OPL */}
-              <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.WORKSPACE_MEMBERS_READ]} />}>
-                <Route path="/dashboard/management-review" element={<ManagementReviewView />} />
-              </Route>
 
               <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.VOICE_NOTES_READ]} />}>
                 <Route path="/voice-notes" element={<VoiceNotesPage />} />
