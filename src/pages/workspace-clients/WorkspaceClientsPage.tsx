@@ -443,12 +443,17 @@ const DocumentsPanel: React.FC<{ clientId: string; canManage: boolean }> = ({ cl
 };
 
 const ProjectsPanel: React.FC<{ clientId: string }> = ({ clientId }) => {
-  const { data: projects = [], isLoading } = useQuery({ queryKey: ['workspace-clients', 'projects', clientId], queryFn: () => workspaceClientsApi.projects(clientId) });
+  const { data: projects = [], isLoading, isError, refetch } = useQuery({ queryKey: ['workspace-clients', 'projects', clientId], queryFn: () => workspaceClientsApi.projects(clientId) });
   return (
     <section aria-label="Projects" className="rounded-2xl border border-border bg-card p-5 space-y-3">
-      <h2 className="text-sm font-bold text-foreground flex items-center gap-2"><FolderKanban className="w-4 h-4 text-blue-500" /> Projects <span className="text-xs font-semibold text-muted-foreground">{projects.length}</span></h2>
+      <h2 className="text-sm font-bold text-foreground flex items-center gap-2"><FolderKanban className="w-4 h-4 text-blue-500" /> Projects {!isError && !isLoading && <span className="text-xs font-semibold text-muted-foreground">{projects.length}</span>}</h2>
       {isLoading ? (
         <div className="flex justify-center p-4"><Loader2 className="w-4 h-4 animate-spin text-blue-500" /></div>
+      ) : isError ? (
+        <p className="text-xs text-red-600 dark:text-red-400 flex flex-wrap items-center gap-2">
+          <AlertTriangle className="w-3.5 h-3.5" /> Couldn't load the projects.
+          <button type="button" onClick={() => refetch()} className="font-semibold underline cursor-pointer">Try again</button>
+        </p>
       ) : projects.length === 0 ? (
         <p className="text-xs text-muted-foreground">No projects for this client yet. Choose this client when you create a project.</p>
       ) : (
