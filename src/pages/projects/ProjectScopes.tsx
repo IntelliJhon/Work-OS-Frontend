@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { RichTextEditor } from '../../components/ui/RichTextEditor';
+import { ClientPicker } from '../../components/projects/ClientPicker';
 
 export const ProjectScopes: React.FC = () => {
   const { project, refetch: refetchProject } = useOutletContext<{ project: Project; refetch: () => void }>();
@@ -29,13 +30,16 @@ export const ProjectScopes: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [overviewText, setOverviewText] = useState(project.overview || '');
   const [scopesText, setScopesText] = useState(project.scopes || '');
-  const [clientNameText, setClientNameText] = useState(project.clientName || '');
+  // '' = Company Projects; only sent when changed, so an old typed client name stays until someone picks a client
+  const [clientIdValue, setClientIdValue] = useState(project.clientId ?? '');
+  const [clientTouched, setClientTouched] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
   React.useEffect(() => {
     setOverviewText(project.overview || '');
     setScopesText(project.scopes || '');
-    setClientNameText(project.clientName || '');
+    setClientIdValue(project.clientId ?? '');
+    setClientTouched(false);
   }, [project]);
 
   // Upload state
@@ -55,7 +59,7 @@ export const ProjectScopes: React.FC = () => {
 
   // Mutation for updating overview & scopes & client name
   const updateProjectMutation = useMutation({
-    mutationFn: (payload: { overview: string; scopes: string; clientName: string }) =>
+    mutationFn: (payload: { overview: string; scopes: string; clientId?: string | null }) =>
       projectsApi.update(project.id, payload),
     onSuccess: () => {
       refetchProject();
@@ -88,14 +92,15 @@ export const ProjectScopes: React.FC = () => {
     updateProjectMutation.mutate({
       overview: overviewText.trim(),
       scopes: scopesText.trim(),
-      clientName: clientNameText.trim()
+      ...(clientTouched ? { clientId: clientIdValue || null } : {}),
     });
   };
 
   const handleCancel = () => {
     setOverviewText(project.overview || '');
     setScopesText(project.scopes || '');
-    setClientNameText(project.clientName || '');
+    setClientIdValue(project.clientId ?? '');
+    setClientTouched(false);
     setIsEditing(false);
     setUpdateError(null);
   };
@@ -245,15 +250,15 @@ export const ProjectScopes: React.FC = () => {
           {isEditing ? (
             <div className="space-y-5">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-800 dark:text-zinc-300">
-                  Client Name
+                <label htmlFor="scopes-client" className="text-xs font-bold text-slate-800 dark:text-zinc-300">
+                  Client
                 </label>
-                <input
-                  type="text"
+                <ClientPicker
+                  id="scopes-client"
+                  value={clientIdValue}
+                  legacyName={clientTouched ? null : project.clientName}
+                  onChange={(v) => { setClientIdValue(v); setClientTouched(true); }}
                   className="w-full bg-slate-50 dark:bg-background border border-border/80 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-zinc-150 focus:outline-none focus:border-blue-500"
-                  value={clientNameText}
-                  onChange={(e) => setClientNameText(e.target.value)}
-                  placeholder="e.g. ACME Corporation"
                 />
               </div>
 

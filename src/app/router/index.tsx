@@ -37,7 +37,8 @@ const LeavePage = lazy(() => import('../../pages/leave/LeavePage'));
 const RemindersPage = lazy(() => import('../../pages/reminders/RemindersPage'));
 const GroupsPage = lazy(() => import('../../pages/groups/GroupsPage'));
 const ManagementReviewView = lazy(() => import('../../pages/management/ManagementReviewView'));
-const ClientsList = lazy(() => import('../../pages/clients/ClientsList'));
+const WorkspaceClientsPage = lazy(() => import('../../pages/workspace-clients/WorkspaceClientsPage'));
+const OnboardedClients = lazy(() => import('../../pages/clients/ClientsList'));
 const EmployeesPage = lazy(() => import('../../pages/employees/EmployeesPage'));
 const ComplaintsPage = lazy(() => import('../../pages/complaints/ComplaintsPage'));
 
@@ -100,7 +101,10 @@ export const AppRouter: React.FC = () => {
               </Route>
 
               <Route path="/notifications" element={<NotificationCenter />} />
-              <Route path="/clients" element={<ClientsList />} />
+              {/* The Clients section of every workspace; LeadsNDeals also keeps its CRM-linked Onboarded Clients page */}
+              <Route path="/clients" element={<WorkspaceClientsPage />} />
+              <Route path="/clients/:id" element={<WorkspaceClientsPage />} />
+              <Route path="/onboarded-clients" element={<OnboardedClients />} />
               <Route path="/employees" element={<EmployeesPage />} />
               <Route path="/complaints" element={<ComplaintsPage />} />
 

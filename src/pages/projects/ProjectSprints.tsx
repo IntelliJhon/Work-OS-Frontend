@@ -37,6 +37,7 @@ import { DragDropUpload } from './DragDropUpload';
 import { useSocket } from '../../services/socket/socket-context';
 import { useSocketEvent } from '../../services/socket/socket-events';
 import { useAuthStore } from '../../store/authStore';
+import { TaskTimeChip } from '../../components/time-logs/TaskTimeLog';
 import { useCollaborationStore } from '../../store/collaborationStore';
 import { usersApi } from '../../services/api/users';
 import type { User } from '../../services/api/users';
@@ -326,6 +327,7 @@ export const ProjectSprints: React.FC = () => {
         status: (activeNestedSprint && activeNestedSprint.status === 'closed') ? ('done' as const) : mappedStatus,
         weight: storyPoints,
         assignee: assigneeEmail,
+        assigneeId: task.assigneeId,
         dueDate,
         startDate,
         priority: priority as any,
@@ -1564,6 +1566,8 @@ export const ProjectSprints: React.FC = () => {
                                      </span>
                                    </span>
                                  )}
+
+                                <TaskTimeChip taskId={task.id} taskName={task.name} isAssignee={!!user && task.assigneeId === user.id} done={task.status === 'done'} />
 
                                 <select
                                   value={task.status}

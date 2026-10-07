@@ -6,7 +6,7 @@ import { SECTION_LABELS, workspaceApi, type PlatformWorkspaceSections, type Sect
 import { useToast } from '../../components/ui/Toast';
 
 const QUERY_KEY = ['platform', 'workspaces'];
-const ORDER: Section[] = ['tasks', 'projects', 'calendar', 'voice_notes', 'attendance', 'leave', 'reminders', 'groups'];
+const ORDER: Section[] = ['tasks', 'projects', 'calendar', 'voice_notes', 'attendance', 'leave', 'reminders', 'groups', 'clients'];
 // Built on work items: off whenever Tasks is off
 const NEEDS_TASKS: Section[] = ['projects', 'calendar', 'voice_notes'];
 

@@ -10,6 +10,8 @@ export interface Project {
   overview: string | null;
   scopes: string | null;
   clientName: string | null;
+  /** The client from the Clients section; null = Company Projects (or an old typed name) */
+  clientId?: string | null;
   status: 'active' | 'archived' | string;
   createdAt: string;
   updatedAt: string;
@@ -90,7 +92,7 @@ export const projectsApi = {
     return data;
   },
 
-  create: async (payload: { name: string; description?: string; clientName?: string }): Promise<{ project: Project; phases: Phase[] }> => {
+  create: async (payload: { name: string; description?: string; clientName?: string; clientId?: string | null }): Promise<{ project: Project; phases: Phase[] }> => {
     const { data } = await apiClient.post<{ project: Project; phases: Phase[] }>('/projects', payload);
     return data;
   },

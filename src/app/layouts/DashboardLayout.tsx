@@ -181,7 +181,8 @@ export const DashboardLayout: React.FC = () => {
   };
 
 
-  // Clients and Complaints: LeadsNDeals workspace only, matched on the workspace id (the API enforces it too)
+  // Complaints and the CRM-linked Onboarded Clients page: LeadsNDeals workspace only, matched on the workspace id
+  // (the API enforces it too). Every workspace has the Clients section, shown by section switch and role.
   const showCompanyTools = isLeadsndealsTenant(user?.tenantId);
 
   const { can } = usePermissions();
@@ -194,7 +195,8 @@ export const DashboardLayout: React.FC = () => {
     { name: 'Projects', path: '/projects', icon: FolderKanban, permission: PERMISSIONS.PROJECT_READ, section: 'projects' as Section },
     { name: 'Employees', path: '/employees', icon: UserCheck },
     { name: 'Complaints', path: '/complaints', icon: MessageSquareWarning },
-    { name: 'Clients', path: '/clients', icon: Users },
+    { name: 'Clients', path: '/clients', icon: Users, anyPermission: [PERMISSIONS.CLIENT_READ, PERMISSIONS.CLIENT_MANAGE], section: 'clients' as Section },
+    { name: 'Onboarded Clients', path: '/onboarded-clients', icon: Users },
     { name: 'Management Review', path: '/dashboard/management-review', icon: ShieldAlert, permission: PERMISSIONS.WORKSPACE_MEMBERS_READ },
     { name: 'Alerts Center', path: '/notifications', icon: Bell },
     { name: 'Tasks', path: '/dashboard/tasks', icon: CheckSquare, permission: PERMISSIONS.TASK_READ, section: 'tasks' as Section },
@@ -210,7 +212,7 @@ export const DashboardLayout: React.FC = () => {
   ];
 
   const filteredItems = navItems.filter((item) => {
-    if ((item.name === 'Clients' || item.name === 'Complaints') && !showCompanyTools) {
+    if ((item.name === 'Complaints' || item.name === 'Onboarded Clients') && !showCompanyTools) {
       return false;
     }
     if ('section' in item && item.section && !isOn(item.section)) {

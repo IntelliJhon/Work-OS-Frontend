@@ -47,6 +47,13 @@ const PERMISSION_GROUPS: { group: string; items: { key: string; label: string; d
     ],
   },
   {
+    group: 'Clients',
+    items: [
+      { key: 'client.read', label: 'See clients', desc: 'Open the client list, client details and documents, and add notes.' },
+      { key: 'client.manage', label: 'Manage clients', desc: 'Add and edit clients and their documents (Admins always can; only Admins archive).' },
+    ],
+  },
+  {
     group: 'Voice Notes',
     items: [
       { key: 'voice_notes.read', label: 'See voice notes', desc: 'Open the voice notes inbox and transcripts.' },

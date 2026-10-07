@@ -13,6 +13,11 @@ export interface WorkReport {
   documentName?: string;
   fileType?: string;
   fileSize?: string;
+  // Set on reports that come from a task time log
+  workDate?: string | null;
+  minutes?: number | null;
+  taskId?: string | null;
+  projectId?: string | null;
   createdAt: string;
   updatedAt: string;
 }

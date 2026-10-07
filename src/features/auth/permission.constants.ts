@@ -22,6 +22,8 @@ export const PERMISSIONS = {
   LEAVE_USE: 'leave.use',
   LEAVE_APPROVE: 'leave.approve',
   GROUPS_CREATE: 'groups.create',
+  CLIENT_READ: 'client.read',
+  CLIENT_MANAGE: 'client.manage',
 } as const;
 
 export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];

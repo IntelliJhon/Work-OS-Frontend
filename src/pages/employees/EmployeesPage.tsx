@@ -8,6 +8,8 @@ import { workReportsApi, type WorkReport } from '../../services/api/work-reports
 import { clientsApi } from '../../services/api/clients.api';
 import { MentionTextarea, type MentionCandidate } from '../../components/ui/MentionTextarea';
 import { useAuthStore } from '../../store/authStore';
+import { DailyHoursPanel, TodayHoursChip } from '../../components/time-logs/DailyHours';
+import { formatMinutes, useTeamHours } from '../../services/api/timeLogs';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { useToast } from '../../components/ui/Toast';
 import {
@@ -58,6 +60,12 @@ export const EmployeesPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
   const [workReportEmployee, setWorkReportEmployee] = useState<User | null>(null);
+  const me = useAuthStore((s) => s.user);
+  // Admins and Project Managers see everyone; others see only themselves (the API sends only their own work too)
+  const isManager = !!me && (['admin', 'tenant admin', 'project manager'].includes((me.roleName || me.role || '').toLowerCase())
+    || me.permissions?.admin === true || me.permissions?.['project.manage'] === true);
+  const { data: teamHours } = useTeamHours();
+  const hoursByUser = useMemo(() => new Map((teamHours?.people ?? []).map((p) => [p.userId, p])), [teamHours]);
 
   // 1. Fetch Users (Employees)
   const {
@@ -98,6 +106,7 @@ export const EmployeesPage: React.FC = () => {
 
   // Exclude Tenant Admin / Admin users from the employees list
   const employees = useMemo(() => {
+    if (!isManager) return allUsers.filter((u) => u.id === me?.id);
     return allUsers.filter((u) => {
       const role = (u.roleName || '').toLowerCase().trim();
       return !(
@@ -107,7 +116,7 @@ export const EmployeesPage: React.FC = () => {
         role.includes('tenant admin')
       );
     });
-  }, [allUsers]);
+  }, [allUsers, isManager, me?.id]);
 
   // Project map for quick name lookup
   const projectMap = useMemo(() => {
@@ -395,6 +404,8 @@ export const EmployeesPage: React.FC = () => {
                     </span>
                   )}
                 </div>
+
+                <TodayHoursChip person={hoursByUser.get(emp.id)} />
 
                 {/* Task Breakdown Stats Bar */}
                 <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-zinc-900">
@@ -733,6 +744,8 @@ const WorkReportModal: React.FC<WorkReportModalProps> = ({ employee, onClose }) 
   }, [user]);
 
   const canEditReport = (report: WorkReport) => {
+    // Reports from a task time log change with the time entry (in the project's Task Planner)
+    if (report.taskId && report.minutes != null) return false;
     if (isUserAdmin) return true;
     const currentUserId = user?.id;
     const currentUserEmail = user?.email?.toLowerCase();
@@ -988,6 +1001,8 @@ const WorkReportModal: React.FC<WorkReportModalProps> = ({ employee, onClose }) 
 
           {/* Body Content */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <DailyHoursPanel userId={employee.id} />
+
             {/* ADD / EDIT FORM CONTAINER */}
             {showAddForm && (
               <form onSubmit={handleSubmit} className="p-4 rounded-2xl bg-purple-50/40 dark:bg-purple-950/10 border border-purple-200 dark:border-purple-900/40 space-y-4 animate-fade-in">
@@ -1220,6 +1235,14 @@ const WorkReportModal: React.FC<WorkReportModalProps> = ({ employee, onClose }) 
                               <Calendar className="w-3 h-3 text-slate-400" />
                               <span>{createdDate} at {createdTime}</span>
                             </span>
+                            {report.minutes != null && (
+                              <>
+                                <span>•</span>
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-300 font-bold" title="From a time entry on a project task">
+                                  {formatMinutes(report.minutes)}{report.workDate ? ` on ${new Date(`${report.workDate}T00:00:00Z`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' })}` : ''}
+                                </span>
+                              </>
+                            )}
                             {updatedTimeStr && (
                               <span className="text-[9px] text-purple-600 dark:text-purple-400 font-semibold italic">
                                 (Edited: {updatedTimeStr})

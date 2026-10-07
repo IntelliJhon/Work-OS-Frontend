@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { ClientPicker } from '../../components/projects/ClientPicker';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '../../store/authStore';
@@ -29,7 +30,8 @@ import {
 const createProjectSchema = z.object({
   name: z.string().min(3, 'Project name must be at least 3 characters'),
   description: z.string().optional(),
-  clientName: z.string().max(255).optional(),
+  // '' = Company Projects
+  clientId: z.string().optional(),
 });
 
 type CreateProjectFormValues = z.infer<typeof createProjectSchema>;
@@ -93,6 +95,8 @@ export const Overview: React.FC = () => {
 
   const {
     register,
+    watch,
+    setValue,
     handleSubmit,
     reset,
     formState: { errors },
@@ -101,7 +105,7 @@ export const Overview: React.FC = () => {
   });
 
   const onSubmit = (values: CreateProjectFormValues) => {
-    createProjectMutation.mutate(values);
+    createProjectMutation.mutate({ ...values, clientId: values.clientId || null });
   };
 
   // Real-time Event Subscriptions
@@ -474,16 +478,8 @@ export const Overview: React.FC = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Client Name</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. ACME Corporation"
-                    {...register('clientName')}
-                    className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500"
-                  />
-                  {errors.clientName && (
-                    <p className="text-[10px] text-red-400 font-bold">{errors.clientName.message}</p>
-                  )}
+                  <label htmlFor="project-client" className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Client</label>
+                  <ClientPicker id="project-client" value={watch('clientId') ?? ''} onChange={(v) => setValue('clientId', v)} className="w-full bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500" />
                 </div>
 
                 <div className="space-y-1.5">
