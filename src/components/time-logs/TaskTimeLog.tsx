@@ -11,9 +11,13 @@ import { addDays, formatMinutes, timeLogsApi, todayKey, type TimeLog } from '../
 
 const BACK_DAYS = 7;
 const apiError = (err: unknown, fallback: string) => (err as { response?: { data?: { error?: string } } })?.response?.data?.error || fallback;
-const dayLabel = (day: string) =>
-  day === todayKey() ? 'Today' : day === addDays(todayKey(), -1) ? 'Yesterday'
-    : new Date(`${day}T00:00:00Z`).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+/** 'Today, 7 Oct 2026' / 'Yesterday, 6 Oct 2026' / 'Mon, 5 Oct 2026' */
+const dayLabel = (day: string) => {
+  const date = new Date(`${day}T00:00:00Z`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  if (day === todayKey()) return `Today, ${date}`;
+  if (day === addDays(todayKey(), -1)) return `Yesterday, ${date}`;
+  return `${new Date(`${day}T00:00:00Z`).toLocaleDateString('en-IN', { weekday: 'short', timeZone: 'UTC' })}, ${date}`;
+};
 
 const inputClass =
   'w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50';
