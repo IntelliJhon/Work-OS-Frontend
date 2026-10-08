@@ -57,10 +57,10 @@ const LocationCell: React.FC<{ record: AttendanceRecord | null }> = ({ record })
         href={`https://www.google.com/maps?q=${record.latitude},${record.longitude}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1 text-blue-400 hover:underline"
-        title={record.accuracyM ? `Accurate to about ${Math.round(record.accuracyM)} m` : undefined}
+        className="inline-flex items-center gap-1 text-blue-400 hover:underline max-w-[16rem]"
+        title={[record.locationName, record.accuracyM ? `accurate to about ${Math.round(record.accuracyM)} m` : '', 'open in Maps'].filter(Boolean).join(' · ')}
       >
-        <MapPin className="w-3.5 h-3.5" /> Map
+        <MapPin className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{record.locationName || 'Map'}</span>
       </a>
     );
   }

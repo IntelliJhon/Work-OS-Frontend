@@ -12,6 +12,8 @@ export interface AttendanceRecord {
   early: boolean;
   checkInAt: string | null;
   latitude: number | null;
+  /** Place name of the location ('Kakkanad, Kochi'); null until looked up, '' when none was found */
+  locationName?: string | null;
   longitude: number | null;
   accuracyM: number | null;
   /** ok | denied | unavailable; null for an admin's entry */
