@@ -5,7 +5,13 @@ export interface ChatAttachment {
   name: string;
   mimeType: string;
   size: number;
+  /** A voice message recorded in the chat, and its length */
+  voice?: boolean;
+  durationMs?: number;
 }
+
+/** How a shared file is named in previews: 🎤 for voice messages, 📎 for other files */
+export const fileLabel = (name: string, voice?: boolean) => (voice || /^Voice message./.test(name) ? '🎤 Voice message' : `📎 ${name}`);
 
 export interface ChatMessage {
   id: string;
@@ -89,6 +95,16 @@ export const groupsApi = {
     if (replyToId) form.append('replyToId', replyToId);
     form.append('mentions', JSON.stringify(mentions));
     files.forEach((f) => form.append('files', f));
+    return (await apiClient.post<{ data: ChatMessage }>(`/groups/${id}/messages`, form, { headers: { 'Content-Type': 'multipart/form-data' } })).data.data;
+  },
+  /** A voice message recorded in the chat */
+  sendVoice: async (id: string, file: File, durationMs: number, replyToId: string | null = null): Promise<ChatMessage> => {
+    const form = new FormData();
+    form.append('body', '');
+    form.append('mentions', '[]');
+    form.append('voiceDurationMs', String(Math.round(durationMs)));
+    if (replyToId) form.append('replyToId', replyToId);
+    form.append('files', file);
     return (await apiClient.post<{ data: ChatMessage }>(`/groups/${id}/messages`, form, { headers: { 'Content-Type': 'multipart/form-data' } })).data.data;
   },
   deleteMessage: async (id: string, messageId: string) => (await apiClient.delete(`/groups/${id}/messages/${messageId}`)).data,

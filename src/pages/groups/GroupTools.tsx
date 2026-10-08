@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, ListChecks, Loader2, Pin, PinOff, RefreshCw, Search, Sparkles, X } from 'lucide-react';
 import { useToast } from '../../components/ui/Toast';
-import { groupsApi, type ChatMessage, type GroupChatSummary, type GroupDetail } from '../../services/api/groups';
+import { fileLabel, groupsApi, type ChatMessage, type GroupChatSummary, type GroupDetail } from '../../services/api/groups';
 
 // Group chat tools: AI summary, task from a message, search and pinned messages.
 
@@ -201,7 +201,7 @@ const ResultRow: React.FC<{ m: ChatMessage; action?: React.ReactNode }> = ({ m, 
   <li className="flex items-start gap-3 p-3">
     <div className="min-w-0 flex-1">
       <p className="text-xs text-muted-foreground"><span className="font-semibold text-foreground">{m.senderName}</span> · {when(m.createdAt)}</p>
-      <p className="text-sm text-foreground whitespace-pre-wrap break-words mt-0.5">{m.body || (m.attachments[0] ? `📎 ${m.attachments.map((a) => a.name).join(', ')}` : '')}</p>
+      <p className="text-sm text-foreground whitespace-pre-wrap break-words mt-0.5">{m.body || (m.attachments[0] ? m.attachments.map((a) => fileLabel(a.name, a.voice)).join(', ') : '')}</p>
     </div>
     {action}
   </li>

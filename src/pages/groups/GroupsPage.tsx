@@ -9,7 +9,9 @@ import { useAuthStore } from '../../store/authStore';
 import { useToast } from '../../components/ui/Toast';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { useSocketEvent } from '../../services/socket/socket-events';
-import { fileSize, groupsApi, type ChatAttachment, type ChatMessage, type GroupDetail, type GroupSummary } from '../../services/api/groups';
+import { MicButton, RecordingBar, VoicePlayer } from './VoiceNotes';
+import { useVoiceRecorder, type Recording } from './useVoiceRecorder';
+import { fileLabel, fileSize, groupsApi, type ChatAttachment, type ChatMessage, type GroupDetail, type GroupSummary } from '../../services/api/groups';
 
 // ─── Groups ─────────────────────────────────────────────────────────────────────
 // Company group chats, like WhatsApp groups: Admins and Project Managers create a group and add members, who
@@ -220,6 +222,7 @@ const GroupInfo: React.FC<{ group: GroupDetail; onClose: () => void; onLeft: () 
 const Attachment: React.FC<{ groupId: string; a: ChatAttachment; mine: boolean }> = ({ groupId, a, mine }) => {
   const { toast } = useToast();
   const isImage = a.mimeType.startsWith('image/');
+  const isAudio = !!a.voice || a.mimeType.startsWith('audio/');
   const { data: preview } = useQuery({ queryKey: ['groups', 'file', a.uploadId], queryFn: () => groupsApi.fileUrl(groupId, a.uploadId), enabled: isImage, staleTime: 50 * 60_000 });
   const open = async () => {
     const tab = window.open('', '_blank');
@@ -231,6 +234,9 @@ const Attachment: React.FC<{ groupId: string; a: ChatAttachment; mine: boolean }
       toast.error(apiError(err, 'Could not open the file.'), 'Groups');
     }
   };
+  if (isAudio) {
+    return <VoicePlayer groupId={groupId} uploadId={a.uploadId} durationMs={a.durationMs} mine={mine} onError={(msg) => toast.error(msg, 'Groups')} />;
+  }
   if (isImage && preview) {
     return (
       <button type="button" onClick={open} className="block rounded-xl overflow-hidden max-w-[16rem] cursor-pointer" aria-label={`Open ${a.name}`}>
@@ -362,6 +368,35 @@ const Chat: React.FC<{ groupId: string; onBack: () => void }> = ({ groupId, onBa
   });
   const canSend = (text.trim().length > 0 || files.length > 0) && !send.isPending;
 
+  // Voice messages: tap the mic to record, then send or delete (stops by itself at 5 minutes)
+  const sendVoice = useMutation({
+    mutationFn: (r: Recording) => groupsApi.sendVoice(groupId, r.file, r.durationMs, replyTo?.id ?? null),
+    onSuccess: (m) => {
+      setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+      setReplyTo(null);
+      scrollToEnd();
+      queryClient.invalidateQueries({ queryKey: ['groups', 'list'] });
+    },
+    onError: (err) => toast.error(apiError(err, 'Could not send the voice message.'), 'Groups'),
+  });
+  // The recorder calls this when it reaches its 5-minute limit (set below, once finishRecording exists)
+  const atLimit = useRef<() => void>(() => {});
+  const voice = useVoiceRecorder(useCallback(() => atLimit.current(), []));
+  const finishRecording = async () => {
+    const r = await voice.stop();
+    if (!r) return;
+    if (r.durationMs < 800) { toast.error('That was too short. Tap the mic and speak, then send.', 'Groups'); return; }
+    sendVoice.mutate(r);
+  };
+  useEffect(() => { atLimit.current = () => { void finishRecording(); }; });
+  const startRecording = async () => {
+    try {
+      await voice.start();
+    } catch (err) {
+      toast.error((err as Error).message, 'Groups');
+    }
+  };
+
   const memberOptions = useMemo(() => {
     if (mentionQuery === null || !group) return [];
     const q = mentionQuery.toLowerCase();
@@ -423,7 +458,7 @@ const Chat: React.FC<{ groupId: string; onBack: () => void }> = ({ groupId, onBa
         <button type="button" onClick={() => setTool('pinned')} className="flex items-center gap-2 px-4 py-2 border-b border-border bg-amber-500/5 text-left cursor-pointer hover:bg-amber-500/10">
           <Pin className="w-3.5 h-3.5 text-amber-600 shrink-0" />
           <span className="min-w-0 flex-1 text-xs text-foreground truncate">
-            <span className="font-semibold">{pinned[0].senderName}:</span> {pinned[0].body || (pinned[0].attachments[0] ? `📎 ${pinned[0].attachments[0].name}` : '')}
+            <span className="font-semibold">{pinned[0].senderName}:</span> {pinned[0].body || (pinned[0].attachments[0] ? fileLabel(pinned[0].attachments[0].name, pinned[0].attachments[0].voice) : '')}
           </span>
           {pinned.length > 1 && <span className="text-[10px] text-muted-foreground shrink-0">+{pinned.length - 1} more</span>}
         </button>
@@ -465,7 +500,7 @@ const Chat: React.FC<{ groupId: string; onBack: () => void }> = ({ groupId, onBa
                               onClick={() => document.getElementById(`msg-${m.replyTo!.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                               className={`block w-full text-left rounded-lg border-l-4 px-2 py-1 text-xs cursor-pointer ${mine ? 'bg-white/15 border-white/60' : 'bg-muted border-blue-500'}`}>
                               <span className="block font-semibold truncate">{m.replyTo.deleted ? 'Deleted message' : m.replyTo.senderName}</span>
-                              <span className={`block truncate ${mine ? 'text-white/80' : 'text-muted-foreground'}`}>{m.replyTo.deleted ? '' : m.replyTo.body || (m.replyTo.attachmentName ? `📎 ${m.replyTo.attachmentName}` : '')}</span>
+                              <span className={`block truncate ${mine ? 'text-white/80' : 'text-muted-foreground'}`}>{m.replyTo.deleted ? '' : m.replyTo.body || (m.replyTo.attachmentName ? fileLabel(m.replyTo.attachmentName) : '')}</span>
                             </button>
                           )}
                           {m.attachments.map((a) => <Attachment key={a.uploadId} groupId={groupId} a={a} mine={mine} />)}
@@ -538,7 +573,7 @@ const Chat: React.FC<{ groupId: string; onBack: () => void }> = ({ groupId, onBa
             <CornerUpLeft className="w-3.5 h-3.5 text-blue-500 shrink-0" />
             <span className="min-w-0 flex-1 text-xs">
               <span className="block font-semibold text-foreground truncate">Replying to {replyTo.senderId === me?.id ? 'yourself' : replyTo.senderName}</span>
-              <span className="block text-muted-foreground truncate">{replyTo.body || (replyTo.attachments[0] ? `📎 ${replyTo.attachments[0].name}` : '')}</span>
+              <span className="block text-muted-foreground truncate">{replyTo.body || (replyTo.attachments[0] ? fileLabel(replyTo.attachments[0].name, replyTo.attachments[0].voice) : '')}</span>
             </span>
             <button type="button" onClick={() => setReplyTo(null)} aria-label="Cancel reply" className="p-1 rounded text-muted-foreground hover:text-foreground cursor-pointer"><X className="w-3.5 h-3.5" /></button>
           </div>
@@ -553,6 +588,9 @@ const Chat: React.FC<{ groupId: string; onBack: () => void }> = ({ groupId, onBa
             ))}
           </ul>
         )}
+        {voice.recording ? (
+          <RecordingBar elapsed={voice.elapsed} sending={sendVoice.isPending} onCancel={voice.cancel} onSend={() => { void finishRecording(); }} />
+        ) : (
         <div className="flex items-end gap-2">
           <input ref={fileRef} type="file" multiple className="hidden" id="group-files" onChange={(e) => addFiles(e.target.files)}
             accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip" />
@@ -577,17 +615,22 @@ const Chat: React.FC<{ groupId: string; onBack: () => void }> = ({ groupId, onBa
             style={{ height: 'auto' }}
             onInput={(e) => { const el = e.currentTarget; el.style.height = 'auto'; el.style.height = `${Math.min(el.scrollHeight, 128)}px`; }}
           />
+          {!canSend && !send.isPending && voice.supported ? (
+            <MicButton onClick={() => { void startRecording(); }} disabled={sendVoice.isPending} />
+          ) : (
           <button type="submit" disabled={!canSend} aria-label="Send" className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-40 cursor-pointer">
             {send.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           </button>
+          )}
         </div>
+        )}
       </form>
 
       {tool === 'summary' && group && <SummaryModal group={group} onClose={() => setTool(null)} />}
       {tool === 'search' && group && <SearchModal group={group} onClose={() => setTool(null)} />}
       {tool === 'pinned' && group && <PinnedModal group={group} onClose={() => setTool(null)} />}
       {taskFrom && group && (
-        <CreateTaskModal group={group} messageId={taskFrom.id} initialName={taskFrom.body ?? taskFrom.attachments.map((a) => a.name).join(', ')}
+        <CreateTaskModal group={group} messageId={taskFrom.id} initialName={taskFrom.body ?? taskFrom.attachments.map((a) => (a.voice ? 'Voice message' : a.name)).join(', ')}
           initialAssigneeId={taskFrom.mentions[0] ?? null} onClose={() => setTaskFrom(null)} />
       )}
       {showInfo && group && <GroupInfo group={group} onClose={() => setShowInfo(false)} onLeft={() => { setShowInfo(false); navigate('/groups'); }} />}
@@ -618,7 +661,7 @@ export const GroupsPage: React.FC = () => {
     if (!m) return g.description || 'No messages yet';
     if (m.deleted) return 'This message was deleted';
     const who = m.senderId === me?.id ? 'You' : m.senderName.split(' ')[0];
-    const what = m.body || (m.attachments.length ? `📎 ${m.attachments[0].name}` : '');
+    const what = m.body || (m.attachments.length ? fileLabel(m.attachments[0].name, m.attachments[0].voice) : '');
     return `${who}: ${what}`;
   };
 
