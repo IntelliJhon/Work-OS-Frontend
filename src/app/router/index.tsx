@@ -27,6 +27,7 @@ const MembersManagement = lazyPage(() => import('../../pages/settings/MembersMan
 const RolesManagement = lazyPage(() => import('../../pages/settings/RolesManagement'));
 const SecurityActivityCenter = lazyPage(() => import('../../pages/settings/SecurityActivityCenter'));
 const VoiceNotesSettings = lazyPage(() => import('../../pages/settings/voice/VoiceNotesSettings'));
+const McpSettings = lazyPage(() => import('../../pages/settings/McpSettings'));
 const VoiceNotesPage = lazyPage(() => import('../../pages/voice-notes/VoiceNotesPage'));
 const WhatsAppBotsPage = lazyPage(() => import('../../pages/platform/WhatsAppBotsPage'));
 const WorkspacesPage = lazyPage(() => import('../../pages/platform/WorkspacesPage'));
@@ -184,6 +185,10 @@ export const AppRouter: React.FC = () => {
                 </Route>
                 <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.WORKSPACE_VOICE_MANAGE]} />}>
                   <Route path="voice-notes" element={<VoiceNotesSettings />} />
+                </Route>
+                {/* MCP access keys: Admins only (checked by the API too) */}
+                <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.ADMIN]} />}>
+                  <Route path="mcp" element={<McpSettings />} />
                 </Route>
               </Route>
             </Route>

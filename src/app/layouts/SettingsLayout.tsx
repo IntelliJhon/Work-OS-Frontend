@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Users, Shield, Lock, Mic, ChevronRight } from 'lucide-react';
+import { Users, Shield, Lock, Mic, Bot, ChevronRight } from 'lucide-react';
 import { usePermissions } from '../../features/auth/usePermissions';
 
 export const SettingsLayout: React.FC = () => {
@@ -35,6 +35,13 @@ export const SettingsLayout: React.FC = () => {
       icon: Mic,
       description: 'Register the WhatsApp number that sends voice notes.',
       permission: 'workspace.voice.manage',
+    },
+    {
+      name: 'AI & MCP',
+      path: '/settings/mcp',
+      icon: Bot,
+      description: 'Keys that let n8n, Claude or ChatGPT read this workspace.',
+      permission: 'admin',
     },
   ];
 
