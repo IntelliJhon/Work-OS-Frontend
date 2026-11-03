@@ -54,6 +54,13 @@ const PERMISSION_GROUPS: { group: string; items: { key: string; label: string; d
     ],
   },
   {
+    group: 'Leads',
+    items: [
+      { key: 'lead.read', label: 'See leads', desc: 'Open the leads board and lead details, and add notes.' },
+      { key: 'lead.manage', label: 'Work on leads', desc: 'Add and edit leads, move them between stages and add proposals (Admins always can; only Admins archive).' },
+    ],
+  },
+  {
     group: 'Voice Notes',
     items: [
       { key: 'voice_notes.read', label: 'See voice notes', desc: 'Open the voice notes inbox and transcripts.' },

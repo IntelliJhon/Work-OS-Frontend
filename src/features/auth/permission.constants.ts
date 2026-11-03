@@ -24,6 +24,8 @@ export const PERMISSIONS = {
   GROUPS_CREATE: 'groups.create',
   CLIENT_READ: 'client.read',
   CLIENT_MANAGE: 'client.manage',
+  LEAD_READ: 'lead.read',
+  LEAD_MANAGE: 'lead.manage',
 } as const;
 
 export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];

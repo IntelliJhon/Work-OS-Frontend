@@ -39,6 +39,7 @@ const LeavePage = lazyPage(() => import('../../pages/leave/LeavePage'));
 const RemindersPage = lazyPage(() => import('../../pages/reminders/RemindersPage'));
 const GroupsPage = lazyPage(() => import('../../pages/groups/GroupsPage'));
 const WorkspaceClientsPage = lazyPage(() => import('../../pages/workspace-clients/WorkspaceClientsPage'));
+const LeadsPage = lazyPage(() => import('../../pages/leads/LeadsPage'));
 const OnboardedClients = lazyPage(() => import('../../pages/clients/ClientsList'));
 const EmployeesPage = lazyPage(() => import('../../pages/employees/EmployeesPage'));
 const ComplaintsPage = lazyPage(() => import('../../pages/complaints/ComplaintsPage'));
@@ -105,6 +106,8 @@ export const AppRouter: React.FC = () => {
               {/* The Clients section of every workspace; LeadsNDeals also keeps its CRM-linked Onboarded Clients page */}
               <Route path="/clients" element={<WorkspaceClientsPage />} />
               <Route path="/clients/:id" element={<WorkspaceClientsPage />} />
+              <Route path="/leads" element={<LeadsPage />} />
+              <Route path="/leads/:id" element={<LeadsPage />} />
               <Route path="/onboarded-clients" element={<OnboardedClients />} />
               <Route path="/employees" element={<EmployeesPage />} />
               <Route path="/complaints" element={<ComplaintsPage />} />
