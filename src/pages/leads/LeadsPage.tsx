@@ -8,7 +8,6 @@ import {
 import { useToast } from '../../components/ui/Toast';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { formatPhone } from '../../services/api/workspaceClients';
-import EmailComposer from './EmailComposer';
 import {
   AUTO_FOLLOW_UPS, LEAD_STAGES, REJECT_LABELS, SOURCE_LABELS, STAGE_LABELS, leadsApi, rupees,
   type DuplicateLead, type LeadActivity, type LeadDetail, type LeadFilter, type LeadInput, type LeadSource, type LeadStage,
@@ -849,7 +848,6 @@ const LeadProfile: React.FC<{ id: string }> = ({ id }) => {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [editingRequirement, setEditingRequirement] = useState(false);
-  const [emailing, setEmailing] = useState(false);
   const { data, isLoading, isError, error } = useQuery({ queryKey: ['leads', 'detail', id], queryFn: () => leadsApi.get(id) });
   const { data: proposals = [] } = useQuery({ queryKey: ['leads', 'proposals', id], queryFn: () => leadsApi.proposals(id) });
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['leads'] });
@@ -905,7 +903,6 @@ const LeadProfile: React.FC<{ id: string }> = ({ id }) => {
           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             <a href={`https://wa.me/${l.phone}`} target="_blank" rel="noreferrer" className={secondaryButton}><MessageCircle className="w-4 h-4 text-emerald-600" /> WhatsApp</a>
             <a href={`tel:+${l.phone}`} className={secondaryButton}><Phone className="w-4 h-4" /> Call</a>
-            {canManage && <button type="button" onClick={() => setEmailing(true)} className={secondaryButton}><Mail className="w-4 h-4 text-blue-500" /> Email</button>}
             {canManage && <button type="button" onClick={() => setEditing(true)} className={secondaryButton}><Pencil className="w-4 h-4" /> Edit</button>}
           </div>
         </div>
@@ -1015,7 +1012,6 @@ const LeadProfile: React.FC<{ id: string }> = ({ id }) => {
         </section>
       </div>
 
-      {emailing && <EmailComposer lead={l} onClose={() => setEmailing(false)} />}
       {editingRequirement && (
         <StageDialog editOnly move={{ lead: l, to: 'requirement' }} onClose={() => setEditingRequirement(false)} onMoved={() => { setEditingRequirement(false); refresh(); }} />
       )}

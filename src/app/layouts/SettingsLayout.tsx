@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Users, Shield, Lock, Mic, Bot, Mail, ChevronRight } from 'lucide-react';
+import { Users, Shield, Lock, Mic, Bot, ChevronRight } from 'lucide-react';
 import { usePermissions } from '../../features/auth/usePermissions';
 
 export const SettingsLayout: React.FC = () => {
@@ -41,13 +41,6 @@ export const SettingsLayout: React.FC = () => {
       path: '/settings/mcp',
       icon: Bot,
       description: 'Keys that let n8n, Claude or ChatGPT read this workspace.',
-      permission: 'admin',
-    },
-    {
-      name: 'Company email',
-      path: '/settings/email',
-      icon: Mail,
-      description: 'The mailbox Work OS sends email from (e.g. info@).',
       permission: 'admin',
     },
   ];

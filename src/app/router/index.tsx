@@ -40,7 +40,6 @@ const RemindersPage = lazyPage(() => import('../../pages/reminders/RemindersPage
 const GroupsPage = lazyPage(() => import('../../pages/groups/GroupsPage'));
 const WorkspaceClientsPage = lazyPage(() => import('../../pages/workspace-clients/WorkspaceClientsPage'));
 const LeadsPage = lazyPage(() => import('../../pages/leads/LeadsPage'));
-const CompanyMailSettings = lazyPage(() => import('../../pages/settings/CompanyMailSettings'));
 const OnboardedClients = lazyPage(() => import('../../pages/clients/ClientsList'));
 const EmployeesPage = lazyPage(() => import('../../pages/employees/EmployeesPage'));
 const ComplaintsPage = lazyPage(() => import('../../pages/complaints/ComplaintsPage'));
@@ -193,7 +192,6 @@ export const AppRouter: React.FC = () => {
                 {/* MCP access keys: Admins only (checked by the API too) */}
                 <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.ADMIN]} />}>
                   <Route path="mcp" element={<McpSettings />} />
-                  <Route path="email" element={<CompanyMailSettings />} />
                 </Route>
               </Route>
             </Route>
