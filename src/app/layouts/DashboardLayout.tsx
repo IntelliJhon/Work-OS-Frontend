@@ -23,6 +23,7 @@ import { GroupsNavBadge } from '../../pages/groups/GroupsNavBadge';
 import { platformApi } from '../../services/api/platform';
 import { useSections, type Section } from '../../services/api/workspace';
 import { SectionGate } from '../../components/security/SectionGate';
+import AiAssistant from '../../components/ai/AiAssistant';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -188,7 +189,7 @@ export const DashboardLayout: React.FC = () => {
   const { can } = usePermissions();
   const { data: platformMe } = useQuery({ queryKey: ['platform', 'me'], queryFn: platformApi.me, staleTime: 300000 });
   // Sections the workspace has (switched by a platform admin); roles still decide who sees them
-  const { isOn } = useSections();
+  const { isOn, loaded: sectionsLoaded } = useSections();
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -519,6 +520,9 @@ export const DashboardLayout: React.FC = () => {
 
       {/* Real-time Toast Alerts Stream Container */}
       <RealtimeAlertToast />
+
+      {/* Ask AI: the in-app assistant (Claude), where the Leads section is on */}
+      {sectionsLoaded && isOn('leads') && <AiAssistant />}
 
       {/* Slide-out glassmorphic panel NotificationDrawer */}
       <NotificationDrawer

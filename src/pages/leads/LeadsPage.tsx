@@ -8,6 +8,7 @@ import {
 import { useToast } from '../../components/ui/Toast';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { formatPhone } from '../../services/api/workspaceClients';
+import EmailComposer from './EmailComposer';
 import {
   AUTO_FOLLOW_UPS, LEAD_STAGES, REJECT_LABELS, SOURCE_LABELS, STAGE_LABELS, leadsApi, rupees,
   type DuplicateLead, type LeadActivity, type LeadDetail, type LeadFilter, type LeadInput, type LeadSource, type LeadStage,
@@ -672,8 +673,8 @@ const LeadsBoard: React.FC = () => {
 // ─── Lead page ──────────────────────────────────────────────────────────────────
 
 const ActivityIcon: React.FC<{ kind: LeadActivity['kind'] }> = ({ kind }) => {
-  const Icon = kind === 'note' ? StickyNote : kind === 'stage' ? ArrowRight : kind === 'proposal' ? FileText : kind === 'whatsapp' ? MessageCircle : kind === 'client' ? Building2 : kind === 'archived' ? Archive : kind === 'restored' ? ArchiveRestore : kind === 'created' ? Plus : Pencil;
-  const tone = kind === 'note' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : kind === 'stage' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : kind === 'proposal' ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400' : kind === 'whatsapp' || kind === 'client' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground';
+  const Icon = kind === 'note' ? StickyNote : kind === 'stage' ? ArrowRight : kind === 'proposal' ? FileText : kind === 'whatsapp' ? MessageCircle : kind === 'email' ? Mail : kind === 'client' ? Building2 : kind === 'archived' ? Archive : kind === 'restored' ? ArchiveRestore : kind === 'created' ? Plus : Pencil;
+  const tone = kind === 'note' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : kind === 'stage' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : kind === 'proposal' ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400' : kind === 'email' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : kind === 'whatsapp' || kind === 'client' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground';
   return <span className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center ${tone}`}><Icon className="w-3.5 h-3.5" /></span>;
 };
 
@@ -848,6 +849,7 @@ const LeadProfile: React.FC<{ id: string }> = ({ id }) => {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [editingRequirement, setEditingRequirement] = useState(false);
+  const [emailing, setEmailing] = useState(false);
   const { data, isLoading, isError, error } = useQuery({ queryKey: ['leads', 'detail', id], queryFn: () => leadsApi.get(id) });
   const { data: proposals = [] } = useQuery({ queryKey: ['leads', 'proposals', id], queryFn: () => leadsApi.proposals(id) });
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['leads'] });
@@ -903,6 +905,7 @@ const LeadProfile: React.FC<{ id: string }> = ({ id }) => {
           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             <a href={`https://wa.me/${l.phone}`} target="_blank" rel="noreferrer" className={secondaryButton}><MessageCircle className="w-4 h-4 text-emerald-600" /> WhatsApp</a>
             <a href={`tel:+${l.phone}`} className={secondaryButton}><Phone className="w-4 h-4" /> Call</a>
+            {canManage && <button type="button" onClick={() => setEmailing(true)} className={secondaryButton}><Mail className="w-4 h-4 text-blue-500" /> Email</button>}
             {canManage && <button type="button" onClick={() => setEditing(true)} className={secondaryButton}><Pencil className="w-4 h-4" /> Edit</button>}
           </div>
         </div>
@@ -1012,6 +1015,7 @@ const LeadProfile: React.FC<{ id: string }> = ({ id }) => {
         </section>
       </div>
 
+      {emailing && <EmailComposer lead={l} onClose={() => setEmailing(false)} />}
       {editingRequirement && (
         <StageDialog editOnly move={{ lead: l, to: 'requirement' }} onClose={() => setEditingRequirement(false)} onMoved={() => { setEditingRequirement(false); refresh(); }} />
       )}

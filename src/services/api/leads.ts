@@ -6,7 +6,7 @@ export const LEAD_STAGES = ['new', 'contacted', 'requirement', 'proposal', 'foll
 export type LeadStage = typeof LEAD_STAGES[number];
 export type LeadSource = 'manual' | 'whatsapp' | 'website' | 'referral' | 'call' | 'walk_in' | 'social' | 'other';
 export type RejectReason = 'price' | 'timing' | 'competitor' | 'no_response' | 'not_needed' | 'other';
-export type LeadActivityKind = 'note' | 'created' | 'updated' | 'stage' | 'proposal' | 'whatsapp' | 'client' | 'archived' | 'restored';
+export type LeadActivityKind = 'note' | 'created' | 'updated' | 'stage' | 'proposal' | 'whatsapp' | 'email' | 'client' | 'archived' | 'restored';
 export type AcceptedAs = 'bot' | 'client';
 
 export const STAGE_LABELS: Record<LeadStage, string> = {
@@ -126,6 +126,7 @@ export interface LeadProposal {
   amount: string | null;
   note: string | null;
   file: { name: string; size: number; mimeType: string } | null;
+  uploadId: string | null;
   whatsappSentAt: string | null;
   whatsappError: string | null;
   createdAt: string;
