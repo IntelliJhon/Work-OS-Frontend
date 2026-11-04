@@ -710,7 +710,7 @@ export const ClientsList: React.FC = () => {
       {/* ────────────────────────────────────────────────────────── */}
       {activeTab === 'onboarded' && (
         <div className="space-y-6 animate-fade-in">
-          <div className="flex justify-end -mb-2">
+          <div className="flex justify-end">
             <button
               type="button"
               onClick={() => setShowRecharges(true)}
