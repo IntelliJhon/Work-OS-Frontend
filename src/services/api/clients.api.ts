@@ -185,7 +185,25 @@ export interface UpdateEnquiryPayload {
   remarks?: string;
 }
 
+export interface WalletTopupLog {
+  id: string;
+  createdAt: string;
+  clientId: string;
+  clientName: string | null;
+  wallet: 'main' | 'conversation';
+  channelNumber: string | null;
+  amount: number;
+  note: string | null;
+  status: 'done' | 'failed';
+  error: string | null;
+  source: 'button' | 'ai';
+  addedBy: string | null;
+}
+
 export const clientsApi = {
+  getWalletTopups: async (params: { from?: string; to?: string }) =>
+    (await apiClient.get<{ success: boolean; topups: WalletTopupLog[] }>('/clients/wallet-topups', { params })).data,
+
   list: async (): Promise<GetClientsResponse> => {
     const { data } = await apiClient.get<GetClientsResponse>('/clients');
     return data;

@@ -11,6 +11,8 @@ import {
 } from '../../services/api/clients.api';
 import { Navigate } from 'react-router-dom';
 import WalletTopUpModal, { type TopUpTarget } from './WalletTopUpModal';
+import RechargeHistoryModal from './RechargeHistoryModal';
+import { History } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { isLeadsndealsTenant } from '../../features/auth/company';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
@@ -184,6 +186,7 @@ export const ClientsList: React.FC = () => {
   const onboardedClients = onboardedData?.users || [];
   const canTopUp = !!onboardedData?.canTopUp;
   const [topUp, setTopUp] = useState<TopUpTarget | null>(null);
+  const [showRecharges, setShowRecharges] = useState(false);
   const clientDisplayName = (c: ClientUser) => `${c.profile?.name?.first ?? ''} ${c.profile?.name?.last ?? ''}`.trim() || c.email;
   const onboardingClients = onboardingData?.data || [];
   const companyName = onboardedData?.company || (isLeadsndeals ? 'Leadsndeals interactive technologies' : 'Current Company');
@@ -707,6 +710,16 @@ export const ClientsList: React.FC = () => {
       {/* ────────────────────────────────────────────────────────── */}
       {activeTab === 'onboarded' && (
         <div className="space-y-6 animate-fade-in">
+          <div className="flex justify-end -mb-2">
+            <button
+              type="button"
+              onClick={() => setShowRecharges(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs font-bold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800/80 transition shadow-sm cursor-pointer"
+            >
+              <History className="w-3.5 h-3.5 text-blue-500" /> Recharge history
+            </button>
+          </div>
+          {showRecharges && <RechargeHistoryModal onClose={() => setShowRecharges(false)} />}
           {/* Our own Partner Panel wallets: client top-ups are paid from these */}
           {onboardedData?.agencyWallets && (() => {
             const w = onboardedData.agencyWallets;
@@ -920,7 +933,7 @@ export const ClientsList: React.FC = () => {
           </div>
 
           {topUp && (
-            <WalletTopUpModal target={topUp} onClose={() => setTopUp(null)} onDone={() => { setTopUp(null); queryClient.invalidateQueries({ queryKey: ['clients-list'] }); }} />
+            <WalletTopUpModal target={topUp} onClose={() => setTopUp(null)} onDone={() => { setTopUp(null); queryClient.invalidateQueries({ queryKey: ['clients-list'] }); queryClient.invalidateQueries({ queryKey: ['wallet-topups'] }); }} />
           )}
 
           {/* Table View */}
