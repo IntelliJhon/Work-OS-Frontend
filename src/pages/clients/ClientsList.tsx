@@ -50,7 +50,8 @@ import {
   Filter,
   Bell,
   BellOff,
-  PlusCircle
+  PlusCircle,
+  Wallet
 } from 'lucide-react';
 
 const STAGES = [
@@ -706,6 +707,40 @@ export const ClientsList: React.FC = () => {
       {/* ────────────────────────────────────────────────────────── */}
       {activeTab === 'onboarded' && (
         <div className="space-y-6 animate-fade-in">
+          {/* Our own Partner Panel wallets: client top-ups are paid from these */}
+          {onboardedData?.agencyWallets && (() => {
+            const w = onboardedData.agencyWallets;
+            const cards = [
+              { key: 'main', label: 'Our main wallet', icon: Wallet, value: w.main?.balance ?? null, limit: w.mainLimit,
+                text: w.main ? `${w.main.currency === 'INR' ? '₹' : `${w.main.currency} `}${w.main.balance.toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : '—',
+                sub: w.main ? `Added ₹${w.main.totalIn.toLocaleString('en-IN', { maximumFractionDigits: 0 })} · spent ₹${w.main.totalOut.toLocaleString('en-IN', { maximumFractionDigits: 0 })} in total` : 'Not available' },
+              { key: 'conversation', label: 'Our conversation wallet', icon: MessageSquare, value: w.conversation?.balance ?? null, limit: w.conversationLimit,
+                text: w.conversation ? `${w.conversation.balance.toLocaleString('en-IN', { maximumFractionDigits: 2 })} coins` : '—',
+                sub: 'Used for client conversation top-ups' },
+            ];
+            return (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {cards.map((c) => {
+                  const low = c.value !== null && c.value < c.limit;
+                  return (
+                    <div key={c.key} className={`rounded-2xl p-4 border flex items-center gap-3.5 ${low ? 'border-rose-300 bg-rose-50/70 dark:border-rose-800/60 dark:bg-rose-950/20' : 'border-emerald-200/70 bg-emerald-50/50 dark:border-emerald-900/40 dark:bg-emerald-950/10'}`}>
+                      <div className={`p-2.5 rounded-xl shrink-0 ${low ? 'text-rose-600 bg-rose-500/10' : 'text-emerald-600 bg-emerald-500/10'}`}>
+                        <c.icon className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] uppercase font-black tracking-wider text-slate-500">{c.label} · Partner Panel</p>
+                        <h4 className={`text-xl font-extrabold mt-0.5 ${low ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-white'}`}>{c.text}</h4>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {low ? `Low — below ${c.limit}. Recharge in the Partner Panel.` : c.sub}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
           {/* Summary Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div className="glass-panel rounded-2xl p-4 border border-slate-100 dark:border-white/5 flex items-center space-x-3.5">

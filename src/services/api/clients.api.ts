@@ -62,6 +62,13 @@ export interface GetClientsResponse {
   success: boolean;
   // Admins may add balance to clients' wallets
   canTopUp?: boolean;
+  // The agency's own Partner Panel wallets that client top-ups are paid from (null when unavailable)
+  agencyWallets?: {
+    main: { balance: number; currency: string; totalIn: number; totalOut: number } | null;
+    conversation: { balance: number } | null;
+    mainLimit: number;
+    conversationLimit: number;
+  } | null;
   company: string;
   slug: string;
   isOurCompany?: boolean;
