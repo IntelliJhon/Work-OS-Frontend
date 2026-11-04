@@ -45,6 +45,11 @@ export interface ClientUser {
   country?: string;
   currency?: string;
   balance?: number;
+  // Active WhatsApp channels and their conversation wallets (Partner Panel); null when the client has none
+  conversationBalance?: number | null;
+  conversationChannels?: { id: string; name: string; number: string; balance: number; currency: string }[];
+  // WhatsApp alert to the team when its conversation wallet runs low
+  lowBalanceAlert?: boolean;
   crm_api_key?: string;
   comment?: string;
   commentAuthor?: string | null;
@@ -55,6 +60,8 @@ export interface ClientUser {
 
 export interface GetClientsResponse {
   success: boolean;
+  // Admins may add balance to clients' wallets
+  canTopUp?: boolean;
   company: string;
   slug: string;
   isOurCompany?: boolean;
@@ -176,6 +183,12 @@ export const clientsApi = {
     const { data } = await apiClient.get<GetClientsResponse>('/clients');
     return data;
   },
+
+  topUpWallet: async (clientId: string, input: { wallet: 'main' | 'conversation'; channelId?: string; amount: number; note?: string; clientName: string }) =>
+    (await apiClient.post<{ success: boolean; balance: number | null }>(`/clients/${clientId}/wallet-topup`, input, { timeout: 60_000 })).data,
+
+  setLowBalanceAlert: async (clientId: string, on: boolean, name: string) =>
+    (await apiClient.put<{ success: boolean; on: boolean }>(`/clients/${clientId}/low-balance-alert`, { on, name })).data,
 
   saveComment: async (clientId: string, comment: string): Promise<SaveCommentResponse> => {
     const { data } = await apiClient.post<SaveCommentResponse>(`/clients/${clientId}/comments`, { comment });

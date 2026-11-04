@@ -10,6 +10,7 @@ import {
   type EnquiryClient,
 } from '../../services/api/clients.api';
 import { Navigate } from 'react-router-dom';
+import WalletTopUpModal, { type TopUpTarget } from './WalletTopUpModal';
 import { useAuthStore } from '../../store/authStore';
 import { isLeadsndealsTenant } from '../../features/auth/company';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
@@ -46,7 +47,10 @@ import {
   Upload,
   ExternalLink,
   ChevronDown,
-  Filter
+  Filter,
+  Bell,
+  BellOff,
+  PlusCircle
 } from 'lucide-react';
 
 const STAGES = [
@@ -89,6 +93,12 @@ function getDocumentIcon(fileType: string, fileName: string) {
   }
   return <FileIcon className="w-4 h-4 text-indigo-500 shrink-0" />;
 }
+
+// Conversation wallets below this are flagged (the server alerts the team at the same limit)
+const LOW_BALANCE = 100;
+/** A client with a live subscription and an active WhatsApp channel below LOW_BALANCE */
+const isLowBalance = (c: ClientUser, now: number) =>
+  !!c.expiry && new Date(c.expiry).getTime() > now && (c.conversationChannels ?? []).some((ch) => ch.balance < LOW_BALANCE);
 
 export const ClientsList: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'onboarded' | 'onboarding' | 'enquiry'>('onboarded');
@@ -171,6 +181,9 @@ export const ClientsList: React.FC = () => {
     onboardedData?.isOurCompany === true;
 
   const onboardedClients = onboardedData?.users || [];
+  const canTopUp = !!onboardedData?.canTopUp;
+  const [topUp, setTopUp] = useState<TopUpTarget | null>(null);
+  const clientDisplayName = (c: ClientUser) => `${c.profile?.name?.first ?? ''} ${c.profile?.name?.last ?? ''}`.trim() || c.email;
   const onboardingClients = onboardingData?.data || [];
   const companyName = onboardedData?.company || (isLeadsndeals ? 'Leadsndeals interactive technologies' : 'Current Company');
 
@@ -412,13 +425,34 @@ export const ClientsList: React.FC = () => {
     return { expired, expire1Day, expire3Days, expire5Days };
   }, [onboardedClients]);
 
+  // Low conversation-balance WhatsApp alert per client
+  const toggleLowBalanceAlert = useMutation({
+    mutationFn: ({ client, on }: { client: ClientUser; on: boolean }) => {
+      const name = `${client.profile?.name?.first ?? ''} ${client.profile?.name?.last ?? ''}`.trim() || client.email;
+      return clientsApi.setLowBalanceAlert(client.id, on, name);
+    },
+    onSuccess: (r) => {
+      toast.success(r.on ? 'Low-balance alert on for this client.' : 'Low-balance alert off for this client.', 'Conversation wallet');
+      queryClient.invalidateQueries({ queryKey: ['clients-list'] });
+    },
+    onError: () => toast.error('Could not change the alert. Please try again.', 'Conversation wallet'),
+  });
+
+  const lowBalanceCount = useMemo(() => {
+    const nowTime = new Date().getTime();
+    return onboardedClients.filter((c: ClientUser) => isLowBalance(c, nowTime)).length;
+  }, [onboardedClients]);
+
   // Filtered Onboarded Clients
   const filteredOnboardedClients = useMemo(() => {
     const nowTime = new Date().getTime();
 
     return onboardedClients.filter((client: ClientUser) => {
+      // Low conversation wallet: a live subscription with an active channel below the limit
+      if (expiryFilter === 'low_balance') {
+        if (!isLowBalance(client, nowTime)) return false;
+      } else if (expiryFilter !== 'all') {
       // 1. Subscription Expiry Filter
-      if (expiryFilter !== 'all') {
         if (!client.expiry) return false;
         const expiryDateObj = new Date(client.expiry);
         if (isNaN(expiryDateObj.getTime())) return false;
@@ -832,8 +866,27 @@ export const ClientsList: React.FC = () => {
                   {expiryCounts.expire5Days}
                 </span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setExpiryFilter('low_balance')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  expiryFilter === 'low_balance'
+                    ? 'bg-rose-600 text-white shadow-sm'
+                    : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50 hover:bg-rose-100 dark:hover:bg-rose-900/50'
+                }`}
+              >
+                <span>Low conversation balance (&lt; ₹{LOW_BALANCE})</span>
+                <span className="px-1.5 py-0.5 rounded-md bg-rose-200/60 dark:bg-rose-900/60 text-[10px]">
+                  {lowBalanceCount}
+                </span>
+              </button>
             </div>
           </div>
+
+          {topUp && (
+            <WalletTopUpModal target={topUp} onClose={() => setTopUp(null)} onDone={() => { setTopUp(null); queryClient.invalidateQueries({ queryKey: ['clients-list'] }); }} />
+          )}
 
           {/* Table View */}
           {isOnboardedLoading ? (
@@ -873,7 +926,8 @@ export const ClientsList: React.FC = () => {
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">Client User</th>
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">Account ID</th>
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">Subscription Expiry</th>
-                    <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-right">Balance</th>
+                    <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-right">Main wallet</th>
+                    <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-right">Conversation wallet</th>
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-center">Status</th>
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-center">Docs</th>
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">Important Remark</th>
@@ -963,6 +1017,59 @@ export const ClientsList: React.FC = () => {
                               </span>
                             );
                           })()}
+                          {canTopUp && (
+                            <button type="button" title="Add balance to the main wallet" aria-label="Add balance to the main wallet"
+                              onClick={() => setTopUp({ clientId: client.id, clientName: clientDisplayName(client), wallet: 'main', currentBalance: typeof client.balance === 'number' ? client.balance : 0, currency: client.currency || 'INR' })}
+                              className="ml-1.5 align-middle p-0.5 rounded-md text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer">
+                              <PlusCircle className="w-4 h-4" />
+                            </button>
+                          )}
+                        </td>
+
+                        <td className="px-5 py-4 align-middle text-right">
+                          <div className="flex items-start justify-end gap-2">
+                          {!client.conversationChannels?.length ? (
+                            <span className="text-slate-400 text-xs italic">No active channel</span>
+                          ) : (
+                            <div className="flex flex-col items-end gap-1">
+                              {client.conversationChannels.map((ch) => {
+                                const low = ch.balance < LOW_BALANCE;
+                                return (
+                                  <span key={ch.number || ch.name} title={`${ch.name} · ${ch.number}`}
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-extrabold font-mono border ${
+                                      low
+                                        ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200/60 dark:border-rose-800/40'
+                                        : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/40'
+                                    }`}>
+                                    {client.conversationChannels!.length > 1 && <span className="font-sans font-semibold text-[10px] opacity-70">…{ch.number.slice(-4)}</span>}
+                                    {ch.currency === 'INR' ? '₹' : `${ch.currency} `}{ch.balance.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                    {canTopUp && (
+                                      <button type="button" title={`Add balance to ${ch.number}`} aria-label={`Add balance to the conversation wallet of ${ch.number}`}
+                                        onClick={() => setTopUp({ clientId: client.id, clientName: clientDisplayName(client), wallet: 'conversation', channelId: ch.id, channelNumber: ch.number, currentBalance: ch.balance, currency: ch.currency })}
+                                        className="font-sans -mr-1 p-0.5 rounded-md text-current opacity-70 hover:opacity-100 cursor-pointer">
+                                        <PlusCircle className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            disabled={toggleLowBalanceAlert.isPending}
+                            onClick={() => toggleLowBalanceAlert.mutate({ client, on: !client.lowBalanceAlert })}
+                            title={client.lowBalanceAlert ? `WhatsApp alert when below ₹${LOW_BALANCE} is on — click to turn off` : `Turn on a WhatsApp alert when below ₹${LOW_BALANCE}`}
+                            aria-label={client.lowBalanceAlert ? 'Turn off low-balance alert' : 'Turn on low-balance alert'}
+                            className={`p-1 rounded-lg border cursor-pointer disabled:opacity-50 ${
+                              client.lowBalanceAlert
+                                ? 'text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:border-amber-800/50'
+                                : 'text-slate-400 border-transparent hover:bg-slate-100 dark:hover:bg-zinc-800'
+                            }`}
+                          >
+                            {client.lowBalanceAlert ? <Bell className="w-3.5 h-3.5" /> : <BellOff className="w-3.5 h-3.5" />}
+                          </button>
+                          </div>
                         </td>
 
                         <td className="px-5 py-4 align-middle text-center">
