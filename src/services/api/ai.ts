@@ -13,7 +13,7 @@ export interface AiChatItem {
 
 export interface AiAction {
   id: string;
-  kind: 'send_proposal' | 'send_email';
+  kind: 'send_proposal' | 'send_email' | 'wallet_topup';
   payload: {
     leadId: string | null;
     leadName: string | null;
@@ -29,6 +29,14 @@ export interface AiAction {
     subject?: string;
     body?: string;
     attachments?: { name: string }[];
+    // wallet_topup
+    clientName?: string;
+    wallet?: 'main' | 'conversation';
+    channelNumber?: string | null;
+    amount?: number;
+    currentBalance?: number;
+    currency?: string;
+    note?: string | null;
   };
   status: 'pending' | 'done' | 'failed' | 'cancelled';
   result: string | null;

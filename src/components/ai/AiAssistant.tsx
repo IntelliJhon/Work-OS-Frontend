@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, ChevronDown, FileText, History, Loader2, Mail, MessageCircle, Paperclip, Plus, Send, Target, Trash2, UserPlus, X, XCircle } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Wallet, FileText, History, Loader2, Mail, MessageCircle, Paperclip, Plus, Send, Target, Trash2, UserPlus, X, XCircle } from 'lucide-react';
 import { useToast } from '../ui/Toast';
 import { BotAvatar } from './BotAvatar';
 import { aiApi, type AiAction, type AiChatItem, type AiConversation } from '../../services/api/ai';
@@ -19,14 +19,27 @@ const SUGGESTIONS: { icon: React.ElementType; text: string }[] = [
 ];
 const HEADER = 'bg-gradient-to-br from-violet-600 via-indigo-600 to-sky-500';
 
+const money = (n: number | undefined, currency = 'INR') => `${currency === 'INR' ? '₹' : `${currency} `}${(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+
 const ActionCard: React.FC<{ action: AiAction; busy: boolean; onSend: () => void; onCancel: () => void }> = ({ action, busy, onSend, onCancel }) => {
   const p = action.payload;
   const tone = action.status === 'pending' ? 'border-emerald-500/40 bg-emerald-500/5 shadow-sm'
     : action.status === 'done' ? 'border-emerald-500/20 bg-card' : action.status === 'failed' ? 'border-red-500/30 bg-red-500/5' : 'border-border bg-card opacity-70';
   const email = action.kind === 'send_email';
+  const topUp = action.kind === 'wallet_topup';
   return (
     <div className={`ml-9 rounded-2xl border p-3 space-y-2 ${tone}`}>
-      {email ? (
+      {topUp ? (
+        <>
+          <p className="text-xs font-bold text-foreground flex items-center gap-1.5"><Wallet className="w-3.5 h-3.5 text-amber-600" /> Add balance</p>
+          <div className="text-xs text-muted-foreground space-y-0.5">
+            <p className="font-semibold text-foreground">{p.clientName}</p>
+            <p>{p.wallet === 'main' ? 'Main wallet' : <>Conversation wallet · {p.channelNumber}</>} · now {money(p.currentBalance, p.currency)}</p>
+            <p>Add <span className="font-bold text-foreground">{money(p.amount, p.currency)}</span> → {money((p.currentBalance ?? 0) + (p.amount ?? 0), p.currency)}</p>
+            {p.note ? <p className="italic">{p.note}</p> : null}
+          </div>
+        </>
+      ) : email ? (
         <>
           <p className="text-xs font-bold text-foreground flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 text-blue-600" /> Send email</p>
           <div className="text-xs text-muted-foreground space-y-0.5">
@@ -53,14 +66,14 @@ const ActionCard: React.FC<{ action: AiAction; busy: boolean; onSend: () => void
       {action.status === 'pending' ? (
         <div className="flex gap-2">
           <button type="button" disabled={busy} onClick={onSend} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold disabled:opacity-50 cursor-pointer">
-            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Send
+            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : topUp ? <Plus className="w-3.5 h-3.5" /> : <Send className="w-3.5 h-3.5" />} {topUp ? 'Add' : 'Send'}
           </button>
           <button type="button" disabled={busy} onClick={onCancel} className="flex-1 px-3 py-1.5 rounded-xl border border-border text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50 cursor-pointer">Cancel</button>
         </div>
       ) : (
         <p className={`text-xs font-semibold flex items-center gap-1 ${action.status === 'done' ? 'text-emerald-700 dark:text-emerald-400' : action.status === 'failed' ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
           {action.status === 'done' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-          {action.status === 'done' ? 'Sent' : action.status === 'failed' ? action.result ?? 'Not sent' : 'Cancelled — nothing was sent'}
+          {action.status === 'done' ? (topUp ? action.result ?? 'Added' : 'Sent') : action.status === 'failed' ? action.result ?? (topUp ? 'Not added' : 'Not sent') : topUp ? 'Cancelled — nothing was added' : 'Cancelled — nothing was sent'}
         </p>
       )}
     </div>
