@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Bot, CheckCircle2, History, Loader2, MousePointerClick, Search, X, XCircle } from 'lucide-react';
+import { Bot, CheckCircle2, History, Loader2, MousePointerClick, Search, UserRound, X, XCircle } from 'lucide-react';
 import { clientsApi } from '../../services/api/clients.api';
 
 // Recharge history: every top-up made from Work OS (the Add balance buttons and Ask AI), newest first.
@@ -83,10 +83,11 @@ const RechargeHistoryModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                     {r.status === 'failed' && r.error && <p className="text-xs text-red-600 dark:text-red-400">{r.error}</p>}
                   </div>
                   <div className="text-xs text-muted-foreground sm:w-48 shrink-0">
+                    <p className="font-semibold text-foreground flex items-center gap-1"><UserRound className="w-3 h-3" /> By {r.addedBy ?? 'Unknown'}</p>
                     <p>{when(r.createdAt)}</p>
                     <p className="flex items-center gap-1">
                       {r.source === 'ai' ? <Bot className="w-3 h-3 text-violet-600" /> : <MousePointerClick className="w-3 h-3" />}
-                      {r.source === 'ai' ? 'Ask AI' : 'Add balance button'}{r.addedBy ? ` · ${r.addedBy}` : ''}
+                      {r.source === 'ai' ? 'Ask AI' : 'Add balance button'}
                     </p>
                   </div>
                   <div className="text-right shrink-0 sm:w-28">
