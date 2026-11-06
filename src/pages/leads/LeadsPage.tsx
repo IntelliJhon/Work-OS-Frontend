@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle, Archive, ArchiveRestore, ArrowLeft, ArrowRight, Bot, Building2, CalendarClock, CheckCircle2, ClipboardList, FileText, IndianRupee,
@@ -554,6 +554,72 @@ const LeadCard: React.FC<{ lead: LeadSummary; draggable: boolean; onOpen: () => 
   );
 };
 
+const dangerButton = 'flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-red-500/30 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-500/10 disabled:opacity-50 cursor-pointer';
+
+/** Asks first, then permanently deletes an archived lead */
+const useDeleteLead = (onDone: () => void) => {
+  const { toast } = useToast();
+  const confirm = useConfirm();
+  const del = useMutation({
+    mutationFn: (id: string) => leadsApi.remove(id),
+    onSuccess: () => { toast.success('Lead deleted.', 'Leads'); onDone(); },
+    onError: (err) => toast.error(apiError(err, 'Could not delete the lead.'), 'Leads'),
+  });
+  const ask = async (lead: { id: string; name: string }) => {
+    if (await confirm({
+      title: `Delete ${lead.name} permanently?`,
+      message: 'The lead, its notes, history and proposal files are removed for good. This cannot be undone.',
+      confirmLabel: 'Delete permanently', cancelLabel: 'Keep it', variant: 'danger',
+    })) del.mutate(lead.id);
+  };
+  return { ask, pending: del.isPending, deletingId: del.isPending ? del.variables : null };
+};
+
+const ArchivedLeads: React.FC<{ leads: LeadSummary[]; isAdmin: boolean; filtered: boolean; onChanged: () => void }> = ({ leads, isAdmin, filtered, onChanged }) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const remover = useDeleteLead(onChanged);
+  const restore = useMutation({
+    mutationFn: (id: string) => leadsApi.restore(id),
+    onSuccess: (l) => { toast.success(`${l.name} is back on the board.`, 'Leads'); onChanged(); },
+    onError: (err) => toast.error(apiError(err, 'Could not restore the lead.'), 'Leads'),
+  });
+  if (leads.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+        <Archive className="w-6 h-6 mx-auto mb-2 opacity-60" />
+        {filtered ? 'No archived leads match.' : 'No archived leads. Leads you archive appear here.'}
+      </div>
+    );
+  }
+  return (
+    <ul className="rounded-2xl border border-border bg-card divide-y divide-border">
+      {leads.map((l) => (
+        <li key={l.id} className="p-3 sm:px-4 flex flex-wrap sm:flex-nowrap items-center gap-x-4 gap-y-2">
+          <button type="button" onClick={() => navigate(`/leads/${l.id}`)} className="min-w-0 flex-1 text-left cursor-pointer group">
+            <p className="text-sm font-semibold text-foreground truncate group-hover:underline">{l.name}{l.company ? <span className="font-normal text-muted-foreground"> · {l.company}</span> : null}</p>
+            <p className="text-xs text-muted-foreground truncate">{formatPhone(l.phone)}{l.service ? ` · ${l.service}` : ''}</p>
+          </button>
+          <StageBadge stage={l.stage} />
+          <p className="text-xs text-muted-foreground sm:w-52 shrink-0">
+            Archived {when(l.archivedAt)}{l.archivedByName ? <><br />by {l.archivedByName}</> : null}
+          </p>
+          {isAdmin && (
+            <div className="flex gap-2 shrink-0">
+              <button type="button" disabled={restore.isPending} onClick={() => restore.mutate(l.id)} className={`${secondaryButton} !px-3 !py-1.5 !text-xs`}>
+                <ArchiveRestore className="w-3.5 h-3.5" /> Restore
+              </button>
+              <button type="button" disabled={remover.pending} onClick={() => remover.ask(l)} aria-label={`Delete ${l.name} permanently`} className={`${dangerButton} !px-3 !py-1.5 !text-xs`}>
+                {remover.deletingId === l.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />} Delete
+              </button>
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+};
+
 const LeadsBoard: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -562,13 +628,17 @@ const LeadsBoard: React.FC = () => {
   const [ownerId, setOwnerId] = useState('');
   const [adding, setAdding] = useState(false);
   const [over, setOver] = useState<LeadStage | null>(null);
+  // ?view=archived shows the archived leads instead of the board (kept in the address, so Back returns here)
+  const [params, setParams] = useSearchParams();
+  const showArchived = params.get('view') === 'archived';
+  const setShowArchived = (on: boolean) => setParams(on ? { view: 'archived' } : {}, { replace: true });
 
   useEffect(() => {
     const t = setTimeout(() => setQ(search.trim()), 250);
     return () => clearTimeout(t);
   }, [search]);
 
-  const filter: LeadFilter = { q, ownerId };
+  const filter: LeadFilter = { q, ownerId, archived: showArchived };
   const { data, isLoading, isError, error, isFetching } = useQuery({ queryKey: ['leads', 'list', filter], queryFn: () => leadsApi.list(filter), placeholderData: (prev) => prev });
   const { data: people = [] } = useQuery({ queryKey: ['leads', 'people'], queryFn: leadsApi.people, staleTime: 60_000 });
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['leads'] });
@@ -604,14 +674,14 @@ const LeadsBoard: React.FC = () => {
         <div className="flex items-start gap-3">
           <span className="p-2 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20"><Target className="w-5 h-5" /></span>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Leads</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">{showArchived ? 'Archived leads' : 'Leads'}</h1>
             <p className="text-xs text-muted-foreground mt-1">
-              {open.length} open · {rupees(pipeline) || '₹0'} in the pipeline{overdueCount ? <> · <span className="text-red-600 dark:text-red-400 font-semibold">{overdueCount} follow-up{overdueCount === 1 ? '' : 's'} overdue</span></> : ''}
-              {canManage ? ' · Drag a card to move it.' : ''}
+              {showArchived ? <>{leads.length} archived · hidden from the board and the pipeline</> : <>{open.length} open · {rupees(pipeline) || '₹0'} in the pipeline{overdueCount ? <> · <span className="text-red-600 dark:text-red-400 font-semibold">{overdueCount} follow-up{overdueCount === 1 ? '' : 's'} overdue</span></> : ''}
+              {canManage ? ' · Drag a card to move it.' : ''}</>}
             </p>
           </div>
         </div>
-        {canManage && <button type="button" onClick={() => setAdding(true)} className={primaryButton}><Plus className="w-4 h-4" /> Add lead</button>}
+        {canManage && !showArchived && <button type="button" onClick={() => setAdding(true)} className={primaryButton}><Plus className="w-4 h-4" /> Add lead</button>}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -626,12 +696,20 @@ const LeadsBoard: React.FC = () => {
           <option value="none">No owner</option>
           {people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
+        <button
+          type="button" aria-pressed={showArchived} onClick={() => setShowArchived(!showArchived)}
+          className={`${secondaryButton} shrink-0 ${showArchived ? 'bg-amber-500/10 border-amber-500/40 text-amber-700 dark:text-amber-400' : ''}`}
+        >
+          {showArchived ? <><Target className="w-4 h-4" /> Back to board</> : <><Archive className="w-4 h-4" /> Archived</>}
+        </button>
       </div>
 
       {isLoading ? (
         <div className="flex justify-center p-10"><Loader2 className="w-5 h-5 animate-spin text-blue-500" /></div>
       ) : isError ? (
         <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-600 flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> {apiError(error, 'Could not load leads.')}</div>
+      ) : showArchived ? (
+        <ArchivedLeads leads={leads} isAdmin={!!data?.isAdmin} filtered={!!(q || ownerId)} onChanged={refresh} />
       ) : (
         <div className="flex gap-3 overflow-x-auto pb-3 -mx-1 px-1 snap-x">
           {LEAD_STAGES.map((stage) => {
@@ -862,6 +940,7 @@ const LeadProfile: React.FC<{ id: string }> = ({ id }) => {
     onSuccess: (l) => { toast.success(l.autoFollowUp ? 'Automatic follow-ups are on.' : 'Automatic follow-ups are off.', 'Leads'); refresh(); },
     onError: (err) => toast.error(apiError(err, 'Could not change automatic follow-ups.'), 'Leads'),
   });
+  const remover = useDeleteLead(() => { refresh(); navigate('/leads?view=archived'); });
   const restore = useMutation({
     mutationFn: () => leadsApi.restore(id),
     onSuccess: () => { toast.success('Lead restored.', 'Leads'); refresh(); },
@@ -886,7 +965,7 @@ const LeadProfile: React.FC<{ id: string }> = ({ id }) => {
 
   return (
     <div className="space-y-5 max-w-5xl">
-      <Link to="/leads" className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground"><ArrowLeft className="w-4 h-4" /> All leads</Link>
+      <Link to={archived ? '/leads?view=archived' : '/leads'} className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground"><ArrowLeft className="w-4 h-4" /> {archived ? 'Archived leads' : 'All leads'}</Link>
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
         <div className="flex flex-wrap items-start gap-4">
@@ -934,7 +1013,14 @@ const LeadProfile: React.FC<{ id: string }> = ({ id }) => {
       {archived && (
         <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-700 dark:text-red-400 flex flex-wrap items-center justify-between gap-3">
           <span className="flex items-center gap-2"><Archive className="w-4 h-4" /> Archived on {when(l.archivedAt)}. It is hidden from the board.</span>
-          {data.isAdmin && <button type="button" disabled={restore.isPending} onClick={() => restore.mutate()} className={secondaryButton}><ArchiveRestore className="w-4 h-4" /> Restore</button>}
+          {data.isAdmin && (
+            <div className="flex flex-wrap gap-2">
+              <button type="button" disabled={restore.isPending} onClick={() => restore.mutate()} className={secondaryButton}><ArchiveRestore className="w-4 h-4" /> Restore</button>
+              <button type="button" disabled={remover.pending} onClick={() => remover.ask(l)} className={dangerButton}>
+                {remover.pending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Delete permanently
+              </button>
+            </div>
+          )}
         </div>
       )}
 

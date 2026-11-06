@@ -60,6 +60,8 @@ export interface LeadSummary {
   proposalHasFile: boolean;
   clientId: string | null;
   archivedAt: string | null;
+  /** Archived list only: who archived it */
+  archivedByName?: string | null;
   createdAt: string;
 }
 
@@ -158,6 +160,8 @@ export const leadsApi = {
   moveStage: async (id: string, input: StageInput) =>
     (await apiClient.post<{ data: LeadDetail & { whatsapp?: WhatsAppResult } }>(`${base}/${id}/stage`, input)).data.data,
   archive: async (id: string) => (await apiClient.delete(`${base}/${id}`)).data,
+  /** Permanently deletes an archived lead (Admins only) */
+  remove: async (id: string) => (await apiClient.delete(`${base}/${id}/permanent`)).data,
   restore: async (id: string) => (await apiClient.post<{ data: LeadDetail }>(`${base}/${id}/restore`)).data.data,
 
   activity: async (id: string, before?: string) =>
