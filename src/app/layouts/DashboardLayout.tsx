@@ -48,7 +48,8 @@ import {
   MessageSquareWarning,
   Mic,
   Bot,
-  Target
+  Target,
+  Receipt
 } from 'lucide-react';
 
 export const DashboardLayout: React.FC = () => {
@@ -199,6 +200,7 @@ export const DashboardLayout: React.FC = () => {
     { name: 'Clients', path: '/clients', icon: Users, anyPermission: [PERMISSIONS.CLIENT_READ, PERMISSIONS.CLIENT_MANAGE], section: 'clients' as Section },
     { name: 'Leads', path: '/leads', icon: Target, anyPermission: [PERMISSIONS.LEAD_READ, PERMISSIONS.LEAD_MANAGE], section: 'leads' as Section },
     { name: 'Onboarded Clients', path: '/onboarded-clients', icon: Users },
+    { name: 'Billing', path: '/billing', icon: Receipt, permission: PERMISSIONS.BILLING_MANAGE },
     { name: 'Alerts Center', path: '/notifications', icon: Bell },
     { name: 'Tasks', path: '/dashboard/tasks', icon: CheckSquare, permission: PERMISSIONS.TASK_READ, section: 'tasks' as Section },
     { name: 'Calendar', path: '/calendar', icon: CalendarDays, permission: PERMISSIONS.TASK_READ, section: 'calendar' as Section },
@@ -213,7 +215,7 @@ export const DashboardLayout: React.FC = () => {
   ];
 
   const filteredItems = navItems.filter((item) => {
-    if ((item.name === 'Complaints' || item.name === 'Onboarded Clients') && !showCompanyTools) {
+    if ((item.name === 'Complaints' || item.name === 'Onboarded Clients' || item.name === 'Billing') && !showCompanyTools) {
       return false;
     }
     if ('section' in item && item.section && !isOn(item.section)) {

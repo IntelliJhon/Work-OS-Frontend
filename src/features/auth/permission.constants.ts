@@ -26,6 +26,7 @@ export const PERMISSIONS = {
   CLIENT_MANAGE: 'client.manage',
   LEAD_READ: 'lead.read',
   LEAD_MANAGE: 'lead.manage',
+  BILLING_MANAGE: 'billing.manage',
 } as const;
 
 export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];

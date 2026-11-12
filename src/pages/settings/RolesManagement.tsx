@@ -61,6 +61,12 @@ const PERMISSION_GROUPS: { group: string; items: { key: string; label: string; d
     ],
   },
   {
+    group: 'Billing',
+    items: [
+      { key: 'billing.manage', label: 'Billing', desc: 'Record client payments in Zoho Books and send receipts on WhatsApp (LeadsNDeals; Admins always can).' },
+    ],
+  },
+  {
     group: 'Voice Notes',
     items: [
       { key: 'voice_notes.read', label: 'See voice notes', desc: 'Open the voice notes inbox and transcripts.' },
