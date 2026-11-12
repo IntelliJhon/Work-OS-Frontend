@@ -12,6 +12,7 @@ import {
 import { Navigate } from 'react-router-dom';
 import WalletTopUpModal, { type TopUpTarget } from './WalletTopUpModal';
 import RechargeHistoryModal from './RechargeHistoryModal';
+import TaskBalanceCell from './TaskBalanceCell';
 import { History } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { isLeadsndealsTenant } from '../../features/auth/company';
@@ -976,6 +977,7 @@ export const ClientsList: React.FC = () => {
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">Subscription Expiry</th>
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-right">Main wallet</th>
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-right">Conversation wallet</th>
+                    <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-right" title="WAAU automation tasks left of the tasks allotted (read daily)">Automation tasks</th>
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-center">Status</th>
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider text-center">Docs</th>
                     <th className="px-5 py-3.5 text-[10px] font-black uppercase text-slate-500 dark:text-zinc-400 tracking-wider">Important Remark</th>
@@ -1118,6 +1120,18 @@ export const ClientsList: React.FC = () => {
                             {client.lowBalanceAlert ? <Bell className="w-3.5 h-3.5" /> : <BellOff className="w-3.5 h-3.5" />}
                           </button>
                           </div>
+                        </td>
+
+                        <td className="px-5 py-4 align-middle text-right">
+                          <TaskBalanceCell
+                            clientId={client.id}
+                            clientName={clientDisplayName(client)}
+                            balance={onboardedData?.taskBalances?.[client.id]}
+                            limit={onboardedData?.taskLimit ?? 200}
+                            isAdmin={canTopUp}
+                            addon={onboardedData?.taskAddon}
+                            onChanged={() => queryClient.invalidateQueries({ queryKey: ['clients-list'] })}
+                          />
                         </td>
 
                         <td className="px-5 py-4 align-middle text-center">

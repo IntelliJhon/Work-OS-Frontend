@@ -58,8 +58,23 @@ export interface ClientUser {
   documentsCount?: number;
 }
 
+/** WAAU automation task balance: the last daily reading (Task Allotted / Consumed / Remaining) */
+export interface TaskBalance {
+  total: number | null;
+  consumed: number | null;
+  remaining: number | null;
+  checkedAt: string | null;
+  error: string | null;
+  errorAt: string | null;
+  watched: boolean;
+}
+
 export interface GetClientsResponse {
   success: boolean;
+  // Automation task balances by Partner Panel account id, the alert limit and the TASK add-on
+  taskBalances?: Record<string, TaskBalance>;
+  taskLimit?: number;
+  taskAddon?: { tasks: number; validity: string };
   // Admins may add balance to clients' wallets
   canTopUp?: boolean;
   // The agency's own Partner Panel wallets that client top-ups are paid from (null when unavailable)
@@ -190,7 +205,7 @@ export interface WalletTopupLog {
   createdAt: string;
   clientId: string;
   clientName: string | null;
-  wallet: 'main' | 'conversation';
+  wallet: 'main' | 'conversation' | 'tasks';
   channelNumber: string | null;
   amount: number;
   note: string | null;
@@ -211,6 +226,13 @@ export const clientsApi = {
 
   topUpWallet: async (clientId: string, input: { wallet: 'main' | 'conversation'; channelId?: string; amount: number; note?: string; clientName: string }) =>
     (await apiClient.post<{ success: boolean; balance: number | null }>(`/clients/${clientId}/wallet-topup`, input, { timeout: 60_000 })).data,
+
+  refreshTasks: async (clientId: string, name: string) =>
+    (await apiClient.post<{ success: boolean; total: number; consumed: number; remaining: number }>(`/clients/${clientId}/tasks/refresh`, { name }, { timeout: 60_000 })).data,
+  addTasks: async (clientId: string, clientName: string) =>
+    (await apiClient.post<{ success: boolean; added: number; remaining: number | null }>(`/clients/${clientId}/tasks/add`, { clientName }, { timeout: 90_000 })).data,
+  setTaskAlert: async (clientId: string, on: boolean, name: string) =>
+    (await apiClient.put<{ success: boolean; on: boolean }>(`/clients/${clientId}/task-alert`, { on, name })).data,
 
   setLowBalanceAlert: async (clientId: string, on: boolean, name: string) =>
     (await apiClient.put<{ success: boolean; on: boolean }>(`/clients/${clientId}/low-balance-alert`, { on, name })).data,

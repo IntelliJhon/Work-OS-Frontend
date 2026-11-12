@@ -22,7 +22,7 @@ const RechargeHistoryModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     const s = q.trim().toLowerCase();
     return (data?.topups ?? []).filter((r) => !s || (r.clientName ?? '').toLowerCase().includes(s) || (r.channelNumber ?? '').includes(s) || (r.addedBy ?? '').toLowerCase().includes(s));
   }, [data, q]);
-  const total = rows.filter((r) => r.status === 'done').reduce((sum, r) => sum + r.amount, 0);
+  const total = rows.filter((r) => r.status === 'done' && r.wallet !== 'tasks').reduce((sum, r) => sum + r.amount, 0);
   // Opened over the page (a portal: the tab's slide-in animation would otherwise pin it to the top of the tab), page scroll locked, Esc closes
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -77,7 +77,7 @@ const RechargeHistoryModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-foreground truncate">{r.clientName ?? r.clientId}</p>
                     <p className="text-xs text-muted-foreground">
-                      {r.wallet === 'main' ? 'Main wallet' : <>Conversation wallet · {r.channelNumber}</>}
+                      {r.wallet === 'main' ? 'Main wallet' : r.wallet === 'tasks' ? 'Automation tasks (TASK add-on)' : <>Conversation wallet · {r.channelNumber}</>}
                     </p>
                     {r.note && <p className="text-xs text-muted-foreground italic truncate">{r.note}</p>}
                     {r.status === 'failed' && r.error && <p className="text-xs text-red-600 dark:text-red-400">{r.error}</p>}
@@ -91,7 +91,7 @@ const RechargeHistoryModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                     </p>
                   </div>
                   <div className="text-right shrink-0 sm:w-28">
-                    <p className={`text-sm font-bold ${r.status === 'done' ? 'text-foreground' : 'text-muted-foreground line-through'}`}>{money(r.amount)}</p>
+                    <p className={`text-sm font-bold ${r.status === 'done' ? 'text-foreground' : 'text-muted-foreground line-through'}`}>{r.wallet === 'tasks' ? `${r.amount.toLocaleString('en-IN')} tasks` : money(r.amount)}</p>
                     <p className={`text-[11px] font-semibold flex items-center justify-end gap-1 ${r.status === 'done' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                       {r.status === 'done' ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />} {r.status === 'done' ? 'Added' : 'Failed'}
                     </p>
