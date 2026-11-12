@@ -60,7 +60,9 @@ const TaskBalanceCell: React.FC<{
     })) add.mutate();
   };
 
-  const has = typeof balance?.remaining === 'number';
+  // Nothing allotted = the client does not use automation (not alerted)
+  const none = typeof balance?.remaining === 'number' && !balance.total;
+  const has = typeof balance?.remaining === 'number' && !none;
   const low = has && balance!.remaining! < limit;
   const busy = refresh.isPending || add.isPending;
 
@@ -86,7 +88,7 @@ const TaskBalanceCell: React.FC<{
             )}
           </span>
         ) : (
-          <span className="text-slate-400 text-xs italic">{watched ? 'Not read yet' : '—'}</span>
+          <span className="text-slate-400 text-xs italic">{none ? 'No automation tasks' : watched ? 'Not read yet' : '—'}</span>
         )}
         {balance?.error && (!balance.checkedAt || (balance.errorAt && balance.errorAt > balance.checkedAt)) ? (
           <span className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1" title={balance.error}>
