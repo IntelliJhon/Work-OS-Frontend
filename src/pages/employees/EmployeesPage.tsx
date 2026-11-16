@@ -104,18 +104,10 @@ export const EmployeesPage: React.FC = () => {
 
   const allUsers: User[] = usersData || [];
 
-  // Exclude Tenant Admin / Admin users from the employees list
+  // Everyone, Admins included (they log their own work reports too); non-managers see only themselves
   const employees = useMemo(() => {
     if (!isManager) return allUsers.filter((u) => u.id === me?.id);
-    return allUsers.filter((u) => {
-      const role = (u.roleName || '').toLowerCase().trim();
-      return !(
-        role === 'tenant admin' ||
-        role === 'admin' ||
-        role === 'tenant_admin' ||
-        role.includes('tenant admin')
-      );
-    });
+    return allUsers;
   }, [allUsers, isManager, me?.id]);
 
   // Project map for quick name lookup
