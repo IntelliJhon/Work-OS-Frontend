@@ -35,6 +35,7 @@ export const SECTION_PATHS: [string, Section][] = [
   ['/groups', 'groups'],
   ['/clients', 'clients'],
   ['/leads', 'leads'],
+  ['/campaigns', 'leads'],
 ];
 
 export const sectionOfPath = (path: string): Section | null =>

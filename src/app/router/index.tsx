@@ -40,6 +40,7 @@ const RemindersPage = lazyPage(() => import('../../pages/reminders/RemindersPage
 const GroupsPage = lazyPage(() => import('../../pages/groups/GroupsPage'));
 const WorkspaceClientsPage = lazyPage(() => import('../../pages/workspace-clients/WorkspaceClientsPage'));
 const LeadsPage = lazyPage(() => import('../../pages/leads/LeadsPage'));
+const CampaignsPage = lazyPage(() => import('../../pages/campaigns/CampaignsPage'));
 const BillingPage = lazyPage(() => import('../../pages/billing/BillingPage'));
 const OnboardedClients = lazyPage(() => import('../../pages/clients/ClientsList'));
 const EmployeesPage = lazyPage(() => import('../../pages/employees/EmployeesPage'));
@@ -110,6 +111,7 @@ export const AppRouter: React.FC = () => {
               <Route path="/leads" element={<LeadsPage />} />
               <Route path="/billing" element={<BillingPage />} />
               <Route path="/leads/:id" element={<LeadsPage />} />
+              <Route path="/campaigns" element={<CampaignsPage />} />
               <Route path="/onboarded-clients" element={<OnboardedClients />} />
               <Route path="/employees" element={<EmployeesPage />} />
               <Route path="/complaints" element={<ComplaintsPage />} />

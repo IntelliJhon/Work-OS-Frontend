@@ -49,6 +49,7 @@ import {
   Mic,
   Bot,
   Target,
+  Megaphone,
   Receipt
 } from 'lucide-react';
 
@@ -199,6 +200,7 @@ export const DashboardLayout: React.FC = () => {
     { name: 'Complaints', path: '/complaints', icon: MessageSquareWarning },
     { name: 'Clients', path: '/clients', icon: Users, anyPermission: [PERMISSIONS.CLIENT_READ, PERMISSIONS.CLIENT_MANAGE], section: 'clients' as Section },
     { name: 'Leads', path: '/leads', icon: Target, anyPermission: [PERMISSIONS.LEAD_READ, PERMISSIONS.LEAD_MANAGE], section: 'leads' as Section },
+    { name: 'Campaigns', path: '/campaigns', icon: Megaphone, anyPermission: [PERMISSIONS.LEAD_READ, PERMISSIONS.LEAD_MANAGE], section: 'leads' as Section },
     { name: 'Onboarded Clients', path: '/onboarded-clients', icon: Users },
     { name: 'Billing', path: '/billing', icon: Receipt, permission: PERMISSIONS.BILLING_MANAGE },
     { name: 'Alerts Center', path: '/notifications', icon: Bell },
