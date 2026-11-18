@@ -186,7 +186,7 @@ const CampaignsPage: React.FC = () => {
           <span className="p-2 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20"><Megaphone className="w-5 h-5" /></span>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Campaigns</h1>
-            <p className="text-xs text-muted-foreground mt-1">WhatsApp messages per category to Leads and the Enquiry List. A reply, a button tap, conversion or opt-out stops it. Sent 9 AM–7 PM.</p>
+            <p className="text-xs text-muted-foreground mt-1">WhatsApp messages per category to Leads and the Enquiry List, sent as WAAU campaigns from 919048338111 (9 AM–7 PM). A reply, a button tap, conversion or opt-out stops it.</p>
           </div>
         </div>
         {isAdmin && <button type="button" onClick={() => setEditing('new')} className={primaryButton}><Plus className="w-4 h-4" /> New campaign</button>}
@@ -233,6 +233,11 @@ const CampaignsPage: React.FC = () => {
                       {s.stats.paused > 0 && <span className="px-2 py-1 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 font-semibold">Paused {s.stats.paused}</span>}
                       {stopped.map(([r, n]) => <span key={r} className="px-2 py-1 rounded-lg bg-muted text-foreground font-semibold">{STOP_LABELS[r] ?? r} {n}</span>)}
                     </div>
+                    {s.stats.messages && s.stats.messages.sent > 0 && (
+                      <p className="text-xs text-muted-foreground" title="From WAAU's campaign reports (refreshed for 3 days after each send)">
+                        WhatsApp: <b className="text-foreground">{s.stats.messages.sent}</b> sent · {s.stats.messages.delivered} delivered · {s.stats.messages.read} read · {s.stats.messages.replied} replied{s.stats.messages.failed ? <> · <span className="text-red-600 dark:text-red-400">{s.stats.messages.failed} failed</span></> : null}
+                      </p>
+                    )}
                     <div className="flex flex-wrap gap-1.5">
                       {s.steps.map((st) => <span key={st.day} className="px-2 py-0.5 rounded-md border border-border text-[11px] font-mono text-muted-foreground">D{st.day}: {st.templateName}</span>)}
                     </div>

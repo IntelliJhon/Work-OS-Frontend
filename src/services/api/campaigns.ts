@@ -19,7 +19,11 @@ export interface CampaignSequence {
   active: boolean;
   repeatEveryDays: number | null;
   steps: CampaignStep[];
-  stats: { active: number; paused: number; stopped: Partial<Record<StopReason, number>> };
+  stats: {
+    active: number; paused: number; stopped: Partial<Record<StopReason, number>>;
+    // WAAU report totals for every message sent so far
+    messages?: { sent: number; delivered: number; read: number; replied: number; failed: number };
+  };
   updatedAt: string;
 }
 export interface CampaignEnrolment {
