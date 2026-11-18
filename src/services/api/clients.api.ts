@@ -115,6 +115,10 @@ export interface OnboardingClient {
   assignedTo?: string | null;
   targetDate?: string | null;
   notes?: string | null;
+  category?: string | null;
+  subcategory?: string | null;
+  usesSoftware?: boolean | null;
+  softwareName?: string | null;
   createdBy?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -128,6 +132,10 @@ export interface GetOnboardingClientsResponse {
 }
 
 export interface CreateOnboardingClientPayload {
+  category?: string | null;
+  subcategory?: string | null;
+  usesSoftware?: boolean | null;
+  softwareName?: string | null;
   clientName: string;
   contactPerson?: string;
   email: string;
@@ -141,6 +149,10 @@ export interface CreateOnboardingClientPayload {
 }
 
 export interface UpdateOnboardingClientPayload {
+  category?: string | null;
+  subcategory?: string | null;
+  usesSoftware?: boolean | null;
+  softwareName?: string | null;
   clientName?: string;
   contactPerson?: string;
   email?: string;
@@ -169,12 +181,20 @@ export interface EnquiryClient {
   email?: string | null;
   remarks?: string | null;
   sourceSheetName?: string | null;
+  category?: string | null;
+  subcategory?: string | null;
+  usesSoftware?: boolean | null;
+  softwareName?: string | null;
   createdBy?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateEnquiryPayload {
+  category?: string | null;
+  subcategory?: string | null;
+  usesSoftware?: boolean | null;
+  softwareName?: string | null;
   clientName: string;
   number: string;
   email?: string;
@@ -184,6 +204,10 @@ export interface CreateEnquiryPayload {
 
 export interface BulkImportEnquiriesPayload {
   items: Array<{
+    category?: string | null;
+    subcategory?: string | null;
+    usesSoftware?: boolean | null;
+    softwareName?: string | null;
     clientName: string;
     number: string;
     email?: string;
@@ -194,6 +218,10 @@ export interface BulkImportEnquiriesPayload {
 }
 
 export interface UpdateEnquiryPayload {
+  category?: string | null;
+  subcategory?: string | null;
+  usesSoftware?: boolean | null;
+  softwareName?: string | null;
   clientName?: string;
   number?: string;
   email?: string;

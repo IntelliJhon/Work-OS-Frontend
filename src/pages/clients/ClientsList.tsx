@@ -13,6 +13,10 @@ import { Navigate } from 'react-router-dom';
 import WalletTopUpModal, { type TopUpTarget } from './WalletTopUpModal';
 import RechargeHistoryModal from './RechargeHistoryModal';
 import TaskBalanceCell from './TaskBalanceCell';
+import { CategoryFilterBar, CategoryLine, ClientCategoryFields } from './ClientCategory';
+import {
+  NO_CATEGORY_FILTER, categoryPayload, matchesCategoryFilter, useCategorySuggestions, type CategoryFilter, type ClientCategory,
+} from './clientCategory.utils';
 import { History } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { isLeadsndealsTenant } from '../../features/auth/company';
@@ -109,6 +113,8 @@ export const ClientsList: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [expiryFilter, setExpiryFilter] = useState<string>('all');
   const [stageFilter, setStageFilter] = useState<string>('all');
+  const [onboardingCatFilter, setOnboardingCatFilter] = useState<CategoryFilter>(NO_CATEGORY_FILTER);
+  const [enquiryCatFilter, setEnquiryCatFilter] = useState<CategoryFilter>(NO_CATEGORY_FILTER);
   const [editingOnboardedClient, setEditingOnboardedClient] = useState<ClientUser | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingOnboardingClient, setEditingOnboardingClient] = useState<OnboardingClient | null>(null);
@@ -117,7 +123,7 @@ export const ClientsList: React.FC = () => {
   const [showAddEnquiryModal, setShowAddEnquiryModal] = useState(false);
   const [editingEnquiry, setEditingEnquiry] = useState<EnquiryClient | null>(null);
   const [showSheetUploadModal, setShowSheetUploadModal] = useState(false);
-  const [parsedSheetRows, setParsedSheetRows] = useState<Array<{ clientName: string; number: string; email?: string; remarks?: string }>>([]);
+  const [parsedSheetRows, setParsedSheetRows] = useState<Array<{ clientName: string; number: string; email?: string; remarks?: string } & ClientCategory>>([]);
   const [parsedSheetName, setParsedSheetName] = useState('');
   const [isParsingSheet, setIsParsingSheet] = useState(false);
   const sheetInputRef = useRef<HTMLInputElement>(null);
@@ -229,6 +235,13 @@ export const ClientsList: React.FC = () => {
         const numberKey = findKey(['number', 'phone', 'mobile', 'contact', 'cell']);
         const emailKey = findKey(['email', 'mail']);
         const remarksKey = findKey(['remarks', 'remark', 'notes', 'note', 'comments', 'comment', 'description']);
+        // Categorization columns (optional): Category, Subcategory, Uses software? (Yes/No), Software name
+        const exact = (names: string[]) => keys.find((k) => names.includes(k.toLowerCase().replace(/[^a-z0-9]/g, '')));
+        const subcategoryKey = exact(['subcategory', 'subcat', 'subtype', 'segment']);
+        const categoryKey = exact(['category', 'industry', 'sector', 'businesstype', 'type']);
+        const usesSoftwareKey = exact(['usessoftware', 'usingsoftware', 'software', 'hassoftware', 'softwareused']);
+        const softwareNameKey = exact(['softwarename', 'currentsoftware', 'softwareusing', 'existingsoftware']);
+        const yesNo = (v: string): boolean | null => (/^(y|yes|true|1)$/i.test(v) ? true : /^(n|no|false|0|none)$/i.test(v) ? false : null);
 
         const extracted = jsonRows
           .map((row) => {
@@ -236,12 +249,25 @@ export const ClientsList: React.FC = () => {
             const number = String(numberKey ? row[numberKey] : '').trim();
             const email = String(emailKey ? row[emailKey] : '').trim();
             const remarks = String(remarksKey ? row[remarksKey] : '').trim();
+            const category = String(categoryKey ? row[categoryKey] : '').trim();
+            const subcategory = String(subcategoryKey ? row[subcategoryKey] : '').trim();
+            const swCell = String(usesSoftwareKey ? row[usesSoftwareKey] : '').trim();
+            let softwareName = String(softwareNameKey ? row[softwareNameKey] : '').trim();
+            // One "Software" column may hold Yes/No or the software's name
+            let usesSoftware = swCell ? yesNo(swCell) : null;
+            if (swCell && usesSoftware === null && !softwareName) { softwareName = swCell; }
+            if (softwareName && usesSoftware === null) usesSoftware = true;
+            if (usesSoftware === false) softwareName = '';
 
             return {
               clientName,
               number,
               email: email || undefined,
               remarks: remarks || undefined,
+              category: category || null,
+              subcategory: subcategory || null,
+              usesSoftware,
+              softwareName: softwareName || null,
             };
           })
           .filter((item) => item.clientName || item.number);
@@ -289,7 +315,7 @@ export const ClientsList: React.FC = () => {
 
   // Single Enquiry Mutation
   const saveEnquiryMutation = useMutation({
-    mutationFn: (payload: { id?: string; clientName: string; number: string; email?: string; remarks?: string }) => {
+    mutationFn: (payload: { id?: string; clientName: string; number: string; email?: string; remarks?: string } & ClientCategory) => {
       if (payload.id) {
         return clientsApi.updateEnquiryClient(payload.id, payload);
       }
@@ -503,6 +529,7 @@ export const ClientsList: React.FC = () => {
     return onboardingClients.filter((client: OnboardingClient) => {
       const matchesStage = stageFilter === 'all' || client.stage === stageFilter;
       if (!matchesStage) return false;
+      if (!matchesCategoryFilter(client, onboardingCatFilter)) return false;
 
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase().trim();
@@ -522,13 +549,14 @@ export const ClientsList: React.FC = () => {
         notes.includes(q)
       );
     });
-  }, [onboardingClients, searchQuery, stageFilter]);
+  }, [onboardingClients, searchQuery, stageFilter, onboardingCatFilter]);
 
   // Filtered Enquiry Clients
   const filteredEnquiryClients = useMemo(() => {
-    if (!searchQuery.trim()) return enquiryClients;
+    const inCategory = enquiryClients.filter((e: EnquiryClient) => matchesCategoryFilter(e, enquiryCatFilter));
+    if (!searchQuery.trim()) return inCategory;
     const q = searchQuery.toLowerCase().trim();
-    return enquiryClients.filter((e: EnquiryClient) => {
+    return inCategory.filter((e: EnquiryClient) => {
       const name = (e.clientName || '').toLowerCase();
       const num = (e.number || '').toLowerCase();
       const email = (e.email || '').toLowerCase();
@@ -1308,6 +1336,7 @@ export const ClientsList: React.FC = () => {
                   <option key={s.key} value={s.key}>{s.label}</option>
                 ))}
               </select>
+              <CategoryFilterBar items={onboardingClients} value={onboardingCatFilter} onChange={setOnboardingCatFilter} />
             </div>
 
             <div className="text-xs text-slate-500 dark:text-zinc-400 font-semibold self-end sm:self-auto">
@@ -1396,6 +1425,7 @@ export const ClientsList: React.FC = () => {
                                 <Mail className="w-3 h-3 text-slate-400" />
                                 {client.email}
                               </span>
+                              <CategoryLine item={client} />
                             </div>
                           </div>
                         </td>
@@ -1621,6 +1651,9 @@ export const ClientsList: React.FC = () => {
                 className="w-full pl-10 pr-4 py-2 rounded-xl bg-white dark:bg-background border border-slate-200 dark:border-zinc-850 text-xs text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-blue-500 font-medium"
               />
             </div>
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+              <CategoryFilterBar items={enquiryClients} value={enquiryCatFilter} onChange={setEnquiryCatFilter} />
+            </div>
 
             <div className="text-xs text-slate-500 dark:text-zinc-400 font-semibold self-end sm:self-auto">
               Showing {filteredEnquiryClients.length} of {totalEnquiries} enquiries
@@ -1694,6 +1727,7 @@ export const ClientsList: React.FC = () => {
                             <span className="text-xs font-bold text-slate-900 dark:text-zinc-100 block">
                               {item.clientName}
                             </span>
+                            <CategoryLine item={item} />
                             {item.sourceSheetName && (
                               <span className="inline-flex items-center gap-1 text-[10px] text-purple-600 dark:text-purple-400 font-medium mt-0.5">
                                 <FileSpreadsheet className="w-3 h-3" />
@@ -1797,6 +1831,7 @@ export const ClientsList: React.FC = () => {
         <CreateOnboardingModal
           isOpen={showCreateModal}
           initialData={editingOnboardingClient}
+          suggestionItems={[...onboardingClients, ...enquiryClients]}
           onClose={() => {
             setShowCreateModal(false);
             setEditingOnboardingClient(null);
@@ -1835,6 +1870,7 @@ export const ClientsList: React.FC = () => {
         <SingleEnquiryModal
           isOpen={showAddEnquiryModal}
           initialData={editingEnquiry}
+          suggestionItems={[...onboardingClients, ...enquiryClients]}
           onClose={() => {
             setShowAddEnquiryModal(false);
             setEditingEnquiry(null);
@@ -2306,6 +2342,7 @@ const EditOnboardedRemarksModal: React.FC<EditOnboardedRemarksModalProps> = ({
 interface CreateModalProps {
   isOpen: boolean;
   initialData?: OnboardingClient | null;
+  suggestionItems: ClientCategory[];
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -2313,6 +2350,7 @@ interface CreateModalProps {
 const CreateOnboardingModal: React.FC<CreateModalProps> = ({
   isOpen,
   initialData,
+  suggestionItems,
   onClose,
   onSuccess,
 }) => {
@@ -2326,6 +2364,11 @@ const CreateOnboardingModal: React.FC<CreateModalProps> = ({
   const [assignedTo, setAssignedTo] = useState(initialData?.assignedTo || '');
   const [targetDate, setTargetDate] = useState(initialData?.targetDate || '');
   const [notes, setNotes] = useState(initialData?.notes || '');
+  const [cat, setCat] = useState<ClientCategory>({
+    category: initialData?.category ?? '', subcategory: initialData?.subcategory ?? '',
+    usesSoftware: initialData?.usesSoftware ?? null, softwareName: initialData?.softwareName ?? '',
+  });
+  const suggestions = useCategorySuggestions(suggestionItems);
   const [errorMessage, setErrorMessage] = useState('');
 
   const isEdit = Boolean(initialData?.id);
@@ -2345,6 +2388,7 @@ const CreateOnboardingModal: React.FC<CreateModalProps> = ({
           assignedTo,
           targetDate,
           notes,
+          ...categoryPayload(cat),
         });
       } else {
         return clientsApi.createOnboardingClient({
@@ -2358,6 +2402,7 @@ const CreateOnboardingModal: React.FC<CreateModalProps> = ({
           assignedTo,
           targetDate,
           notes,
+          ...categoryPayload(cat),
         });
       }
     },
@@ -2400,7 +2445,7 @@ const CreateOnboardingModal: React.FC<CreateModalProps> = ({
               </span>
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                  {isEdit ? 'Edit Client Remarks' : 'Create Onboarding Client'}
+                  {isEdit ? 'Edit Client' : 'Create Onboarding Client'}
                 </h3>
                 <p className="text-[11px] text-muted-foreground font-light">
                   {isEdit ? (
@@ -2539,6 +2584,8 @@ const CreateOnboardingModal: React.FC<CreateModalProps> = ({
               </>
             )}
 
+            <ClientCategoryFields value={cat} onChange={setCat} suggestions={suggestions} idPrefix="onb" />
+
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-800 dark:text-zinc-200">Remarks & Notes</label>
               <textarea
@@ -2569,7 +2616,7 @@ const CreateOnboardingModal: React.FC<CreateModalProps> = ({
                 ) : (
                   <Check className="w-4 h-4" />
                 )}
-                <span>{isEdit ? 'Update Remarks' : 'Create Client'}</span>
+                <span>{isEdit ? 'Save Changes' : 'Create Client'}</span>
               </button>
             </div>
           </form>
@@ -2584,7 +2631,7 @@ const CreateOnboardingModal: React.FC<CreateModalProps> = ({
 interface SheetUploadModalProps {
   isOpen: boolean;
   sheetName: string;
-  rows: Array<{ clientName: string; number: string; email?: string; remarks?: string }>;
+  rows: Array<{ clientName: string; number: string; email?: string; remarks?: string } & ClientCategory>;
   onClose: () => void;
   onConfirmImport: (validRows: any[]) => void;
   isPending: boolean;
@@ -2651,6 +2698,8 @@ const SheetUploadModal: React.FC<SheetUploadModalProps> = ({
                     <th className="px-4 py-2.5 font-bold text-slate-600 dark:text-zinc-400">Number</th>
                     <th className="px-4 py-2.5 font-bold text-slate-600 dark:text-zinc-400">Email</th>
                     <th className="px-4 py-2.5 font-bold text-slate-600 dark:text-zinc-400">Remarks</th>
+                    <th className="px-4 py-2.5 font-bold text-slate-600 dark:text-zinc-400">Category</th>
+                    <th className="px-4 py-2.5 font-bold text-slate-600 dark:text-zinc-400">Software</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-150 dark:divide-zinc-850">
@@ -2661,6 +2710,8 @@ const SheetUploadModal: React.FC<SheetUploadModalProps> = ({
                       <td className="px-4 py-2 font-mono font-semibold text-slate-800 dark:text-zinc-200">{r.number}</td>
                       <td className="px-4 py-2 text-slate-600 dark:text-zinc-400">{r.email || '-'}</td>
                       <td className="px-4 py-2 text-slate-600 dark:text-zinc-400 truncate max-w-xs">{r.remarks || '-'}</td>
+                      <td className="px-4 py-2 text-slate-600 dark:text-zinc-400">{[r.category, r.subcategory].filter(Boolean).join(' › ') || '-'}</td>
+                      <td className="px-4 py-2 text-slate-600 dark:text-zinc-400">{r.usesSoftware === true ? (r.softwareName || 'Yes') : r.usesSoftware === false ? 'No' : '-'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -2701,14 +2752,16 @@ const SheetUploadModal: React.FC<SheetUploadModalProps> = ({
 interface SingleEnquiryModalProps {
   isOpen: boolean;
   initialData?: EnquiryClient | null;
+  suggestionItems: ClientCategory[];
   onClose: () => void;
-  onSuccess: (data: { clientName: string; number: string; email?: string; remarks?: string }) => void;
+  onSuccess: (data: { clientName: string; number: string; email?: string; remarks?: string } & ClientCategory) => void;
   isPending: boolean;
 }
 
 const SingleEnquiryModal: React.FC<SingleEnquiryModalProps> = ({
   isOpen,
   initialData,
+  suggestionItems,
   onClose,
   onSuccess,
   isPending,
@@ -2717,6 +2770,11 @@ const SingleEnquiryModal: React.FC<SingleEnquiryModalProps> = ({
   const [number, setNumber] = useState(initialData?.number || '');
   const [email, setEmail] = useState(initialData?.email || '');
   const [remarks, setRemarks] = useState(initialData?.remarks || '');
+  const [cat, setCat] = useState<ClientCategory>({
+    category: initialData?.category ?? '', subcategory: initialData?.subcategory ?? '',
+    usesSoftware: initialData?.usesSoftware ?? null, softwareName: initialData?.softwareName ?? '',
+  });
+  const suggestions = useCategorySuggestions(suggestionItems);
   const [errorMessage, setErrorMessage] = useState('');
 
   const isEdit = Boolean(initialData?.id);
@@ -2738,6 +2796,7 @@ const SingleEnquiryModal: React.FC<SingleEnquiryModalProps> = ({
       number: number.trim(),
       email: email.trim() || undefined,
       remarks: remarks.trim() || undefined,
+      ...categoryPayload(cat),
     });
   };
 
@@ -2813,6 +2872,8 @@ const SingleEnquiryModal: React.FC<SingleEnquiryModalProps> = ({
                 className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500 font-medium"
               />
             </div>
+
+            <ClientCategoryFields value={cat} onChange={setCat} suggestions={suggestions} idPrefix="enq" />
 
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-800 dark:text-zinc-200">Remarks / Notes (Optional)</label>
