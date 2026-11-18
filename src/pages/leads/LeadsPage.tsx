@@ -8,6 +8,8 @@ import {
 import { useToast } from '../../components/ui/Toast';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { formatPhone } from '../../services/api/workspaceClients';
+import { CategoryFilterBar, CategoryLine, ClientCategoryFields } from '../clients/ClientCategory';
+import { NO_CATEGORY_FILTER, matchesCategoryFilter, useCategorySuggestions, type CategoryFilter } from '../clients/clientCategory.utils';
 import {
   AUTO_FOLLOW_UPS, LEAD_STAGES, REJECT_LABELS, SOURCE_LABELS, STAGE_LABELS, leadsApi, rupees,
   type DuplicateLead, type LeadActivity, type LeadDetail, type LeadFilter, type LeadInput, type LeadSource, type LeadStage,
@@ -128,6 +130,8 @@ const LeadForm: React.FC<{ initial?: LeadDetail; onClose: () => void; onSaved: (
     city: initial?.city ?? '',
     source: (initial?.source ?? 'manual') as LeadSource,
     service: initial?.service ?? '',
+    category: initial?.category ?? '',
+    subcategory: initial?.subcategory ?? '',
     expectedValue: initial?.expectedValue ? String(Number(initial.expectedValue)) : '',
     ownerId: initial ? initial.ownerId ?? '' : 'me',
     nextFollowUpAt: toLocalInput(initial?.nextFollowUpAt),
@@ -138,6 +142,9 @@ const LeadForm: React.FC<{ initial?: LeadDetail; onClose: () => void; onSaved: (
   const [duplicates, setDuplicates] = useState<DuplicateLead[] | null>(null);
   const set = (key: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF((s) => ({ ...s, [key]: e.target.value }));
   const { data: people = [] } = useQuery({ queryKey: ['leads', 'people'], queryFn: leadsApi.people, staleTime: 60_000 });
+  // Category suggestions: the starter list plus categories already used on leads
+  const { data: leadList } = useQuery({ queryKey: ['leads', 'list', { q: '', ownerId: '', archived: false }], queryFn: () => leadsApi.list({ q: '', ownerId: '', archived: false }), staleTime: 60_000 });
+  const suggestions = useCategorySuggestions(leadList?.data ?? []);
 
   const problems = {
     name: f.name.trim().length < 2 ? 'Enter the lead\'s name' : '',
@@ -157,6 +164,8 @@ const LeadForm: React.FC<{ initial?: LeadDetail; onClose: () => void; onSaved: (
         city: f.city.trim() || null,
         source: f.source,
         service: f.service.trim() || null,
+        category: f.category.trim() || null,
+        subcategory: f.subcategory.trim() || null,
         expectedValue: f.expectedValue ? Number(f.expectedValue) : null,
         ownerId: f.ownerId || null,
         nextFollowUpAt: fromLocalInput(f.nextFollowUpAt),
@@ -210,6 +219,9 @@ const LeadForm: React.FC<{ initial?: LeadDetail; onClose: () => void; onSaved: (
             <select id="ld-source" value={f.source} onChange={set('source')} className={`${inputClass} [&>option]:bg-background`}>
               {(Object.keys(SOURCE_LABELS) as LeadSource[]).map((s) => <option key={s} value={s}>{SOURCE_LABELS[s]}</option>)}
             </select>
+          </div>
+          <div className="sm:col-span-2">
+            <ClientCategoryFields value={{ category: f.category, subcategory: f.subcategory }} onChange={(v) => setF((s) => ({ ...s, category: v.category ?? '', subcategory: v.subcategory ?? '' }))} suggestions={suggestions} idPrefix="ld" showSoftware={false} />
           </div>
           <div className="space-y-1.5">
             <label htmlFor="ld-value" className={labelClass}>Expected value (₹)</label>
@@ -533,6 +545,7 @@ const LeadCard: React.FC<{ lead: LeadSummary; draggable: boolean; onOpen: () => 
         {value && <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 whitespace-nowrap">{rupees(value)}</span>}
       </div>
       {(lead.company || lead.service) && <p className="text-[11px] text-muted-foreground truncate">{[lead.company, lead.service].filter(Boolean).join(' · ')}</p>}
+      <CategoryLine item={{ category: lead.category, subcategory: lead.subcategory }} />
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
         <span className="flex items-center gap-1"><User className="w-3 h-3" />{lead.ownerName ?? 'No owner'}</span>
         {lead.proposalVersion && <span className="flex items-center gap-1"><FileText className="w-3 h-3" />v{lead.proposalVersion}</span>}
@@ -644,7 +657,16 @@ const LeadsBoard: React.FC = () => {
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['leads'] });
   const mover = useStageMover(refresh);
 
-  const leads = useMemo(() => data?.data ?? [], [data]);
+  const [catFilter, setCatFilter] = useState<CategoryFilter>(NO_CATEGORY_FILTER);
+  const allLeads = useMemo(() => data?.data ?? [], [data]);
+  const leads = useMemo(() => allLeads.filter((l) => matchesCategoryFilter(l, catFilter)), [allLeads, catFilter]);
+  // The simple view of the pipeline: New / Interested / Converted / Lost
+  const summary = useMemo(() => ({
+    New: leads.filter((l) => l.stage === 'new').length,
+    Interested: leads.filter((l) => !['new', 'accepted', 'rejected'].includes(l.stage)).length,
+    Converted: leads.filter((l) => l.stage === 'accepted').length,
+    Lost: leads.filter((l) => l.stage === 'rejected').length,
+  }), [leads]);
   const canManage = !!data?.canManage;
   const columns = useMemo(() => {
     const by = new Map<LeadStage, LeadSummary[]>(LEAD_STAGES.map((s) => [s, []]));
@@ -684,8 +706,8 @@ const LeadsBoard: React.FC = () => {
         {canManage && !showArchived && <button type="button" onClick={() => setAdding(true)} className={primaryButton}><Plus className="w-4 h-4" /> Add lead</button>}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
+        <div className="relative flex-1 sm:min-w-[16rem]">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <label htmlFor="ld-search" className="sr-only">Search leads</label>
           <input id="ld-search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, company, phone, city or service" className={`${inputClass} pl-9`} />
@@ -696,6 +718,7 @@ const LeadsBoard: React.FC = () => {
           <option value="none">No owner</option>
           {people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
+        <CategoryFilterBar items={allLeads} value={catFilter} onChange={setCatFilter} showSoftware={false} selectClassName={`${inputClass} sm:w-48 [&>option]:bg-background`} />
         <button
           type="button" aria-pressed={showArchived} onClick={() => setShowArchived(!showArchived)}
           className={`${secondaryButton} shrink-0 ${showArchived ? 'bg-amber-500/10 border-amber-500/40 text-amber-700 dark:text-amber-400' : ''}`}
@@ -703,6 +726,16 @@ const LeadsBoard: React.FC = () => {
           {showArchived ? <><Target className="w-4 h-4" /> Back to board</> : <><Archive className="w-4 h-4" /> Archived</>}
         </button>
       </div>
+
+      {!showArchived && !isLoading && (
+        <div className="flex flex-wrap gap-2 text-xs" aria-label="Lead summary">
+          {(Object.entries(summary) as [string, number][]).map(([label, n]) => (
+            <span key={label} className={`px-2.5 py-1 rounded-lg border font-semibold ${label === 'Converted' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : label === 'Lost' ? 'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400' : label === 'Interested' ? 'border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-400' : 'border-border bg-muted/40 text-foreground'}`}>
+              {label} <span className="font-bold">{n}</span>
+            </span>
+          ))}
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex justify-center p-10"><Loader2 className="w-5 h-5 animate-spin text-blue-500" /></div>
@@ -975,7 +1008,7 @@ const LeadProfile: React.FC<{ id: string }> = ({ id }) => {
               <StageBadge stage={l.stage} />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {[l.company, l.service, SOURCE_LABELS[l.source]].filter(Boolean).join(' · ')}
+              {[l.company, l.service, [l.category, l.subcategory].filter(Boolean).join(' › '), SOURCE_LABELS[l.source]].filter(Boolean).join(' · ')}
               {l.createdByName && <> · Added by {l.createdByName} {ago(l.createdAt)}</>}
             </p>
           </div>

@@ -14,7 +14,8 @@ export const ClientCategoryFields: React.FC<{
   onChange: (v: ClientCategory) => void;
   suggestions: ReturnType<typeof useCategorySuggestions>;
   idPrefix: string;
-}> = ({ value, onChange, suggestions, idPrefix }) => {
+  showSoftware?: boolean;
+}> = ({ value, onChange, suggestions, idPrefix, showSoftware = true }) => {
   const subs = useMemo(() => {
     const key = Object.keys(suggestions.map).find((k) => k.toLowerCase() === (value.category || '').trim().toLowerCase());
     return key ? uniq([...suggestions.map[key]]) : [];
@@ -39,7 +40,7 @@ export const ClientCategoryFields: React.FC<{
           <datalist id={`${idPrefix}-subs`}>{subs.map((s) => <option key={s} value={s} />)}</datalist>
         </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {showSoftware && <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <label htmlFor={`${idPrefix}-uses`} className={label}>Uses software?</label>
           <select id={`${idPrefix}-uses`} value={yesNo}
@@ -58,7 +59,7 @@ export const ClientCategoryFields: React.FC<{
             <datalist id={`${idPrefix}-sws`}>{suggestions.software.map((s) => <option key={s} value={s} />)}</datalist>
           </div>
         )}
-      </div>
+      </div>}
     </div>
   );
 };
@@ -68,7 +69,7 @@ export const ClientCategoryFields: React.FC<{
 const select = 'px-3 py-2 rounded-xl bg-white dark:bg-background border border-slate-200 dark:border-zinc-850 text-xs font-semibold text-slate-700 dark:text-zinc-300 focus:outline-none focus:border-blue-500 cursor-pointer max-w-[12rem]';
 
 /** Category / subcategory / software filters for a client list (built from the values in that list) */
-export const CategoryFilterBar: React.FC<{ items: ClientCategory[]; value: CategoryFilter; onChange: (f: CategoryFilter) => void }> = ({ items, value, onChange }) => {
+export const CategoryFilterBar: React.FC<{ items: ClientCategory[]; value: CategoryFilter; onChange: (f: CategoryFilter) => void; showSoftware?: boolean; selectClassName?: string }> = ({ items, value, onChange, showSoftware = true, selectClassName }) => {
   const categories = useMemo(() => uniq(items.map((i) => i.category)), [items]);
   const subcategories = useMemo(
     () => uniq(items.filter((i) => !value.category || value.category === NONE || (i.category || '').trim().toLowerCase() === value.category.toLowerCase()).map((i) => i.subcategory)),
@@ -77,22 +78,22 @@ export const CategoryFilterBar: React.FC<{ items: ClientCategory[]; value: Categ
   const software = useMemo(() => uniq(items.map((i) => (i.usesSoftware ? i.softwareName : null))), [items]);
   return (
     <>
-      <select aria-label="Category" value={value.category} onChange={(e) => onChange({ ...value, category: e.target.value, subcategory: '' })} className={select}>
+      <select aria-label="Category" value={value.category} onChange={(e) => onChange({ ...value, category: e.target.value, subcategory: '' })} className={selectClassName ?? select}>
         <option value="">All categories</option>
         {categories.map((c) => <option key={c} value={c}>{c}</option>)}
         <option value={NONE}>No category</option>
       </select>
-      <select aria-label="Subcategory" value={value.subcategory} onChange={(e) => onChange({ ...value, subcategory: e.target.value })} className={select} disabled={!subcategories.length}>
+      <select aria-label="Subcategory" value={value.subcategory} onChange={(e) => onChange({ ...value, subcategory: e.target.value })} className={selectClassName ?? select} disabled={!subcategories.length}>
         <option value="">All subcategories</option>
         {subcategories.map((s) => <option key={s} value={s}>{s}</option>)}
       </select>
-      <select aria-label="Software" value={value.software} onChange={(e) => onChange({ ...value, software: e.target.value })} className={select}>
+      {showSoftware && <select aria-label="Software" value={value.software} onChange={(e) => onChange({ ...value, software: e.target.value })} className={selectClassName ?? select}>
         <option value="">Any software</option>
         <option value="yes">Uses software</option>
         <option value="no">No software</option>
         <option value={NONE}>Not asked</option>
         {software.length > 0 && <optgroup label="Software">{software.map((s) => <option key={s} value={`name:${s}`}>{s}</option>)}</optgroup>}
-      </select>
+      </select>}
     </>
   );
 };

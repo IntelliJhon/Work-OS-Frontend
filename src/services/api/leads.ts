@@ -4,7 +4,7 @@ import { apiClient } from './client';
 
 export const LEAD_STAGES = ['new', 'contacted', 'requirement', 'proposal', 'follow_up', 'accepted', 'rejected'] as const;
 export type LeadStage = typeof LEAD_STAGES[number];
-export type LeadSource = 'manual' | 'whatsapp' | 'website' | 'referral' | 'call' | 'walk_in' | 'social' | 'other';
+export type LeadSource = 'manual' | 'whatsapp' | 'website' | 'meta_ad' | 'referral' | 'call' | 'walk_in' | 'social' | 'other';
 export type RejectReason = 'price' | 'timing' | 'competitor' | 'no_response' | 'not_needed' | 'other';
 export type LeadActivityKind = 'note' | 'created' | 'updated' | 'stage' | 'proposal' | 'whatsapp' | 'email' | 'client' | 'archived' | 'restored';
 export type AcceptedAs = 'bot' | 'client';
@@ -22,6 +22,7 @@ export const SOURCE_LABELS: Record<LeadSource, string> = {
   manual: 'Added manually',
   whatsapp: 'WhatsApp',
   website: 'Website',
+  meta_ad: 'Meta ad (Facebook / Instagram)',
   referral: 'Referral',
   call: 'Phone call',
   walk_in: 'Walk-in',
@@ -46,6 +47,8 @@ export interface LeadSummary {
   city: string | null;
   source: LeadSource;
   service: string | null;
+  category?: string | null;
+  subcategory?: string | null;
   expectedValue: string | null;
   stage: LeadStage;
   stageChangedAt: string;
@@ -86,6 +89,8 @@ export interface LeadInput {
   city: string | null;
   source: LeadSource;
   service: string | null;
+  category?: string | null;
+  subcategory?: string | null;
   expectedValue: number | null;
   ownerId: string | null;
   nextFollowUpAt: string | null;

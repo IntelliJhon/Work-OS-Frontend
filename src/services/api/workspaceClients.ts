@@ -15,6 +15,7 @@ export interface ClientSummary {
   email: string | null;
   city: string | null;
   category: string | null;
+  subcategory?: string | null;
   status: ClientStatus;
   tags: string[];
   accountManagerId: string | null;
@@ -45,6 +46,7 @@ export interface ClientInput {
   address: string | null;
   gstNumber: string | null;
   category: string | null;
+  subcategory?: string | null;
   status: ClientStatus;
   accountManagerId: string | null;
   clientSince: string | null;

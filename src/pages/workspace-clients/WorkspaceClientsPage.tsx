@@ -97,6 +97,7 @@ export const ClientForm: React.FC<{ initial?: ClientDetail; onClose: () => void;
     contactPerson: initial?.contactPerson ?? '',
     email: initial?.email ?? '',
     category: initial?.category ?? '',
+    subcategory: initial?.subcategory ?? '',
     gstNumber: initial?.gstNumber ?? '',
     city: initial?.city ?? '',
     address: initial?.address ?? '',
@@ -135,6 +136,7 @@ export const ClientForm: React.FC<{ initial?: ClientDetail; onClose: () => void;
         contactPerson: f.contactPerson.trim() || null,
         email: f.email.trim() || null,
         category: f.category.trim() || null,
+        subcategory: f.subcategory.trim() || null,
         gstNumber: gst || null,
         city: f.city.trim() || null,
         address: f.address.trim() || null,
@@ -187,6 +189,10 @@ export const ClientForm: React.FC<{ initial?: ClientDetail; onClose: () => void;
               <label htmlFor="cl-category" className={labelClass}>Category</label>
               <input id="cl-category" list="cl-categories" value={f.category} maxLength={60} onChange={set('category')} placeholder="e.g. Restaurant, Retail, IT" className={inputClass} />
               <datalist id="cl-categories">{categories.map((c) => <option key={c} value={c} />)}</datalist>
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="cl-subcategory" className={labelClass}>Subcategory</label>
+              <input id="cl-subcategory" value={f.subcategory} maxLength={80} onChange={set('subcategory')} placeholder="e.g. Clinic, Bakery" className={inputClass} />
             </div>
             <div className="space-y-1.5">
               <label htmlFor="cl-gst" className={labelClass}>GST number</label>
@@ -533,7 +539,7 @@ const ClientProfile: React.FC<{ id: string }> = ({ id }) => {
             <StatusBadge status={c.status} archived={archived} />
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            {[c.category, c.city].filter(Boolean).join(' · ') || 'No category yet'}
+            {[[c.category, c.subcategory].filter(Boolean).join(' › '), c.city].filter(Boolean).join(' · ') || 'No category yet'}
             {c.createdByName && <> · Added by {c.createdByName}</>}
           </p>
           {c.tags.length > 0 && (
@@ -722,7 +728,7 @@ const ClientsList: React.FC = () => {
                 </div>
                 <div className="hidden md:block text-right shrink-0 w-44">
                   <p className="text-xs font-semibold text-foreground truncate">{c.accountManagerName ?? '—'}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">{c.category ?? 'No category'}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{[c.category, c.subcategory].filter(Boolean).join(' › ') || 'No category'}</p>
                 </div>
                 <StatusBadge status={c.status} archived={!!c.archivedAt} />
               </button>
