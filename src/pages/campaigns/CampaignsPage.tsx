@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,7 +8,7 @@ import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { formatPhone } from '../../services/api/workspaceClients';
 import {
   CAMPAIGN_PARAMS, PARAM_LABELS, STOP_LABELS, campaignsApi,
-  type CampaignEnrolment, type CampaignParam, type CampaignSequence, type CampaignStep, type StopReason,
+  type CampaignEnrolment, type CampaignParam, type CampaignSequence, type CampaignStep, type StopReason, type TemplateSet,
 } from '../../services/api/campaigns';
 import { DEFAULT_CATEGORIES } from '../clients/clientCategory.utils';
 
@@ -34,6 +34,20 @@ const SequenceForm: React.FC<{ initial: CampaignSequence | null; onClose: () => 
     ? initial.steps.map((s) => ({ day: s.day, templateName: s.templateName, language: s.language, params: s.params }))
     : DEFAULT_DAYS.map((d) => ({ day: d, templateName: '', language: 'en', params: ['name'] })));
   const setStep = (i: number, patch: Partial<CampaignStep>) => setSteps((list) => list.map((s, j) => (j === i ? { ...s, ...patch } : s)));
+  // Template sets from WAAU (<set>_day1 … <set>_monthly); picking one fills in the messages
+  const { data: sets = [], isLoading: setsLoading, isError: setsError } = useQuery({ queryKey: ['campaigns', 'template-sets'], queryFn: campaignsApi.templateSets, staleTime: 5 * 60_000 });
+  const statusOf = useMemo(() => new Map(sets.flatMap((s) => s.steps.map((st) => [st.templateName, st.status] as const))), [sets]);
+  const currentSet = useMemo(() => sets.find((s) => steps.length > 0 && steps.every((st) => s.steps.some((x) => x.templateName === st.templateName)))?.name ?? '', [sets, steps]);
+  const pickSet = (name: string) => {
+    const set: TemplateSet | undefined = sets.find((s) => s.name === name);
+    if (!set) return;
+    setSteps(set.steps.map((st) => ({ day: st.day, templateName: st.templateName, language: st.language, params: st.params })));
+    setMonthly(set.hasMonthly);
+  };
+  // Who this category reaches (Enquiry List + open leads)
+  const [debounced, setDebounced] = useState(category.trim());
+  useEffect(() => { const t = setTimeout(() => setDebounced(category.trim()), 400); return () => clearTimeout(t); }, [category]);
+  const { data: preview, isFetching: previewLoading } = useQuery({ queryKey: ['campaigns', 'preview', debounced], queryFn: () => campaignsApi.preview(debounced), enabled: !!debounced });
   const suggestName = (day: number) => (category.trim() ? `${slug(category)}_day${day}` : `category_day${day}`);
 
   const save = useMutation({
@@ -65,6 +79,15 @@ const SequenceForm: React.FC<{ initial: CampaignSequence | null; onClose: () => 
             </div>
           </div>
 
+          <div className="space-y-1.5">
+            <label htmlFor="cp-set" className="text-xs font-semibold text-foreground">Template set (from WAAU)</label>
+            <select id="cp-set" value={currentSet} onChange={(e) => pickSet(e.target.value)} className={inputClass} disabled={setsLoading || setsError}>
+              <option value="">{setsLoading ? 'Loading WAAU templates…' : setsError ? 'Could not load WAAU templates' : sets.length ? 'Choose a template set…' : 'No template sets in WAAU (name them like society_ml_day1)'}</option>
+              {sets.map((s) => <option key={s.name} value={s.name}>{s.name} · {s.language === 'ml' ? 'Malayalam' : s.language === 'en' ? 'English' : s.language} · {s.approved}/{s.total} approved</option>)}
+            </select>
+            <p className="text-[11px] text-muted-foreground">WAAU templates named <span className="font-mono">set_day1</span>, <span className="font-mono">set_day3</span>… and <span className="font-mono">set_monthly</span> form a set. Picking one fills in the messages below.</p>
+          </div>
+
           <div className="space-y-2">
             <p className="text-xs font-semibold text-foreground">Messages (approved WAAU template names)</p>
             <p className="text-[11px] text-muted-foreground">Each template should have the buttons <b>Interested</b>, <b>Not interested</b> and <b>Book a demo</b>. "Variables" fill the template's {'{{1}}, {{2}}'}… in order.</p>
@@ -75,6 +98,12 @@ const SequenceForm: React.FC<{ initial: CampaignSequence | null; onClose: () => 
                 </label>
                 <label className="text-[11px] text-muted-foreground">Template name
                   <input value={s.templateName} onChange={(e) => setStep(i, { templateName: e.target.value.toLowerCase().replace(/\s+/g, '_') })} placeholder={suggestName(s.day)} className={`${inputClass} mt-0.5 font-mono`} aria-label={`Template of message ${i + 1}`} />
+                  {s.templateName && (
+                    <span className={`mt-1 inline-block text-[10px] font-semibold ${statusOf.get(s.templateName) === 'APPROVED' ? 'text-emerald-700 dark:text-emerald-400' : statusOf.get(s.templateName) ? 'text-amber-700 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
+                      {statusOf.get(s.templateName) === 'APPROVED' ? 'Approved' : statusOf.get(s.templateName) ? `${statusOf.get(s.templateName)!.charAt(0)}${statusOf.get(s.templateName)!.slice(1).toLowerCase()} — not sent until approved` : 'Not found in WAAU'}
+                      {s.language && s.language !== 'en' ? ` · ${s.language === 'ml' ? 'Malayalam' : s.language}` : ''}
+                    </span>
+                  )}
                 </label>
                 <label className="text-[11px] text-muted-foreground col-span-2 sm:col-span-1 row-start-2 sm:row-start-auto">Variables
                   <select multiple value={s.params} onChange={(e) => setStep(i, { params: [...e.target.selectedOptions].map((o) => o.value as CampaignParam) })} className={`${inputClass} mt-0.5 h-[4.5rem] text-xs`} aria-label={`Variables of message ${i + 1}`}>
@@ -86,6 +115,35 @@ const SequenceForm: React.FC<{ initial: CampaignSequence | null; onClose: () => 
             ))}
             <button type="button" onClick={() => setSteps((list) => [...list, { day: (list[list.length - 1]?.day ?? 0) + 30, templateName: '', language: 'en', params: ['name'] }])} className={secondaryButton}><Plus className="w-4 h-4" /> Add message</button>
           </div>
+
+          {debounced && (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-foreground flex items-center gap-2">
+                Contacts in {debounced} {previewLoading && <Loader2 className="w-3 h-3 animate-spin" />}
+              </p>
+              {preview && (
+                <>
+                  <p className="text-[11px] text-muted-foreground">
+                    {preview.total === 0
+                      ? `No Enquiry List contacts or open leads have the category "${debounced}" yet. Set it on them (Clients → Enquiry List, or Leads) and they show here.`
+                      : <><b className="text-foreground">{preview.willJoin}</b> of {preview.total} will get the messages ({initial ? 'new ones join automatically; use “Add existing contacts” for these' : 'after you save, turn it on and use “Add existing contacts”'}).</>}
+                  </p>
+                  {preview.total > 0 && (
+                    <ul className="rounded-xl border border-border divide-y divide-border max-h-56 overflow-y-auto text-xs">
+                      {preview.contacts.map((c) => (
+                        <li key={`${c.kind}-${c.id}`} className={`px-3 py-1.5 flex flex-wrap items-center gap-x-3 ${c.skip ? 'opacity-60' : ''}`}>
+                          <span className="font-semibold text-foreground min-w-0 flex-1 truncate">{c.name}{c.company ? ` · ${c.company}` : ''}</span>
+                          <span className="text-muted-foreground">{c.kind === 'lead' ? 'Lead' : 'Enquiry'} · {formatPhone(c.phone)}</span>
+                          {c.subcategory && <span className="text-muted-foreground truncate max-w-[14rem]">{c.subcategory}</span>}
+                          {c.skip && <span className="text-amber-700 dark:text-amber-400">{c.skip}</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
+            </div>
+          )}
 
           <div className="sticky bottom-0 -mx-5 px-5 py-4 bg-card border-t border-border flex justify-end gap-2">
             <button type="button" onClick={onClose} className={secondaryButton}>Cancel</button>

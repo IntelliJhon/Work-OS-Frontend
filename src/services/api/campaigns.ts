@@ -43,6 +43,13 @@ export interface CampaignEnrolment {
   lastSentAt: string | null;
   lastError: string | null;
 }
+export interface TemplateSetStep extends CampaignStep { status: string; buttons: string[]; monthly: boolean }
+export interface TemplateSet { name: string; language: string; approved: number; total: number; hasMonthly: boolean; steps: TemplateSetStep[] }
+export interface CampaignPreview {
+  total: number;
+  willJoin: number;
+  contacts: { kind: 'lead' | 'enquiry'; id: string; name: string; company: string | null; phone: string; subcategory: string | null; skip: string | null }[];
+}
 export interface SequenceInput { category: string; active: boolean; repeatEveryDays: number | null; steps: CampaignStep[] }
 
 const base = '/campaigns';
@@ -51,6 +58,8 @@ export const campaignsApi = {
   save: async (id: string | null, input: SequenceInput) =>
     (id ? await apiClient.put<{ data: CampaignSequence }>(`${base}/${id}`, input) : await apiClient.post<{ data: CampaignSequence }>(base, input)).data.data,
   remove: async (id: string) => (await apiClient.delete(`${base}/${id}`)).data,
+  templateSets: async () => (await apiClient.get<{ data: TemplateSet[] }>(`${base}/template-sets`, { timeout: 60_000 })).data.data,
+  preview: async (category: string) => (await apiClient.get<{ data: CampaignPreview }>(`${base}/preview`, { params: { category } })).data.data,
   enrolExisting: async (id: string) => (await apiClient.post<{ data: { enrolled: number; checked: number } }>(`${base}/${id}/enrol-existing`)).data.data,
   enrolments: async (filter: { sequenceId?: string; status?: string; refId?: string }) => {
     const params = Object.fromEntries(Object.entries(filter).filter(([, v]) => v));

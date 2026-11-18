@@ -14,6 +14,12 @@ export const DEFAULT_CATEGORIES: Record<string, string[]> = {
   Education: ['School', 'College', 'Coaching Centre', 'Training Institute'],
   Retail: ['Supermarket', 'Bakery', 'Textiles', 'Electronics', 'Jewellery'],
   Finance: ['Co-operative Bank', 'Co-operative Society', 'NBFC', 'Insurance'],
+  'Co-operative Society': [
+    'PACS / Farmers Service Co-operative Bank', 'PCARDB', 'Government Employees Co-operative Society', 'Teachers & Educational Employees Co-operative Society',
+    'District / State-level Co-operative Society', 'Credit Co-operative Society', 'Housing Co-operative Society', 'Hospital Co-operative Society',
+    'Consumer Co-operative Society', 'SC/ST Co-operative Society', 'Vanitha Co-operative Society', 'Marketing Co-operative Society',
+    'Fisheries Co-operative Society', 'Dairy Co-operative Society', 'Labour Co-operative Society', 'Educational Co-operative Society',
+  ],
   Automobile: ['Showroom', 'Service Centre', 'Spare Parts'],
   'Real Estate': ['Builder', 'Broker'],
   Hospitality: ['Hotel', 'Resort', 'Restaurant', 'Houseboat'],
