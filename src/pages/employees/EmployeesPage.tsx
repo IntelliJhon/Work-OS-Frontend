@@ -738,12 +738,8 @@ const WorkReportModal: React.FC<WorkReportModalProps> = ({ employee, onClose }) 
   const canEditReport = (report: WorkReport) => {
     // Reports from a task time log change with the time entry (in the project's Task Planner)
     if (report.taskId && report.minutes != null) return false;
-    if (isUserAdmin) return true;
-    const currentUserId = user?.id;
-    const currentUserEmail = user?.email?.toLowerCase();
-    if (currentUserId && currentUserId === report.authorId) return true;
-    if (currentUserEmail && currentUserEmail === report.authorEmail?.toLowerCase()) return true;
-    return false;
+    // Only Admins change saved reports; developers and Project Managers can only add
+    return isUserAdmin;
   };
 
   const canCreateReport = useMemo(() => {
