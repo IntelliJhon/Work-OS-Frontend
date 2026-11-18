@@ -165,6 +165,8 @@ const Contacts: React.FC<{ sequence: CampaignSequence; isAdmin: boolean }> = ({ 
   const queryClient = useQueryClient();
   const [status, setStatus] = useState('');
   const { data = [], isLoading } = useQuery({ queryKey: ['campaigns', 'enrolments', sequence.id, status], queryFn: () => campaignsApi.enrolments({ sequenceId: sequence.id, status }) });
+  // Nobody joined yet: show who is in the category (and why some would be skipped)
+  const { data: waiting } = useQuery({ queryKey: ['campaigns', 'preview', sequence.category], queryFn: () => campaignsApi.preview(sequence.category), enabled: !isLoading && data.length === 0 });
   const act = useMutation({
     mutationFn: ({ id, action }: { id: string; action: 'pause' | 'resume' | 'stop' }) => campaignsApi.setEnrolment(id, action),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['campaigns'] }),
@@ -179,7 +181,32 @@ const Contacts: React.FC<{ sequence: CampaignSequence; isAdmin: boolean }> = ({ 
         <span className="text-xs text-muted-foreground">{data.length} shown</span>
       </div>
       {isLoading ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> : data.length === 0 ? (
-        <p className="text-xs text-muted-foreground py-3">No contacts yet. New leads and enquiries in {sequence.category} join while the campaign is on.</p>
+        <div className="space-y-2 py-1">
+          <p className="text-xs text-muted-foreground">
+            Nobody has joined yet.{' '}
+            {sequence.active
+              ? <>New leads and enquiries in {sequence.category} join automatically; press <b>Add existing contacts</b> for the ones below.</>
+              : <>Turn the campaign <b>on</b>, then press <b>Add existing contacts</b> to add the ones below.</>}
+          </p>
+          {!status && waiting && waiting.total > 0 && (
+            <>
+              <p className="text-xs font-semibold text-foreground">In {sequence.category}, not joined yet: {waiting.willJoin} of {waiting.total} can join</p>
+              <ul className="divide-y divide-border rounded-xl border border-border max-h-60 overflow-y-auto">
+                {waiting.contacts.map((c) => (
+                  <li key={`${c.kind}-${c.id}`} className={`px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ${c.skip ? 'opacity-60' : ''}`}>
+                    <span className="font-semibold text-foreground min-w-0 flex-1 truncate">{c.name}{c.company ? ` · ${c.company}` : ''}</span>
+                    <span className="text-muted-foreground">{c.kind === 'lead' ? 'Lead' : 'Enquiry'} · {formatPhone(c.phone)}</span>
+                    {c.subcategory && <span className="text-muted-foreground truncate max-w-[14rem]">{c.subcategory}</span>}
+                    <span className={c.skip ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}>{c.skip ?? 'Not joined yet'}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {!status && waiting && waiting.total === 0 && (
+            <p className="text-xs text-muted-foreground">No Enquiry List contacts or open leads have the category "{sequence.category}" yet.</p>
+          )}
+        </div>
       ) : (
         <ul className="divide-y divide-border rounded-xl border border-border max-h-80 overflow-y-auto">
           {data.map((e) => (
