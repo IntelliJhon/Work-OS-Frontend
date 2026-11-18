@@ -2465,7 +2465,7 @@ const CreateOnboardingModal: React.FC<CreateModalProps> = ({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
+          <form onSubmit={handleSubmit} className="p-6 pb-0 space-y-4 overflow-y-auto">
             {errorMessage && (
               <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 text-xs text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -2598,7 +2598,7 @@ const CreateOnboardingModal: React.FC<CreateModalProps> = ({
               />
             </div>
 
-            <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-200 dark:border-zinc-800">
+            <div className="sticky bottom-0 -mx-6 px-6 py-4 bg-white dark:bg-zinc-950 flex items-center justify-end space-x-3 border-t border-slate-200 dark:border-zinc-800">
               <button
                 type="button"
                 onClick={onClose}
@@ -2684,7 +2684,7 @@ const SheetUploadModal: React.FC<SheetUploadModalProps> = ({
             <div className="p-3 rounded-2xl bg-purple-50/60 dark:bg-purple-950/20 border border-purple-200/80 dark:border-purple-900/40 text-xs text-purple-900 dark:text-purple-300 font-medium flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4 text-purple-600 shrink-0" />
-                <span>Auto-extracted Client Name, Number, Email and Remarks columns from your spreadsheet.</span>
+                <span>Auto-extracted Client Name, Number, Email, Remarks, Category, Subcategory and Software columns from your spreadsheet.</span>
               </span>
               <span className="font-bold shrink-0 ml-2">Total Rows: {rows.length}</span>
             </div>
@@ -2699,6 +2699,7 @@ const SheetUploadModal: React.FC<SheetUploadModalProps> = ({
                     <th className="px-4 py-2.5 font-bold text-slate-600 dark:text-zinc-400">Email</th>
                     <th className="px-4 py-2.5 font-bold text-slate-600 dark:text-zinc-400">Remarks</th>
                     <th className="px-4 py-2.5 font-bold text-slate-600 dark:text-zinc-400">Category</th>
+                    <th className="px-4 py-2.5 font-bold text-slate-600 dark:text-zinc-400">Subcategory</th>
                     <th className="px-4 py-2.5 font-bold text-slate-600 dark:text-zinc-400">Software</th>
                   </tr>
                 </thead>
@@ -2710,8 +2711,9 @@ const SheetUploadModal: React.FC<SheetUploadModalProps> = ({
                       <td className="px-4 py-2 font-mono font-semibold text-slate-800 dark:text-zinc-200">{r.number}</td>
                       <td className="px-4 py-2 text-slate-600 dark:text-zinc-400">{r.email || '-'}</td>
                       <td className="px-4 py-2 text-slate-600 dark:text-zinc-400 truncate max-w-xs">{r.remarks || '-'}</td>
-                      <td className="px-4 py-2 text-slate-600 dark:text-zinc-400">{[r.category, r.subcategory].filter(Boolean).join(' › ') || '-'}</td>
-                      <td className="px-4 py-2 text-slate-600 dark:text-zinc-400">{r.usesSoftware === true ? (r.softwareName || 'Yes') : r.usesSoftware === false ? 'No' : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600 dark:text-zinc-400 whitespace-nowrap">{r.category || '-'}</td>
+                      <td className="px-4 py-2 text-slate-600 dark:text-zinc-400 whitespace-nowrap">{r.subcategory || '-'}</td>
+                      <td className="px-4 py-2 text-slate-600 dark:text-zinc-400">{r.usesSoftware === true ? (r.softwareName || 'Yes') : r.usesSoftware === false ? 'No' : 'Not asked'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -2830,7 +2832,7 @@ const SingleEnquiryModal: React.FC<SingleEnquiryModalProps> = ({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="p-6 pb-0 space-y-4 overflow-y-auto">
             {errorMessage && (
               <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 text-xs text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -2886,7 +2888,7 @@ const SingleEnquiryModal: React.FC<SingleEnquiryModalProps> = ({
               />
             </div>
 
-            <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-200 dark:border-zinc-800">
+            <div className="sticky bottom-0 -mx-6 px-6 py-4 bg-white dark:bg-zinc-950 flex items-center justify-end space-x-3 border-t border-slate-200 dark:border-zinc-800">
               <button
                 type="button"
                 onClick={onClose}
