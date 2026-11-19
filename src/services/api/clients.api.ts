@@ -381,4 +381,10 @@ export const clientsApi = {
     const { data } = await apiClient.delete<{ success: boolean; message: string }>(`/clients/enquiries/${id}`);
     return data;
   },
+
+  // Move an enquiry to Onboarding Clients
+  moveEnquiryToOnboarding: async (id: string): Promise<{ success: boolean }> => {
+    const { data } = await apiClient.post<{ success: boolean }>(`/clients/enquiries/${id}/move-to-onboarding`);
+    return data;
+  },
 };

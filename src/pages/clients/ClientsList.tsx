@@ -17,7 +17,7 @@ import { CategoryFilterBar, CategoryLine, ClientCategoryFields } from './ClientC
 import {
   NO_CATEGORY_FILTER, categoryPayload, matchesCategoryFilter, useCategorySuggestions, type CategoryFilter, type ClientCategory,
 } from './clientCategory.utils';
-import { History } from 'lucide-react';
+import { ArrowRightLeft, History } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { isLeadsndealsTenant } from '../../features/auth/company';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
@@ -355,6 +355,28 @@ export const ClientsList: React.FC = () => {
     if (ok) {
       deleteEnquiryMutation.mutate(item.id);
     }
+  };
+
+  // Move an enquiry to Onboarding Clients
+  const moveToOnboardingMutation = useMutation({
+    mutationFn: (id: string) => clientsApi.moveEnquiryToOnboarding(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['enquiry-clients-list'] });
+      queryClient.invalidateQueries({ queryKey: ['onboarding-clients-list'] });
+      toast.success('Moved to Onboarding Clients.');
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error || err?.message || 'Failed to move the client');
+    },
+  });
+
+  const handleMoveToOnboarding = async (item: EnquiryClient) => {
+    const ok = await confirm({
+      title: 'Move to Onboarding Clients',
+      message: `Move "${item.clientName}" from the Enquiry List to Onboarding Clients? Any campaign messages to this enquiry will stop.`,
+      confirmLabel: 'Move',
+    });
+    if (ok) moveToOnboardingMutation.mutate(item.id);
   };
 
   // Mutation: Save comment on onboarded client
@@ -1783,6 +1805,17 @@ export const ClientsList: React.FC = () => {
                             title="Edit Enquiry"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleMoveToOnboarding(item)}
+                            disabled={moveToOnboardingMutation.isPending}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer disabled:opacity-50"
+                            title="Move to Onboarding Clients"
+                            aria-label={`Move ${item.clientName} to Onboarding Clients`}
+                          >
+                            <ArrowRightLeft className="w-3.5 h-3.5" />
                           </button>
 
                           <button
